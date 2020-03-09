@@ -426,50 +426,61 @@ pcln1hrfix$positangle <- abs(pcln1hrfix$angle)
 library(amt)
 pcln1hrfix$positangledegree <- as_degree(pcln1hrfix$positangle)
 # Angles between sheep are already deleted because of how prepData function worked
-hist(pcln1hrfix$positangledegree, xlab = "Angle Degree", main = "Frequency of Turning Angles at 1 Hr Fix Rate for All Bighorn (n = 14924)")
-pcln1hrfix$Month <- month(pcln1hrfix$DateTimeLocalTestct)
-pcln1hrfix$MountainRange <- droplevels(pcln1hrfix$MountainRange)
+# Need to make sure that points before and after a given point were actually taken an hour before and an hour after.
+pcln1hrfix$lagtime <- (pcln1hrfix$DateTimeLocalTestct - lag(pcln1hrfix$DateTimeLocalTestct))
+pcln1hrfix$leadtime <- (lead(pcln1hrfix$DateTimeLocalTestct) - pcln1hrfix$DateTimeLocalTestct)
+pcln1hrfix$lagtime <- as.numeric(pcln1hrfix$lagtime)
+pcln1hrfix$leadtime <- as.numeric(pcln1hrfix$leadtime)
+pcln1hrfix1 <- pcln1hrfix[((pcln1hrfix$lagtime >= 50 & pcln1hrfix$lagtime <= 70) & (pcln1hrfix$leadtime >= 50 & pcln1hrfix$leadtime <= 70)), ]
+
+
+
+hist(pcln1hrfix1$positangledegree, xlab = "Angle Degree", main = "Frequency of Turning Angles at 1 Hr Fix Rate for All Bighorn (n = 12964)")
+pcln1hrfix1$Month <- month(pcln1hrfix1$DateTimeLocalTestct)
+pcln1hrfix1$MountainRange <- droplevels(pcln1hrfix1$MountainRange)
 # If turning angle is different by mountain range
-boxplot(positangledegree ~ MountainRange, data = pcln1hrfix, ylab = "Turning Angle", main = "Turning Angle by Mountain Range")
-turnangleMtnRange <- aov(positangledegree ~ MountainRange, data = pcln1hrfix)
+boxplot(positangledegree ~ MountainRange, data = pcln1hrfix1, ylab = "Turning Angle", main = "Turning Angle by Mountain Range")
+turnangleMtnRange <- aov(positangledegree ~ MountainRange, data = pcln1hrfix1)
 summary.lm(turnangleMtnRange)
-# Multiple R-squared:  0.0003511,	Adjusted R-squared:  0.0001495 
-# F-statistic: 1.742 on 3 and 14878 DF,  p-value: 0.1561
+# Multiple R-squared:  0.0003166, Adjusted R-squared:  8.509e-05
+# F-statistic: 1.368 on 3 and 12955 DF,  p-value: 0.2506
 TukeyHSD(turnangleMtnRange)
-# CMPR-BrsS  0.8506750 -3.864226 5.5655764 0.9669665
-# Marb-BrsS -2.0649079 -4.761631 0.6318155 0.2004612
-# Nopa-BrsS  0.1728248 -3.343584 3.6892338 0.9992810
-# Marb-CMPR -2.9155830 -7.771596 1.9404297 0.4119503
-# Nopa-CMPR -0.6778502 -6.032631 4.6769302 0.9881204
-# Nopa-Marb  2.2377327 -1.465738 5.9412036 0.4061609
+#                 diff       lwr      upr     p adj
+# CMPR-BrsS  1.7289660 -3.340182 6.798114 0.8171345
+# Marb-BrsS -1.7841234 -4.683856 1.115610 0.3895996
+# Nopa-BrsS -0.6429978 -4.457247 3.171252 0.9727806
+# Marb-CMPR -3.5130893 -8.759514 1.733336 0.3129495
+# Nopa-CMPR -2.3719637 -8.174120 3.430193 0.7196964
+# Nopa-Marb  1.1411256 -2.905751 5.188002 0.8873445
 # Turning angle is not significantly different between any mountain ranges.
 
 # If turning angle is significantly different by individual sheep
-boxplot(positangledegree ~ ID, data = pcln1hrfix, ylab = "Turning Angle", main = "Turning Angle by Individual Bighorn")
-turnangleid <- aov(positangledegree ~ ID, data = pcln1hrfix)
+boxplot(positangledegree ~ ID, data = pcln1hrfix1, ylab = "Turning Angle", main = "Turning Angle by Individual Bighorn")
+turnangleid <- aov(positangledegree ~ ID, data = pcln1hrfix1)
 summary.lm(turnangleid)
-# Multiple R-squared:  0.003677,	Adjusted R-squared:  0.002538 
-# F-statistic: 3.227 on 17 and 14864 DF,  p-value: 7.41e-06
+# Multiple R-squared:  0.00476, Adjusted R-squared:  0.003453
+# F-statistic: 3.641 on 17 and 12941 DF,  p-value: 5.313e-07
 TukeyHSD(turnangleid)
-# Only bighorn combos that were significantly different were: 1686-1682, 1687-1686, 1688-1686, 1740-1686.
+# Only bighorn combos that were significantly different were: 1686-1584, 1686-1682, 1687-1686, 1688-1686, 1740-1686, 1740-1739.
 
 # If turning angle is different by month
 # Because there was no significant difference between mountain ranges, I did not divide up these results by mountain range.
-boxplot(positangledegree ~ Month, data = pcln1hrfix)
-pcln1hrfix$Month <- as.factor(pcln1hrfix$Month)
-turnanglemonth <- aov(positangledegree ~ Month, data = pcln1hrfix)
+boxplot(positangledegree ~ Month, data = pcln1hrfix1)
+pcln1hrfix1$Month <- as.factor(pcln1hrfix1$Month)
+turnanglemonth <- aov(positangledegree ~ Month, data = pcln1hrfix1)
 summary.lm(turnanglemonth)
-# Multiple R-squared:  0.000449,	Adjusted R-squared:  0.0002475 
-# F-statistic: 2.228 on 3 and 14878 DF,  p-value: 0.08274
+# Multiple R-squared:  0.0009122, Adjusted R-squared:  0.0006808
+# F-statistic: 3.943 on 3 and 12955 DF,  p-value: 0.008015
 TukeyHSD(turnanglemonth)
-#           diff        lwr       upr     p adj
-# 6-5 -2.0224134  -7.829637 3.7848099 0.8075684
-# 7-5 -4.0070869  -9.769706 1.7555324 0.2797733
-# 8-5 -4.1284510 -10.181881 1.9249787 0.2967243
-# 7-6 -1.9846735  -4.692344 0.7229972 0.2352397
-# 8-6 -2.1060376  -5.387457 1.1753815 0.3511314
-# 8-7 -0.1213641  -3.323184 3.0804556 0.9996694
-# No significant different in turning angle between months. The boxplot does show a possible slight downward trend though.
+#           diff        lwr        upr     p adj
+# 6-5 -2.3332716  -9.200252  4.5337086 0.8188386
+# 7-5 -5.5160170 -12.346045  1.3140114 0.1613233
+# 8-5 -5.2894958 -12.395589  1.8165977 0.2227202
+# 7-6 -3.1827453  -6.071774 -0.2937171 0.0240622
+# 8-6 -2.9562242  -6.448181  0.5357326 0.1302038
+# 8-7  0.2265211  -3.192197  3.6452390 0.9982468
+# There was only a significant different in turning angle between June and July. The fact that there wasn't a significant between farther apart months brings into question the relevance of this significance.
+
 ```
 
 I next calculated the shortest topographic distance between points. This is basically step length, accounting for elevation.
@@ -620,11 +631,54 @@ steplengthallmtn <- rbind(onehrnopah2, onehrcmpr2, onehrmarb2, onehrsbrs2)
 
 ```
 
+I conducted the preliminary analyses related to step length. I read in the data at the beginning because I had to conduct the previous chunk on a computer more powerful than my laptop. All topographic step lengths are in meters.
+
+- step length different by mountain range
+- different by individual sheep
+- different by month
+
+```{r}
+steplengthallmtn <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/steplengthallmtn3820.csv")
+# Need to make sure that points before and after a given point were actually taken an hour before and an hour after.
+library(lubridate)
+steplengthallmtn$DateTimeLocalTestct <- as.character(steplengthallmtn$DateTimeLocalTestct)
+steplengthallmtn$DateTimeLocalTestct <- strptime(steplengthallmtn$DateTimeLocalTestct, "%m/%d/%Y %H:%M")
+steplengthallmtn$DateTimeLocalTestct <- as.POSIXct(steplengthallmtn$DateTimeLocalTestct, tz = "America/Los_Angeles", format = "%m/%d/%Y% %H:%M")
+steplengthallmtn$lagtime <- (steplengthallmtn$DateTimeLocalTestct - lag(steplengthallmtn$DateTimeLocalTestct))
+
+steplengthallmtn$lagtime <- difftime((lag(steplengthallmtn$DateTimeLocalTestct)), steplengthallmtn$DateTimeLocalTestct, units = "mins")
+ 
+  #(steplengthallmtn$DateTimeLocalTestct - lag(steplengthallmtn$DateTimeLocalTestct))
+
+
+
+
+pcln1hrfix$lagtime <- (pcln1hrfix$DateTimeLocalTestct - lag(pcln1hrfix$DateTimeLocalTestct))
+pcln1hrfix$leadtime <- (lead(pcln1hrfix$DateTimeLocalTestct) - pcln1hrfix$DateTimeLocalTestct)
+pcln1hrfix$lagtime <- as.numeric(pcln1hrfix$lagtime)
+pcln1hrfix$leadtime <- as.numeric(pcln1hrfix$leadtime)
+pcln1hrfix1 <- pcln1hrfix[((pcln1hrfix$lagtime >= 50 & pcln1hrfix$lagtime <= 70) & (pcln1hrfix$leadtime >= 50 & pcln1hrfix$leadtime <= 70)), ]
 
 
 
 
 
+
+# Step length different by mountain range
+# The following hist does not include all step lengths, there are a couple in the thousands, max = ~8000 meters.
+hist(steplengthallmtn$stplengthtopo, breaks = 80, xlim = c(0, 1500), xlab = "Step Length (m)", main = "Frequency of Step Length Given All Bighorn")
+boxplot(stplengthtopo ~ MountainRange, data = steplengthallmtn)
+
+
+# hist(pcln1hrfix$positangledegree, xlab = "Angle Degree", main = "Frequency of Turning Angles at 1 Hr Fix Rate for All Bighorn (n = 14924)")
+# pcln1hrfix$Month <- month(pcln1hrfix$DateTimeLocalTestct)
+# pcln1hrfix$MountainRange <- droplevels(pcln1hrfix$MountainRange)
+# If turning angle is different by mountain range
+# boxplot(positangledegree ~ MountainRange, data = pcln1hrfix, ylab = "Turning Angle", main = "Turning Angle by Mountain Range")
+# turnangleMtnRange <- aov(positangledegree ~ MountainRange, data = pcln1hrfix)
+# summary.lm(turnangleMtnRange)
+# TukeyHSD()
+```
 This code is what I used before I went into the lab and did it on a computer that could handle the topoDistance function.
 ```{r}
 # Setting up the elevation raster
