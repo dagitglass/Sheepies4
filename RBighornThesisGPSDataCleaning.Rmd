@@ -633,8 +633,8 @@ steplengthallmtn <- rbind(onehrnopah2, onehrcmpr2, onehrmarb2, onehrsbrs2)
 
 I conducted the preliminary analyses related to step length. I read in the data at the beginning because I had to conduct the previous chunk on a computer more powerful than my laptop. All topographic step lengths are in meters.
 
-- step length different by mountain range
-- different by individual sheep
+- step length different by mountain range - DONE
+- different by individual sheep - 
 - different by month
 
 ```{r}
@@ -645,41 +645,42 @@ steplengthallmtn$DateTimeLocalTestct <- as.character(steplengthallmtn$DateTimeLo
 steplengthallmtn$DateTimeLocalTestct <- strptime(steplengthallmtn$DateTimeLocalTestct, "%m/%d/%Y %H:%M")
 steplengthallmtn$DateTimeLocalTestct <- as.POSIXct(steplengthallmtn$DateTimeLocalTestct, tz = "America/Los_Angeles", format = "%m/%d/%Y% %H:%M")
 steplengthallmtn$lagtime <- (steplengthallmtn$DateTimeLocalTestct - lag(steplengthallmtn$DateTimeLocalTestct))
-
-steplengthallmtn$lagtime <- difftime((lag(steplengthallmtn$DateTimeLocalTestct)), steplengthallmtn$DateTimeLocalTestct, units = "mins")
- 
-  #(steplengthallmtn$DateTimeLocalTestct - lag(steplengthallmtn$DateTimeLocalTestct))
-
-
-
-
-pcln1hrfix$lagtime <- (pcln1hrfix$DateTimeLocalTestct - lag(pcln1hrfix$DateTimeLocalTestct))
-pcln1hrfix$leadtime <- (lead(pcln1hrfix$DateTimeLocalTestct) - pcln1hrfix$DateTimeLocalTestct)
-pcln1hrfix$lagtime <- as.numeric(pcln1hrfix$lagtime)
-pcln1hrfix$leadtime <- as.numeric(pcln1hrfix$leadtime)
-pcln1hrfix1 <- pcln1hrfix[((pcln1hrfix$lagtime >= 50 & pcln1hrfix$lagtime <= 70) & (pcln1hrfix$leadtime >= 50 & pcln1hrfix$leadtime <= 70)), ]
-
-
-
-
-
+steplengthallmtn$leadtime <- (lead(steplengthallmtn$DateTimeLocalTestct) - steplengthallmtn$DateTimeLocalTestct)
+steplengthallmtn$lagtime <- as.numeric(steplengthallmtn$lagtime)
+steplengthallmtn$leadtime <- as.numeric(steplengthallmtn$leadtime)
+steplengthallmtn1 <- steplengthallmtn[((steplengthallmtn$lagtime >= 50 & steplengthallmtn$lagtime <= 70) & (steplengthallmtn$leadtime >= 50 & steplengthallmtn$leadtime <= 70)), ]
 
 # Step length different by mountain range
 # The following hist does not include all step lengths, there are a couple in the thousands, max = ~8000 meters.
-hist(steplengthallmtn$stplengthtopo, breaks = 80, xlim = c(0, 1500), xlab = "Step Length (m)", main = "Frequency of Step Length Given All Bighorn")
-boxplot(stplengthtopo ~ MountainRange, data = steplengthallmtn)
+hist(steplengthallmtn1$stplengthtopo, breaks = 80, xlim = c(0, 1500), xlab = "Step Length (m)", main = "Frequency of Step Length Given All Bighorn")
+boxplot(stplengthtopo ~ MountainRange, data = steplengthallmtn1, xlab = "Mountain Range", ylab = "Distanced Moved Per Hour", main = "Distance Moved Per Hour by Mountain Range")
+stplengthmtnrange <- aov(stplengthtopo ~ MountainRange, data = steplengthallmtn1)
+summary.lm(stplengthmtnrange)
+# Multiple R-squared:  0.002887,	Adjusted R-squared:  0.002656 
+# F-statistic: 12.51 on 3 and 12959 DF,  p-value: 3.672e-08
+TukeyHSD(stplengthmtnrange)
+#                  diff        lwr        upr     p adj
+# CMPR-BrsS -30.1553276 -50.908246  -9.402409 0.0010878
+# Marb-BrsS  -1.7340688 -13.603169  10.135031 0.9819728
+# Nopa-BrsS -30.9629630 -46.578123 -15.347803 0.0000021
+# Marb-CMPR  28.4212588   6.943132  49.899386 0.0037746
+# Nopa-CMPR  -0.8076354 -24.561954  22.946683 0.9997612
+# Nopa-Marb -29.2288942 -45.795714 -12.662074 0.0000347
+# There is a significant difference in step length by mountain range. This clearly differentiates the 'low, hot' mountain ranges from the 'high, cool' mountain ranges.
+
+# Whether step length is different by individual bighorn
+boxplot(stplengthtopo ~ ID, data = steplengthallmtn1, ylab = "Distance Traveled/Hr", main = "Distance Traveled Per Hour for a Given Bighorn")
+steplengthid <- aov(stplengthtopo ~ ID, data = steplengthallmtn1)
+summary.lm(steplengthid)
+# Multiple R-squared:  0.01733,	Adjusted R-squared:  0.01604 
+# F-statistic: 13.43 on 17 and 12945 DF,  p-value: < 2.2e-16
+TukeyHSD(steplengthid)
+# Out of 120, 48 combinations of two sheep were significantly different.
 
 
-# hist(pcln1hrfix$positangledegree, xlab = "Angle Degree", main = "Frequency of Turning Angles at 1 Hr Fix Rate for All Bighorn (n = 14924)")
-# pcln1hrfix$Month <- month(pcln1hrfix$DateTimeLocalTestct)
-# pcln1hrfix$MountainRange <- droplevels(pcln1hrfix$MountainRange)
-# If turning angle is different by mountain range
-# boxplot(positangledegree ~ MountainRange, data = pcln1hrfix, ylab = "Turning Angle", main = "Turning Angle by Mountain Range")
-# turnangleMtnRange <- aov(positangledegree ~ MountainRange, data = pcln1hrfix)
-# summary.lm(turnangleMtnRange)
-# TukeyHSD()
+
 ```
-This code is what I used before I went into the lab and did it on a computer that could handle the topoDistance function.
+JUNK This code is what I used before I went into the lab and did it on a computer that could handle the topoDistance function.
 ```{r}
 # Setting up the elevation raster
 library(raster)
