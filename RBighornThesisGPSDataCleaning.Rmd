@@ -1,0 +1,775 @@
+---
+title: "Cleaning the GPS Data"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/AllData3920")
+```
+
+### Cutting the GPS Data
+
+## Subsetting by Range & Individual Sheep ID
+
+First, I uploaded the GPS data. I checked for duplicates - there were none. Then, I subset the data for only the mountain ranges that I am interested in: South Bristols (BrsS), Marbles (Marb), Nopah (Nopa), Castle-Piute (CMPR), and Newberry-Rodman-Ord (NROM). Then I subset to only the individual bighorn that I am interested in - those with fix rates of 4 hours or less.
+
+A list of bighorn whose collars are every four hours:
+
+Marbles: BHS_1581 F, BHS_1595 F (died on 8/5), BHS_1588 F
+South Bristols: BHS_1580 F (before 2019-07-24 04:00, after 1 hour), 
+Nopah: BHS_1738 F
+CMPR: none
+NROM: BHS_1568 F (went to community center), BHS_1565 F, BHS_1567 F, BHS_1564 F, BHS_1677 F
+
+***am not including NROM BHS_1563M b/c travels into East Ord)
+*** SBrs BHS_1580 2019-07-24 4:00 switches from 4 hour to 1 hour, holds steady on that until the end-- COULD INCLUDE IN 1 HOUR FIX Rate
+
+
+A list of bighorn whose collars are every hour or less:
+
+Marbles: BHS_1589 F (very beginning every four hours?), BHS_1584 F, BHS_1582 F, BHS_1577 F, BHS_1683 M, BHS_1682 M, BHS_1684 M (died on 8/17)
+South Bristols: BHS_1688 M, BHS_1685 M, BHS_1689 M, BHS_1687 F, BHS_1686 M, BHS_1580F(after 2019-07-24 04:00)
+Nopah: BHS_1736 F, BHS_1740 F, BHS_1739 M
+CMPR: BHS_1730 F, BHS_1733 F
+NROM: none
+
+```{r}
+allgpsdata <- read.csv("AllGPSData20190501to20190912.csv", header = TRUE, sep = ",")
+# str(allgpsdata)
+library(tidyverse)
+summary(duplicated(allgpsdata))
+rangegpsdata <- allgpsdata[allgpsdata$MountainRange == "BrsS" | allgpsdata$MountainRange == "Marb" | allgpsdata$MountainRange == "Nopa" | allgpsdata$MountainRange == "CMPR" | allgpsdata$MountainRange == "NROM", ]
+# View(rangegpsdata)
+# str(rangegpsdata)
+rangeidgpsdata <- rangegpsdata[rangegpsdata$KI_Known_ID == "BHS_1581" | rangegpsdata$KI_Known_ID == "BHS_1595" | rangegpsdata$KI_Known_ID == "BHS_1588" | rangegpsdata$KI_Known_ID == "BHS_1580" | rangegpsdata$KI_Known_ID == "BHS_1738" | rangegpsdata$KI_Known_ID == "BHS_1568" | rangegpsdata$KI_Known_ID == "BHS_1565" | rangegpsdata$KI_Known_ID == "BHS_1567" | rangegpsdata$KI_Known_ID == "BHS_1564" | rangegpsdata$KI_Known_ID == "BHS_1677" | rangegpsdata$KI_Known_ID == "BHS_1589" | rangegpsdata$KI_Known_ID == "BHS_1584" | rangegpsdata$KI_Known_ID == "BHS_1582" | rangegpsdata$KI_Known_ID == "BHS_1577" | rangegpsdata$KI_Known_ID == "BHS_1683" | rangegpsdata$KI_Known_ID == "BHS_1682" | rangegpsdata$KI_Known_ID == "BHS_1684" | rangegpsdata$KI_Known_ID == "BHS_1688" | rangegpsdata$KI_Known_ID == "BHS_1685" | rangegpsdata$KI_Known_ID == "BHS_1689" | rangegpsdata$KI_Known_ID == "BHS_1687" | rangegpsdata$KI_Known_ID == "BHS_1686" | rangegpsdata$KI_Known_ID == "BHS_1736" | rangegpsdata$KI_Known_ID == "BHS_1740" | rangegpsdata$KI_Known_ID == "BHS_1739" | rangegpsdata$KI_Known_ID == "BHS_1730" | rangegpsdata$KI_Known_ID == "BHS_1733", ]
+# View(rangeidgpsdata)
+rangeidgpsdata$TimeLocal <- as.character(rangeidgpsdata$TimeLocal)
+rangeidgpsdata$DateTimeLocalTest <- rangeidgpsdata$DateTimeLocal
+library(lubridate)
+rangeidgpsdata$DateTimeLocalTest <- strptime(rangeidgpsdata$DateTimeLocalTest, "%m/%d/%Y %H:%M")
+rangeidgpsdata$DateTimeLocalTestct <- as.POSIXct(rangeidgpsdata$DateTimeLocalTest, tz = "America/Los_Angeles", format = "%m/%d/%Y %H:%M")
+
+```
+Subsetting the data to when I had camera data for
+
+I next subset the data to the time periods that I had camera data for. Keeping with my visitation analyses, I cut the GPS data to only include days when the whole 24-hour had camera coverage, and camera coverage was complete.
+
+Marbles:
+2019-05-18 - 2019-05-24
+2019-06-05 - 2019-06-11
+2019-06-19 - 2019-06-22
+2019-06-26 - 2019-06-29
+2019-07-11 - 2019-07-13
+2019-07-18 - 2019-07-24
+2019-08-01 - 2019-08-03
+2019-08-07 - 2019-08-09
+
+South Bristols:
+2019-06-05 - 2019-06-15
+2019-06-19 - 2019-07-28
+2019-08-02 - 2019-08-11
+
+Nopah:
+2019-06-07 - 2019-06-12
+2019-06-26 - 2019-07-07
+2019-07-17 - 2019-07-28
+2019-07-30 - 2019-08-06
+
+Castle Piutes:
+2019-05-24 - 2019-05-30
+2019-06-21 - 2019-06-26
+2019-07-12 - 2019-07-14
+2019-07-31 - 2019-08-03
+2019-08-06 - 2019-08-14
+
+NROM:
+2019-06-28 - 2019-07-01
+2019-07-10 - 2019-07-12
+2019-07-21
+2019-08-09 - 2019-08-18
+2019-08-21
+
+```{r}
+marbidgpsdata <- rangeidgpsdata[rangeidgpsdata$MountainRange == "Marb", ]
+marbidgpsdatacut <- marbidgpsdata[(marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-05-18 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-05-24 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-05 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-06-11 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-19 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-06-22 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-26 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-06-29 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-11 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-13 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-18 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-24 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-08-01 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-03 23:59:59")) | (marbidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-08-07 00:00:00") & marbidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-09 23:59:59")), ]
+
+sbrsidgpsdata <- rangeidgpsdata[rangeidgpsdata$MountainRange == "BrsS", ]
+sbrsidgpsdatacut <- sbrsidgpsdata[(sbrsidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-05 00:00:00") & sbrsidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-06-15 23:59:59")) | (sbrsidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-19 00:00:00") & sbrsidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-28 23:59:59")) | (sbrsidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-08-02 00:00:00") & sbrsidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-11 23:59:59")), ]
+
+cmpridgpsdata <- rangeidgpsdata[rangeidgpsdata$MountainRange == "CMPR", ]
+cmpridgpsdatacut <- cmpridgpsdata[(cmpridgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-05-24 00:00:00") & cmpridgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-05-30 23:59:59")) | (cmpridgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-21 00:00:00") & cmpridgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-06-26 23:59:59")) | (cmpridgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-12 00:00:00") & cmpridgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-14 23:59:59")) | (cmpridgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-31 00:00:00") & cmpridgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-03 23:59:59")) | (cmpridgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-08-06 00:00:00") & cmpridgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-14 23:59:59")), ]
+
+nopaidgpsdata <- rangeidgpsdata[rangeidgpsdata$MountainRange == "Nopa", ]
+nopaidgpsdatacut <- nopaidgpsdata[(nopaidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-07 00:00:00") & nopaidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-06-12 23:59:59")) | (nopaidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-26 00:00:00") & nopaidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-07 23:59:59")) | (nopaidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-17 00:00:00") & nopaidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-28 23:59:59")) | (nopaidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-30 00:00:00") & nopaidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-06 23:59:59")), ]
+
+nromidgpsdata <- rangeidgpsdata[rangeidgpsdata$MountainRange == "NROM", ]
+nromidgpsdatacut <- nromidgpsdata[(nromidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-06-28 00:00:00") & nromidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-01 23:59:59")) | (nromidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-10 00:00:00") & nromidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-12 23:59:59")) | (nromidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-07-21 00:00:00") & nromidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-07-21 23:59:59")) | (nromidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-08-09 00:00:00") & nromidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-18 23:59:59")) | (nromidgpsdata$DateTimeLocalTestct >= as.POSIXct("2019-08-21 00:00:00") & nromidgpsdata$DateTimeLocalTestct <= as.POSIXct("2019-08-21 23:59:59")), ]
+
+allidgpsdatacut <- rbind(marbidgpsdatacut, sbrsidgpsdatacut, cmpridgpsdatacut, nopaidgpsdatacut, nromidgpsdatacut)
+# I removed the entries with missing latitudes or longitudes from the dataset.
+allidgpsdatacut1 <- allidgpsdatacut[is.na(allidgpsdatacut$Latitude) == FALSE, ]
+allidgpsdatacut2 <- allidgpsdatacut1[is.na(allidgpsdatacut1$Longitude) == FALSE, ]
+
+#Removed GPS points for after 1595 died. RIP.
+not1595 <- allidgpsdatacut2[allidgpsdatacut2$KI_Known_ID != "BHS_1595", ]
+is1595 <- allidgpsdatacut2[allidgpsdatacut2$KI_Known_ID == "BHS_1595", ]
+is1595cut <- is1595[(is1595$DateTimeLocalTestct < as.POSIXct("2019-08-05 00:00:00")), ]
+allidgpsdatacut3 <- rbind(not1595, is1595cut)
+
+```
+Subsetting to every hour and four hour
+
+To remove the locations that were taken at 20 minute fix rates, I subset by the rows where the minutes were between 55 and 10. The number of rows before subsetting was 21172 while the number of rows after subsetting was 17691, demonstrating that rows with locations taken not close to the hour mark were removed. 
+
+
+```{r}
+
+# Removing the 20 min fixes
+# rangeidhour includes collars on both 1-hour and 4-hour fix rates
+rangeidhour <- subset(allidgpsdatacut3, format(allidgpsdatacut3$DateTimeLocalTest, "%M") %in% c('00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '55', '56', '57', '58', '59', '54', '53', '52', '51', '50'))
+## I double checked the sheep that are every four hours to make sure that they are on a 0-4-8-12-16-20-24 schedule. They are all.
+# rangeidfourhour <- subset(rangeidhour, format(rangeidhour$DateTimeLocalTest, "%H") %in% c('00', '04', '08', '12', '16', '20', '24'))
+# Including every hour as ~18,000 gps observations, including only every four hour as ~6,000 observations. Both include 28 individual sheep. 
+
+
+## Will need to do the amount of time between points for both time schedules before doing any of my 4 gps movement types.
+
+
+```
+
+### Cleaning the GPS Data
+
+## Mapping the GPS Data
+
+I mapped the GPS data to be able to visually check how cleaning the data changed the sheep movement tracks.
+
+```{r}
+# Making an individually identifiable ID for each point
+rangeidhour$IndPoint <- paste(rangeidhour$KI_Known_ID, rangeidhour$DateTimeLocalTestct)
+
+library(maptools)
+plotattempt <- SpatialPointsDataFrame(rangeidhour[6:5], rangeidhour[21])
+plot(plotattempt)
+
+# library(adehabitatLT)
+# ltrangeidhour <- as.ltraj(xy = rangeidhour[, c("Latitude", "Longitude")], date = rangeidhour$DateTimeLocalTestct, id = rangeidhour$IndPoint)
+# View(ltrangeidhour)
+
+# data.lt_Desert <- as.ltraj(xy = DesertDataDanielleNoDuplicates[, c("UTME", "UTMN")], date = DesertDataDanielleNoDuplicates$DateTimeC, id = DesertDataDanielleNoDuplicates$ID)
+#maybe need to convert to UTM first?
+
+library(moveHMM)
+
+names(rangeidhour)[names(rangeidhour) == "KI_Known_ID"] <- "ID"
+rangeidhour1 <- rangeidhour[with(rangeidhour, order(ID, DateTimeLocalTestct)), ]
+prangeidhour <- prepData(rangeidhour1, type = "LL", coordNames = c("Longitude", "Latitude"))
+plot(prangeidhour, compact = T)
+
+library(ggmap)
+# plotSat(prangeidhour, zoom = 8)
+# Doesn't work because need Google API key????
+
+# Marbles before cleaning
+marbidhour <- rangeidhour1[rangeidhour1$MountainRange == "Marb", ]
+pmarbidhour <- prepData(marbidhour, type = "LL", coordNames = c("Longitude", "Latitude"))
+plot(pmarbidhour, compact = T)
+nrow(pmarbidhour)
+#5670 points for Marbles before cleaning.
+
+# South Bristols before cleaning
+sbrsidhour <- rangeidhour1[rangeidhour1$MountainRange == "BrsS", ]
+psbrsidhour <- prepData(sbrsidhour, type = "LL", coordNames = c("Longitude", "Latitude"))
+plot(psbrsidhour, compact = T)
+nrow(psbrsidhour)
+# 7533 points for SBrs before cleaning.
+
+#Nopah before cleaning
+nopaidhour <- rangeidhour1[rangeidhour1$MountainRange == "Nopa", ]
+pnopaidhour <- prepData(nopaidhour, type = "LL", coordNames = c("Longitude", "Latitude"))
+plot(pnopaidhour, compact = T)
+nrow(pnopaidhour)
+#2655 points for Nopa before cleaning.
+
+#Castle Piute before cleaning
+cmpridhour <- rangeidhour1[rangeidhour1$MountainRange == "CMPR", ]
+pcmpridhour <- prepData(cmpridhour, type = "LL", coordNames = c("Longitude", "Latitude"))
+plot(pcmpridhour, compact = T)
+nrow(pcmpridhour)
+#1135 points for CMPR before cleaning.
+
+# NROM before cleaning
+nromidhour <- rangeidhour1[rangeidhour1$MountainRange == "NROM", ]
+pnromidhour <- prepData(nromidhour, type = "LL", coordNames = c("Longitude", "Latitude"))
+plot(pnromidhour, compact = T)
+nrow(pnromidhour)
+# 698 locations for NROM before cleaning.
+
+```
+Before looking at HDOP, I first deleted points considered to have location error based on their impossible elevation data (D'Eon et al. 2002). The range of elevations possible in each mountain range was calculated by drawing a polygon around each mountain range outside of CDFW's bighorn population range maps using Caltopo. All points outside of these possible range were eliminated.
+
+Using CalTopo: 
+Marbles: 597' - 3840' (181 m - 1171 m)
+South Bristols: 703' - 3269' (214 m - 997 m)
+NROM: 1800'-6095' (548 m - 1858 m)
+Castle Piute: 4000'-5185' (1219 m - 1580 m)
+Nopah: 1392'-5249' (424 m - 1599 m)
+
+```{r}
+# Marbles
+boxplot(pmarbidhour$Altitude)
+pmarbidhouralt <- pmarbidhour[(pmarbidhour$Altitude >= 181) & (pmarbidhour$Altitude <= 1171), ]
+nrow(pmarbidhouralt)
+# Marbles now have 5475 points, instead of 5670 points.
+plot(pmarbidhouralt, compact = T)
+
+# South Bristols
+boxplot(psbrsidhour$Altitude)
+psbrsidhouralt <- psbrsidhour[(psbrsidhour$Altitude >= 214) & (psbrsidhour$Altitude <= 997), ]
+nrow(psbrsidhouralt)
+# South Bristols now has 7196 points, before had 7533 points.
+plot(psbrsidhouralt, compact = T)
+
+#Nopah
+boxplot(pnopaidhour$Altitude)
+pnopaidhouralt <- pnopaidhour[(pnopaidhour$Altitude >= 424) & (pnopaidhour$Altitude <= 1599), ]
+nrow(pnopaidhouralt)
+# Nopah now has 2390 points, before had 2655 points.
+plot(pnopaidhouralt, compact = T)
+
+#Castle Piutes
+boxplot(pcmpridhour$Altitude)
+pcmpridhouralt <- pcmpridhour[(pcmpridhour$Altitude >= 1219) & (pcmpridhour$Altitude <= 1580), ]
+nrow(pcmpridhouralt)
+# Castle Piute now has 1075 points, before had 1135 points.
+plot(pcmpridhouralt, compact = T)
+
+# NROM
+boxplot(pnromidhour$Altitude)
+pnromidhouralt <- pnromidhour[(pnromidhour$Altitude >= 548) & (pnromidhour$Altitude <= 1858), ]
+nrow(pnromidhouralt)
+# NROM has 672 points, before had 698 points.
+plot(pnromidhouralt, compact = T)
+```
+
+I then eliminated the points with a DOP above 10 (Lewis et al. 2007), as these points may not be spatially accurate due to minimum distribution of the satellites locating the collar.
+
+
+```{r}
+# Marbles
+boxplot(pmarbidhouralt$DOP)
+dopmarb <- pmarbidhouralt[pmarbidhouralt$DOP <= 10, ]
+nrow(dopmarb)
+# Marb now has 5420 points, before had 5475.
+plot(dopmarb, compact = T)
+
+# South Bristols
+boxplot(psbrsidhouralt$DOP)
+dopsbrs <- psbrsidhouralt[psbrsidhouralt$DOP <= 10, ]
+nrow(dopsbrs)
+# SBrs now has 7150 points, before had 7196.
+plot(dopsbrs, compact = T)
+
+# Nopah
+boxplot(pnopaidhouralt$DOP)
+dopnopa <- pnopaidhouralt[pnopaidhouralt$DOP <= 10, ]
+nrow(dopnopa)
+# Nopah now has 2371 points, before had 2390.
+plot(dopnopa, compact = T)
+
+# Castle Piute
+boxplot(pcmpridhouralt$DOP)
+dopcmpr <- pcmpridhouralt[pcmpridhouralt$DOP <= 10, ]
+nrow(dopcmpr)
+# Castle Piute now has 1065 points, before had 1075 points.
+plot(dopcmpr, compact = T)
+
+# NROM
+boxplot(pnromidhouralt$DOP)
+dopnrom <- pnromidhouralt[pnromidhouralt$DOP <= 10, ]
+nrow(dopnrom)
+# NROM now has 669 points, before had 672.
+plot(dopnrom, compact = T)
+```
+
+I next examined the relative fix rate by mountain range to check for topographic bias. Since all analyses will be between comparable collars on the same fix schedule, I first separated the fixes back into 1 hour fix rate and 4 hour fix rate. I did subset the 1 hours fix rate collars to increase the 4 hour fix rate sample size. Sheep 1589 switched from 4 hour fix rate to 1 hour fix rate on 2019-06-15 16:00:00.
+
+A lot of the basic, back-of-a-napkin calculations I did on a separate google sheet.
+
+
+```{r}
+dopall <- rbind(dopmarb, dopsbrs, dopcmpr, dopnopa, dopnrom)
+# The points after BHS_1595 died are already eliminated from the dataset
+# I went back and removed BHS_1692 from the dataset because he went over to East Ord for such a large percentage of the time and I am not confident in my absence of water sources in East Ord.
+
+##Subsetting by sheep to differentiate between sheep with 4-hour collars and sheep with every-hour collars
+
+# SBrs BHS_1580 2019-07-24 4:00 switches from 4 hour to 1 hour, holds steady on that until the end-- COULD INCLUDE IN 1 HOUR FIX Rate
+
+# First differentiated between BHS_1589, BHS_1580 and all other sheep
+just1589 <- dopall[dopall$ID == "BHS_1589", ]
+dopall1 <- dopall[(dopall$ID != "BHS_1589") & (dopall$ID != "BHS_1580"), ]
+just1589before <- just1589[just1589$DateTimeLocalTestct < as.POSIXct("2019-06-15 16:00:00"), ]
+just1589after <- just1589[just1589$DateTimeLocalTestct >= as.POSIXct("2019-06-15 16:00:00"), ]
+just1580 <- dopall[dopall$ID == "BHS_1580", ]
+just1580before <- just1580[just1580$DateTimeLocalTestct < as.POSIXct("2019-07-24 04:00:00"), ]
+just1580after <- just1580[just1580$DateTimeLocalTestct >= as.POSIXct("2019-07-24 04:00:00"), ]
+# 1 hour fix rate
+dopall2 <- dopall1[dopall1$ID == "BHS_1584" |  dopall1$ID == "BHS_1582" | dopall1$ID == "BHS_1577" | dopall1$ID == "BHS_1683" | dopall1$ID == "BHS_1682" | dopall1$ID == "BHS_1684" | dopall1$ID == "BHS_1688" | dopall1$ID == "BHS_1685" | dopall1$ID == "BHS_1689" | dopall1$ID == "BHS_1687" | dopall1$ID == "BHS_1686" | dopall1$ID == "BHS_1736" | dopall1$ID == "BHS_1740" | dopall1$ID == "BHS_1739" | dopall1$ID == "BHS_1730" | dopall1$ID == "BHS_1733", ]
+cln1hrfix <- rbind(dopall2, just1589after, just1580after)
+# 4 hour fix rate
+dopall3 <- dopall1[dopall1$ID == "BHS_1581" | dopall1$ID == "BHS_1595" | dopall1$ID == "BHS_1588" | dopall1$ID == "BHS_1738" | dopall1$ID == "BHS_1568" | dopall1$ID == "BHS_1565" | dopall1$ID == "BHS_1567" | dopall1$ID == "BHS_1564" | dopall1$ID == "BHS_1677", ]
+clan4hrfix <- rbind(dopall3, just1589before, just1580before)
+# This only includes sheep that are set to 4 hours fix rate. But, can subset 1 hour fix rate to every four hours and include that too.
+clan4hrfix1 <- subset(clan4hrfix, format(clan4hrfix$DateTimeLocalTest, "%H") %in% c('00', '04', '08', '12', '16', '20', '24'))
+onetofour <- subset(cln1hrfix, format(cln1hrfix$DateTimeLocalTest, "%H") %in% c('00', '04', '08', '12', '16', '20', '24'))
+clean4hrfixall <- rbind(clan4hrfix1, onetofour)
+
+## Counting the difference between the actual number of observations and what number there should be if there is assuming a 100% fix rate and no deletion of points while data cleaning
+
+# 1 hr fix rate
+
+# Marbles: 
+nrow(cln1hrfix[cln1hrfix$MountainRange == "Marb", ])
+# There are 4758 fixes for Marb.
+# Based on basic math I did in my google doc, there should be 6048 fixes for Marb.
+# 4758/6048 = 78.67% fix rate
+
+# South Bristols:
+nrow(cln1hrfix[cln1hrfix$MountainRange == "BrsS", ])
+# There are 6921 fixes for South Bristols.
+# Based on basic math I did in my google doc, there should be 7676 fixes for SBrs.
+# 6691/7320 = 90.16% fix rate
+
+# Nopah
+nrow(cln1hrfix[cln1hrfix$MountainRange == "Nopa", ])
+# There are 2180 fixes for Nopah.
+# There should be 2664 fixes.
+# 2180/2664 = 81.83% fix rate
+
+# CMPR
+nrow(cln1hrfix[cln1hrfix$MountainRange == "CMPR", ])
+# There are 1065 fixes for CMPR.
+# There should be 1392 fixes. 
+# 1065/1392 = 76.51% fix rate.
+
+# All ranges together
+nrow(cln1hrfix)
+# Total Actual = 14924 fixes
+# Total fixes there should be: 17780
+# 14694/17424= 83.94% fix rate
+
+
+
+# 4 hour fix rate
+
+# Marbles
+nrow(clean4hrfixall[clean4hrfixall$MountainRange == "Marb", ])
+# There are 2067 fixes for the Marbles.
+# Total fixes there should be: 2262
+# 2067/2262 = 91.38% fix rate
+
+# South Bristols
+nrow(clean4hrfixall[clean4hrfixall$MountainRange == "BrsS", ])
+# There are 1964 fixes for the South Bristols.
+# Total fixes there should be: 2196
+# 2137/2196 = 89.44%
+
+# Nopah
+nrow(clean4hrfixall[clean4hrfixall$MountainRange == "Nopa", ])
+# There are 795 for the Nopahs.
+# Total fixes there should be: 888
+# 795/888 = 89.53% fix rate
+
+# CMPR
+nrow(clean4hrfixall[clean4hrfixall$MountainRange == "CMPR", ])
+# 325 points for CMPR.
+# Total fixes there should be: 348
+# 93.34% fix rate
+
+# NROM
+nrow(clean4hrfixall[clean4hrfixall$MountainRange == "NROM", ])
+# 533 points for NROM.
+# Total fixes there should be: 570
+# 93.51% fix rate
+
+# All mtn ranges together except NROM:
+nrow(clean4hrfixall[clean4hrfixall$MountainRange == "Marb" | clean4hrfixall$MountainRange == "BrsS" | clean4hrfixall$MountainRange == "Nopa" | clean4hrfixall$MountainRange == "CMPR",])
+# 5151 points for Marb, BrsS, Nopa, CMPR.
+# Total fixes there should be: 5694
+# 5151/5694 = 90.46% fix rate
+
+# All mtn ranges together including NROM:
+nrow(clean4hrfixall)
+# 5684 points total
+# Total fixes there should be: 6264
+# 5684/6264 = 90.74% fix rate
+```
+I then started to calculate my four measures of GPS movement: step length, turning angle, distance to water, angle of movement relative to water. I decided to start with 1 hr, then do 4 hr. To start with, I calculated turning angle.
+
+- if turning angle is different between different sheep- DONE
+- if turning angle is different by month- DONE
+- if turning angle is different by mountain range - DONE
+- if turning angle is different by time-of-day
+
+```{r}
+library(moveHMM)
+# 1 hr
+names(cln1hrfix)[names(cln1hrfix) == "y"] <- "Latitude"
+names(cln1hrfix)[names(cln1hrfix) == "x"] <- "Longitude"
+cln1hrfix1 <- cln1hrfix[with(cln1hrfix, order(ID, DateTimeLocalTestct)), ]
+pcln1hrfix <- prepData(cln1hrfix1, type = "LL", coordNames = c("Longitude", "Latitude"))
+# Upon examination, these turning angles are in radians. The min and max are pi, which makes sense because it is impossible to have a turning angle greater than 180 degrees since the angle that the animal turned should be assumed to be the smaller one (why would I turn 270 degrees when I can only turn 90?). Since for this metric, all I am looking at is the tortuosity of the track, I think I should make every radian angle positive. After all, I do not care about whether the sheep turned left or right.
+pcln1hrfix$positangle <- abs(pcln1hrfix$angle)
+library(amt)
+pcln1hrfix$positangledegree <- as_degree(pcln1hrfix$positangle)
+# Angles between sheep are already deleted because of how prepData function worked
+hist(pcln1hrfix$positangledegree, xlab = "Angle Degree", main = "Frequency of Turning Angles at 1 Hr Fix Rate for All Bighorn (n = 14924)")
+pcln1hrfix$Month <- month(pcln1hrfix$DateTimeLocalTestct)
+pcln1hrfix$MountainRange <- droplevels(pcln1hrfix$MountainRange)
+# If turning angle is different by mountain range
+boxplot(positangledegree ~ MountainRange, data = pcln1hrfix, ylab = "Turning Angle", main = "Turning Angle by Mountain Range")
+turnangleMtnRange <- aov(positangledegree ~ MountainRange, data = pcln1hrfix)
+summary.lm(turnangleMtnRange)
+# Multiple R-squared:  0.0003511,	Adjusted R-squared:  0.0001495 
+# F-statistic: 1.742 on 3 and 14878 DF,  p-value: 0.1561
+TukeyHSD(turnangleMtnRange)
+# CMPR-BrsS  0.8506750 -3.864226 5.5655764 0.9669665
+# Marb-BrsS -2.0649079 -4.761631 0.6318155 0.2004612
+# Nopa-BrsS  0.1728248 -3.343584 3.6892338 0.9992810
+# Marb-CMPR -2.9155830 -7.771596 1.9404297 0.4119503
+# Nopa-CMPR -0.6778502 -6.032631 4.6769302 0.9881204
+# Nopa-Marb  2.2377327 -1.465738 5.9412036 0.4061609
+# Turning angle is not significantly different between any mountain ranges.
+
+# If turning angle is significantly different by individual sheep
+boxplot(positangledegree ~ ID, data = pcln1hrfix, ylab = "Turning Angle", main = "Turning Angle by Individual Bighorn")
+turnangleid <- aov(positangledegree ~ ID, data = pcln1hrfix)
+summary.lm(turnangleid)
+# Multiple R-squared:  0.003677,	Adjusted R-squared:  0.002538 
+# F-statistic: 3.227 on 17 and 14864 DF,  p-value: 7.41e-06
+TukeyHSD(turnangleid)
+# Only bighorn combos that were significantly different were: 1686-1682, 1687-1686, 1688-1686, 1740-1686.
+
+# If turning angle is different by month
+# Because there was no significant difference between mountain ranges, I did not divide up these results by mountain range.
+boxplot(positangledegree ~ Month, data = pcln1hrfix)
+pcln1hrfix$Month <- as.factor(pcln1hrfix$Month)
+turnanglemonth <- aov(positangledegree ~ Month, data = pcln1hrfix)
+summary.lm(turnanglemonth)
+# Multiple R-squared:  0.000449,	Adjusted R-squared:  0.0002475 
+# F-statistic: 2.228 on 3 and 14878 DF,  p-value: 0.08274
+TukeyHSD(turnanglemonth)
+#           diff        lwr       upr     p adj
+# 6-5 -2.0224134  -7.829637 3.7848099 0.8075684
+# 7-5 -4.0070869  -9.769706 1.7555324 0.2797733
+# 8-5 -4.1284510 -10.181881 1.9249787 0.2967243
+# 7-6 -1.9846735  -4.692344 0.7229972 0.2352397
+# 8-6 -2.1060376  -5.387457 1.1753815 0.3511314
+# 8-7 -0.1213641  -3.323184 3.0804556 0.9996694
+# No significant different in turning angle between months. The boxplot does show a possible slight downward trend though.
+```
+
+I next calculated the shortest topographic distance between points. This is basically step length, accounting for elevation.
+
+```{r}
+
+#Nopah
+
+# Setting up the elevation raster
+library(raster)
+library(sp)
+library(rgdal)
+# nopahelevation <- raster("C:/Users/Danielle Glass/Downloads/nopahelevation.tif")
+# proj4string(nopahelevation) <- CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+# plot(nopahelevation, compact = TRUE)
+library(rgdal)
+# tnopahelevation <- projectRaster(from = nopahelevation, crs = ("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+# plot(tnopahelevation)
+# nopahelevationattempt2 <- raster("C:/Users/Danielle Glass/Downloads/NopahElevation1.tif")
+# proj4string(nopahelevationattempt2) <- CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+
+nopahelevationattempt3 <- raster("C:/Users/dmg85/Downloads/Sheepies3-master/output_srtm.tif")
+#
+# Attempt below didn't work, but one above did?
+# nopahelevationproj <- projectRaster(nopahelevation, crs = "+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+
+# WGS 84
+
+# Setting up the SpatialPointsObjects
+onehrnopah <- pcln1hrfix[pcln1hrfix$MountainRange == "Nopa", ]
+onehrnopah$ID <- droplevels(onehrnopah$ID)
+coordsnopa <- as.data.frame(onehrnopah[ ,c("x", "y")])
+restodatanopa <- as.data.frame(onehrnopah[ , c(1:3, 6:28)])
+crsnopa <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+# crsnopa <- CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+nopaspdf <- SpatialPointsDataFrame(coords = coordsnopa, data = restodatanopa, proj4string = crsnopa)
+# tnopaspdf <- spTransform(nopaspdf , CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs"))
+# jpeg("tnopaspdf.jpg", width = 8, height = 12, units = "in", res = 180)
+# plot(tnopaspdf)
+# dev.off()
+# View(nopaspdf@data)
+
+library(topoDistance)
+topodistnopa <- topoDist(DEM = nopahelevationattempt3, pts = nopaspdf, directions = 8, paths = FALSE, zweight = 1)
+View(topodistnopa)
+topodistnopa1 <- as.matrix(topodistnopa)
+topodistnopa1sub <- topodistnopa1[row(topodistnopa1) == (col(topodistnopa1) - 1)]
+View(topodistnopa1sub)
+natopodistnopa1sub <- c(NA, topodistnopa1sub)
+
+onehrnopah2 <- cbind(onehrnopah, natopodistnopa1sub)
+# Then deleted the wrong distances that were calculated between sheep.
+onehrnopah2 <- cbind(rownames(onehrnopah2), data.frame(onehrnopah2, row.names = NULL))
+onehrnopah2[685, 30] <- NA
+onehrnopah2[1389, 30] <- NA
+
+# Castle Piute
+
+castlepiuteelevation <- raster("C:/Users/dmg85/Downloads/Sheepies3-master/castlepiuteelevation.tif")
+onehrcmpr <- pcln1hrfix[pcln1hrfix$MountainRange == "CMPR",]
+onehrcmpr$ID <- droplevels(onehrcmpr$ID)
+coordscmpr <- as.data.frame(onehrcmpr[ ,c("x", "y")])
+restodatacmpr <- as.data.frame(onehrcmpr[ , c(1:3, 6:28)])
+crscmpr <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+cmprspdf <- SpatialPointsDataFrame(coords = coordscmpr, data = restodatacmpr, proj4string = crscmpr)
+topodistcmpr <- topoDist(DEM = castlepiuteelevation, pts = cmprspdf, directions = 8, paths = FALSE, zweight = 1)
+topodistcmpr1 <- as.matrix(topodistcmpr)
+topodistcmpr1sub <- topodistcmpr1[row(topodistcmpr1) == (col(topodistcmpr1) - 1)]
+# View(topodistcmpr1sub)
+natopodistcmpr1sub <- c(NA, topodistcmpr1sub)
+onehrcmpr2 <- cbind(onehrcmpr, natopodistcmpr1sub)
+onehrcmpr2 <- cbind(rownames(onehrcmpr2), data.frame(onehrcmpr2, row.names = NULL))
+onehrcmpr2[546, 30] <- NA
+
+# Marbles
+marbleselevation <- raster("C:/Users/dmg85/Downloads/Sheepies3-master/marbleselevation.tif")
+onehrmarb <- pcln1hrfix[pcln1hrfix$MountainRange == "Marb", ]
+onehrmarb$ID <- droplevels(onehrmarb$ID)
+coordsmarb <- as.data.frame(onehrmarb[ , c("x", "y")])
+restodatamarb <- as.data.frame(onehrmarb[ , c(1:3, 6:28)])
+crsmarb <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+marbspdf <- SpatialPointsDataFrame(coords = coordsmarb, data = restodatamarb, proj4string = crsmarb)
+topodistmarb <- topoDist(DEM = marbleselevation, pts = marbspdf, directions = 8, paths = FALSE, zweight = 1)
+topodistmarb1 <- as.matrix(topodistmarb)
+topodistmarb1sub <- topodistmarb1[row(topodistmarb1) == (col(topodistmarb1) - 1)]
+# View(topodistmarb1sub)
+natopodistmarb1sub <- c(NA, topodistmarb1sub)
+onehrmarb2 <- cbind(onehrmarb, natopodistmarb1sub)
+onehrmarb2 <- cbind(rownames(onehrmarb2), data.frame(onehrmarb2, row.names = NULL))
+onehrmarb2[511, 30] <- NA
+onehrmarb2[1108, 30] <- NA
+onehrmarb2[1707, 30] <- NA
+onehrmarb2[2201, 30] <- NA
+onehrmarb2[3086, 30] <- NA
+onehrmarb2[3949, 30] <- NA
+
+# South Bristols
+sbrselevation <- raster("C:/Users/dmg85/Downloads/Sheepies3-master/sbristolselevation.tif")
+onehrsbrs <- pcln1hrfix[pcln1hrfix$MountainRange == "BrsS", ]
+onehrsbrs$ID <- droplevels(onehrsbrs$ID)
+coordsbrs <- as.data.frame(onehrsbrs[ , c("x", "y")])
+restodatasbrs <- as.data.frame(onehrsbrs[ , c(1:3, 6:28)])
+crsbrs <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+sbrspdf <- SpatialPointsDataFrame(coords = coordsbrs, data = restodatasbrs, proj4string = crsbrs)
+topodistsbrs <- topoDist(DEM = sbrselevation, pts = sbrspdf, directions = 8, paths = FALSE, zweight = 1)
+topodistsbrs1 <- as.matrix(topodistsbrs)
+topodistsbrs1sub <- topodistsbrs1[row(topodistsbrs1) == (col(topodistsbrs1) - 1)]
+# View(topodistsbrs1sub)
+natopodistsbrs1sub <- c(NA, topodistsbrs1sub)
+onehrsbrs2 <- cbind(onehrsbrs, natopodistsbrs1sub)
+onehrsbrs2 <- cbind(rownames(onehrsbrs2), data.frame(onehrsbrs2, row.names = NULL))
+onehrsbrs2[231, 30] <- NA
+onehrsbrs2[1579, 30] <- NA
+onehrsbrs2[2990, 30] <- NA
+onehrsbrs2[4322, 30] <- NA
+onehrsbrs2[5692, 30] <- NA
+
+# Need the row names to be the same in order to rbind to work
+names(onehrnopah2)[names(onehrnopah2) == "rownames(onehrnopah2)"] <- "rownumlrgdatset"
+names(onehrcmpr2)[names(onehrcmpr2) == "rownames(onehrcmpr2)"] <- "rownumlrgdatset"
+names(onehrmarb2)[names(onehrmarb2) == "rownames(onehrmarb2)"] <- "rownumlrgdatset"
+names(onehrsbrs2)[names(onehrsbrs2) == "rownames(onehrsbrs2)"] <- "rownumlrgdatset"
+
+names(onehrnopah2)[names(onehrnopah2) == "natopodistnopa1sub"] <- "stplengthtopo"
+names(onehrcmpr2)[names(onehrcmpr2) == "natopodistcmpr1sub"] <- "stplengthtopo"
+names(onehrmarb2)[names(onehrmarb2) == "natopodistmarb1sub"] <- "stplengthtopo"
+names(onehrsbrs2)[names(onehrsbrs2) == "natopodistsbrs1sub"] <- "stplengthtopo"
+steplengthallmtn <- rbind(onehrnopah2, onehrcmpr2, onehrmarb2, onehrsbrs2)
+
+
+# library(dplyr)
+# BrsSlongtimedif <- BrsScutobslong %>%
+#   arrange(KI_Known_ID, DateTimect) %>%
+#   group_by(KI_Known_ID) %>%
+#   mutate(Timediff = DateTimect - lag(DateTimect), diff_hours = as.numeric(Timediff, units = 'hours'))
+
+# library(adehabitatLT)
+# data.lt.nopah <- as.ltraj(xy = onehrnopah[, c("x", "y")], date = onehrnopah$DateTimeLocalTestct, id = onehrnopah$ID)
+# View(data.lt.nopah[[1]])
+
+# data.lt_Desert <- as.ltraj(xy = DesertDataDanielleNoDuplicates[, c("UTME", "UTMN")], date = DesertDataDanielleNoDuplicates$DateTimeC, id = DesertDataDanielleNoDuplicates$ID)
+
+# data.lt<-as.ltraj(xy=data[,c("x","y")], date=data$date, id=data$id)
+
+
+
+
+
+```
+
+
+
+
+
+
+This code is what I used before I went into the lab and did it on a computer that could handle the topoDistance function.
+```{r}
+# Setting up the elevation raster
+library(raster)
+library(sp)
+library(rgdal)
+nopahelevation <- raster("C:/Users/Danielle Glass/Downloads/nopahelevation.tif")
+proj4string(nopahelevation) <- CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+plot(nopahelevation, compact = TRUE)
+library(rgdal)
+# tnopahelevation <- projectRaster(from = nopahelevation, crs = ("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
+# plot(tnopahelevation)
+nopahelevationattempt2 <- raster("C:/Users/Danielle Glass/Downloads/NopahElevation1.tif")
+proj4string(nopahelevationattempt2) <- CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+
+nopahelevationattempt3 <- raster("C:/Users/dmg85/Downloads/Sheepies3-master/output_srtm.tif")
+# 
+# Attempt below didn't work, but one above did?
+# nopahelevationproj <- projectRaster(nopahelevation, crs = "+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+
+# WGS 84 
+
+# Setting up the SpatialPointsObjects
+
+# This step length calculated automatically from the prepData function of moveHMM does not account for geodetic (the earth being a sphere), or topopgraphy.
+pcln1hrfix$stepnotopo <- (pcln1hrfix$step * 1000)
+
+# This one does:
+onehrnopah <- pcln1hrfix[pcln1hrfix$MountainRange == "Nopa", ]
+onehrnopah$ID <- droplevels(onehrnopah$ID)
+coordsnopa <- as.data.frame(onehrnopah[ ,c("x", "y")])
+restodatanopa <- as.data.frame(onehrnopah[ , c(1:3, 6:27)])
+crsnopa <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+# crsnopa <- CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs")
+nopaspdf <- SpatialPointsDataFrame(coords = coordsnopa, data = restodatanopa, proj4string = crsnopa)
+# tnopaspdf <- spTransform(nopaspdf , CRS("+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs"))
+jpeg("tnopaspdf.jpg", width = 8, height = 12, units = "in", res = 180)
+plot(tnopaspdf)
+dev.off()
+View(nopaspdf@data)
+
+library(topoDistance)
+topodistnopa <- topoDist(DEM = nopahelevationattempt2, pts = tnopaspdf, directions = 4, paths = FALSE, zweight = 1)
+View(topodistnopa)
+topodistnopa1 <- as.matrix(topodistnopa)
+topodistnopa1sub <- topodistnopa1[row(topodistnopa1) == (col(topodistnopa1) - 1)]
+View(topodistnopa1sub)
+natopodistnopa1sub <- c(NA, topodistnopa1sub)
+
+onehrnopah2 <- cbind(onehrnopah, natopodistnopa1sub)
+
+write.csv(onehrnopah2, "C:/Users/Danielle Glass/Documents/RWorkingDirectory2/Sheepies3/pcln1hrfix3820.csv")
+  #onehrnopah$topodistnopahstplength <- topodistnopa1sub
+
+
+#View(onehrnopah2)
+
+
+# library(dplyr)
+# BrsSlongtimedif <- BrsScutobslong %>%
+#   arrange(KI_Known_ID, DateTimect) %>%
+#   group_by(KI_Known_ID) %>%
+#   mutate(Timediff = DateTimect - lag(DateTimect), diff_hours = as.numeric(Timediff, units = 'hours'))
+
+library(adehabitatLT)
+data.lt.nopah <- as.ltraj(xy = onehrnopah[, c("x", "y")], date = onehrnopah$DateTimeLocalTestct, id = onehrnopah$ID)
+View(data.lt.nopah[[1]])
+
+# data.lt_Desert <- as.ltraj(xy = DesertDataDanielleNoDuplicates[, c("UTME", "UTMN")], date = DesertDataDanielleNoDuplicates$DateTimeC, id = DesertDataDanielleNoDuplicates$ID)
+
+# data.lt<-as.ltraj(xy=data[,c("x","y")], date=data$date, id=data$id)
+
+
+
+
+
+```
+Reading in the step length incorporating topography csv. NEED TO WORK ON THIS.
+
+
+```{r}
+steplengthallmtn <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory2/Sheepies3/steplengthallmtn3820.csv")
+
+
+
+
+```
+
+```{r}
+library(rosm)
+library(prettymapr)
+
+marbles <- makebbox(34.743890,-115.475526,34.521739,-115.699376)
+
+# n, e, s, w
+bmaps.plot(marbles, type = "Aerial", zoom = 10)
+
+
+# sp package
+# talk to Lorena
+
+library(moveHMM)
+
+
+# JUNK CODE FROM ATTEMPTS:
+# ggmap(get_stamenmap(bbox = c(left = -115.656813, bottom = 34.648079, right = -115.471502, top = 34.639717), maptype = "terrain", crop = FALSE, zoom = 12))
+
+# install.packages("devtools")
+# install.packages("ggmap")
+# library(ggmap)
+# library(ggplot2)
+# library("devtools")
+# marblesbasemap <- get_map(location = c(lon = 115.582657, lat = 34.641645), zoom = 11, maptype = 'hybrid', source = 'stamen') 
+
+# bbox <- c(left = 34.639717, bottom = 115.471502, right = 34.648079, top = 115.656813)
+# ggmap(get_map(bbox, zoom = 13))
+
+# bbox <- get_stamenmap(bbox = c(left = 34.639717, bottom = 115.471502, right = 34.648079, top = 115.656813), maptype = "terrain", crop = FALSE, zoom = 10)
+
+# Attempt #2
+# get_map(location = c(lon = -115.571137, lat = 34.636558), zoom = 10, scale = "auto", maptype = "terrain", source = "google")
+
+```
+
+
+
+```{r}
+onehrnopah
+
+
+# library(dplyr)
+# BrsSlongtimedif <- BrsScutobslong %>%
+#   arrange(KI_Known_ID, DateTimect) %>%
+#   group_by(KI_Known_ID) %>%
+#   mutate(Timediff = DateTimect - lag(DateTimect), diff_hours = as.numeric(Timediff, units = 'hours'))
+
+library(adehabitatLT)
+library(dplyr)
+data.lt.nopah <- as.ltraj(xy = onehrnopah[, c("x", "y")], date = onehrnopah$DateTimeLocalTestct, id = onehrnopah$ID)
+View(data.lt.nopah[[1]])
+for(i in 1:3){data.lt.nopah[[i]]$xend <- lag(data.lt.nopah[[i]]$x)}
+for(i in 1:3){data.lt.nopah[[i]]$yend <- lag(data.lt.nopah[[i]]$y)}
+nopah1736 <- as.data.frame(data.lt.nopah[[1]])
+write.csv(nopah1736, "C:/Users/Danielle Glass/Documents/RWorkingDirectory2/Sheepies3/nopah1736.csv")
+
+# hi
+```
+

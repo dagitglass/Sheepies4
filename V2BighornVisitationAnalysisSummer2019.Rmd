@@ -1,0 +1,2557 @@
+---
+title: "RBighornVisitationAnalysis"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is my preliminary analysis of bighorn visitation to water, Summer 2019. First, I combined all of my observations into one dataframe. Due to some technical difficulties with the database at the CDFW office, I included observations from both a version of the database from 7/3 and 7/22 since I thought some had gotten deleted from the 7/22. I then removed fully duplicated rows in order to remove data that were in both the 7/3 and 7/22 database. The dataframe had 2108 observations before eliminating duplicated rows, and 2062 observations after the removal of duplicated rows. This makes sense as the approximate number of observations that I had input into the database by 7/3. Before coding further, I went through the SBrs and Marb data and visually checked that there were observations for every date that were supposedly covered. The only discrepancy that I found was that there were no observations in the Marbles on 6/25 after 14:49 pm. I went into the photo data and confirmed that this was indeed the case. Perhaps it was a really cool afternoon?
+
+I then formatted the data where major things needed to be fixed. I changed the cells of  KI_DG_FirstPhotoTime2, KI_DG_FirstPhotoTime3, KI_DG_FirstPhotoTime4, KI_DG_LastPhotoTime2, KI_DG_LastPhotoTime3, and KI_DG_LastPhotoTime4 that were '0' or blank to NAs. I also changed the cells of KI_DG_SheepDrank2, KI_DG_SheepDrank3, and KI_DG_SheepDrank4 that were blank to NAs.
+
+```{r}
+AshleyDataall <- read.csv("AshleyDatabasequeryall121419.csv", header = TRUE, sep = ",")
+twodbobs <- read.csv("ObservationsBeginningoftheSummer2databases121419.csv", header = TRUE, sep = ",")
+firstpartdgobs <- read.csv("NopaCMPRMarbfirstpartofsummerDanielleObservations.csv", header = TRUE, sep = ",")
+threedf <- rbind(AshleyDataall, twodbobs, firstpartdgobs)
+library(tidyverse)
+nodups <- distinct(threedf)
+# table(duplicated(nodups))
+# table(duplicated(nodups$DateObsTimeIDwaterspecific))
+# THERE ARE NO DUPLICATES OF THE ROWS OVERALL, BUT THERE ARE 204 DUPLICATES OF THE NODUPS$DateObsTimeODwaterspecific. WHY?!!!!!!! B/C some of the observations have the capture data and some don't. I SHOULD BE ABLE TO FIX THIS AFTER INPUTTING THE CORRECT WEIGHTS, BODY LENGTHS, AND CHEST GIRTHS THAT ARE MISSING.
+# View(duplicated(nodups$DateObsTimeIDwaterspecific))
+
+# as.character(nodups$KI_DG_FirstPhotoTime2, nodups$KI_DG_LastPhotoTime2, nodups$KI_DG_FirstPhotoTime3, nodups$KI_DG_LastPhotoTime3, nodups$KI_DG_FirstPhotoTime4, nodups$KI_DG_LastPhotoTime4)
+nodups$KI_DG_FirstPhotoTime2[nodups$KI_DG_FirstPhotoTime2 == "0"] <- NA
+nodups$KI_DG_FirstPhotoTime2[nodups$KI_DG_FirstPhotoTime2 == ""] <- NA
+nodups$KI_DG_LastPhotoTime2[nodups$KI_DG_LastPhotoTime2 == "0"] <- NA
+nodups$KI_DG_LastPhotoTime2[nodups$KI_DG_LastPhotoTime2 == ""] <- NA
+nodups$KI_DG_FirstPhotoTime3[nodups$KI_DG_FirstPhotoTime3 == "0"] <- NA
+nodups$KI_DG_FirstPhotoTime3[nodups$KI_DG_FirstPhotoTime3 == ""] <- NA
+nodups$KI_DG_LastPhotoTime3[nodups$KI_DG_LastPhotoTime3 == "0"] <- NA
+nodups$KI_DG_LastPhotoTime3[nodups$KI_DG_LastPhotoTime3 == ""] <- NA
+nodups$KI_DG_FirstPhotoTime4[nodups$KI_DG_FirstPhotoTime4 == "0"] <- NA
+nodups$KI_DG_FirstPhotoTime4[nodups$KI_DG_FirstPhotoTime4 == ""] <- NA
+nodups$KI_DG_LastPhotoTime4[nodups$KI_DG_LastPhotoTime4 == "0"] <- NA
+nodups$KI_DG_LastPhotoTime4[nodups$KI_DG_LastPhotoTime4 == ""] <- NA
+
+
+# as.character(nodups$KI_DG_SheepDrank2, nodups$KI_DG_SheepDrank3, nodups$KI_DG_SheepDrank4)
+nodups$KI_DG_SheepDrank2[nodups$KI_DG_SheepDrank2 == ""] <- NA
+nodups$KI_DG_SheepDrank3[nodups$KI_DG_SheepDrank3 == ""] <- NA
+nodups$KI_DG_SheepDrank4[nodups$KI_DG_SheepDrank4 == ""] <- NA
+
+# as.character(nodups$GO_DG_SpecificSource)
+nodups$GO_DG_SpecificSource[nodups$GO_DG_SpecificSource == ""] <- NA
+# as.factor(nodups$GO_DG_SpecificSource)
+
+```
+
+I noted that there were still some duplicate observations that had not been removed despite the previous code chunk. In an attempt to figure out why there were still duplicated rows, I made a column with everything needed to make each observation individually identifiable. I discovered that some rows did not have the capture data needed, and that this was what was making the duplicated rows not seen as duplicated. I then worked to input the missing information - weight, body length, and chest girth. I subset by the distinct rows and this equaled the previous number of individually identifiable observations. No more duplicates!
+
+```{r}
+# as.character(nodups$GO_Date, nodups$KI_Known_ID, nodups$GO_Time_HHMM, nodups$GO_WaterSource, nodups$GO_DG_SpecificSource)
+nodups$DateObsTimeIDwaterspecific <- paste(nodups$GO_Date, nodups$KI_Known_ID, nodups$GO_Time_HHMM, nodups$GO_WaterSource, nodups$GO_DG_SpecificSource, sep = "")
+# as.character(nodups$KI_Sex)
+# as.character(nodups$KI_Known_ID)
+# table(nodups$KI_Sex)
+nodups$KI_Sex[nodups$KI_Known_ID == "BHS_1489" | nodups$KI_Known_ID == "BHS_1596" | nodups$KI_Known_ID == "BHS_1361" | nodups$KI_Known_ID == "BHS_1357" | nodups$KI_Known_ID == "BHS_1367" | nodups$KI_Known_ID == "BHS_1362" | nodups$KI_Known_ID == "BHS_1584" | nodups$KI_Known_ID == "BHS_1585" | nodups$KI_Known_ID == "BHS_1583" | nodups$KI_Known_ID == "BHS_1582" | nodups$KI_Known_ID == "BHS_1588" | nodups$KI_Known_ID == "BHS_1365" | nodups$KI_Known_ID == "BHS_1574" | nodups$KI_Known_ID == "BHS_1366" | nodups$KI_Known_ID == "BHS_1594" | nodups$KI_Known_ID == "BHS_1577" | nodups$KI_Known_ID == "BHS_1581" | nodups$KI_Known_ID == "BHS_1576" | nodups$KI_Known_ID == "BHS_1416" | nodups$KI_Known_ID == "BHS_1587" | nodups$KI_Known_ID == "BHS_1575" | nodups$KI_Known_ID == "BHS_1592" | nodups$KI_Known_ID == "BHS_1589" | nodups$KI_Known_ID == "BHS_1421" | nodups$KI_Known_ID == "BHS_1740" | nodups$KI_Known_ID == "BHS_1738" | nodups$KI_Known_ID == "BHS_1736" | nodups$KI_Known_ID == "BHS_1734" | nodups$KI_Known_ID == "BHS_1733" | nodups$KI_Known_ID == "BHS_1741"] <- "F"
+
+nodups$KI_Sex[nodups$KI_Known_ID == "BHS_1494" | nodups$KI_Known_ID == "BHS_1684" | nodups$KI_Known_ID == "BHS_1683" | nodups$KI_Known_ID == "BHS_1682" | nodups$KI_Known_ID == "BHS_1493" | nodups$KI_Known_ID == "BHS_1591" | nodups$KI_Known_ID == "BHS_1590" | nodups$KI_Known_ID == "BHS_1420" | nodups$KI_Known_ID == "1728" | nodups$KI_Known_ID == "BHS_1739"] <- "M"
+
+# table(nodups$KI_Known_ID) - going through the individual sheep to check and make sure their weight, body length, and chest girth are filled out correctly.
+# table(nodups$KI_Known_ID[!is.na()])
+
+# LIST OF SHEEP THAT HAVE MEASUREMENTS (* sheep that had different measurements?, ^ sheep that I am checking measurements with CDFW): BHS_1420^, BHS_1428*, BHS_1490*, BHS_1492^, 1493*, 1494*, 1563, 1565, 1574, 1575, 1576, 1577, 1581, 1582, 1583, 1587, 1592, 1594, 1682, 1683, 1684, 1689, 1713, 1730, 1731, 1733, 1734, 1736, 1738, 1739
+# nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == ""]
+#### NEED TO FIX ID THAT HAS "BHs_1596" to "BHS_1596"!!!!!!!!
+
+# as.character(nodups$KI_Known_ID)
+nodups$KI_Known_ID[nodups$KI_Known_ID == "BHs_1596"] <- "BHS_1596"
+# as.factor(nodups$KI_Known_ID)
+# now comes back at BHs_1596 = 0, BHS_1596=78 - did this truly fix the problem?
+
+# Four of the bighorn have two different numbers at their measurements. I am going to set them to the lower number b/c the higher number is probably the untarred number.
+#BHS_1428 - body length comes back at both 151.3 and 149.0. I am going to set it to 149.0 b/c that is what in the 7/22 database and because the higher number is probably the untarred number.
+
+# There are measurements that are not in the 7/22 database that are in my datasheet. I need to add the measurements for the sheep that this is true so as to make there be no duplicated rows.
+
+# BODY LENGTHS:
+# as.character(nodups$CP_BdyLgth_cm)
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1420"] <- "155.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1428"] <- "149.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1490"] <- "158.2"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1492"] <- "152.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1493"] <- "162.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1494"] <- "145.1"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1563"] <- "165.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1565"] <- "136.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1574"] <- "146.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1575"] <- "143.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1576"] <- "141.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1577"] <- "141.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1581"] <- "139.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1582"] <- "138.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1583"] <- "142.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1587"] <- "139.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1592"] <- "137.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1594"] <- "125.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1682"] <- "140.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1683"] <- "144.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1684"] <- "149.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1689"] <- "155.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1713"] <- "140.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1730"] <- "152.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1731"] <- "161.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1733"] <- "153.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1734"] <- "149.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1736"] <- "118.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1738"] <- "130.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1739"] <- "145.0"
+# as.numeric(nodups$CP_BdyLgth_cm)
+
+
+#CHEST GIRTHS
+# as.character(nodups$CP_ChstGth_cm)
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1420"] <- "111.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1428"] <- "100.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1490"] <- "101.8"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1492"] <- "105.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1493"] <- "111.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1494"] <- "104.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1563"] <- "107.2"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1565"] <- "99.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1574"] <- "95.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1575"] <- "99.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1576"] <- "97.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1577"] <- "99.1"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1581"] <- "101.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1582"] <- "92.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1583"] <- "93.2"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1587"] <- "97.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1592"] <- "103.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1594"] <- "98.9"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1682"] <- "98.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1683"] <- "95.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1684"] <- "102.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1689"] <- "108.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1713"] <- "97.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1730"] <- "101.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1731"] <- "115.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1733"] <- "109.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1734"] <- "96.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1736"] <- "82.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1738"] <- "84.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1739"] <- "96.0"
+# as.numeric(nodups$CP_ChstGth_cm)
+
+#WEIGHT - this is unadjusted, raw weight (no tar)b/c the vast majority of the entries do not have a tar weight or a net weight.
+# as.character(nodups$CP_Weight..kg.)
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1420"] <- "96.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1428"] <- "63.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1490"] <- "82.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1492"] <- "88.4"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1493"] <- "87.4"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1494"] <- "64.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1563"] <- "89.8"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1565"] <- "61.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1574"] <- "63.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1575"] <- "67.1"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1576"] <- "58.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1577"] <- "61.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1581"] <- "68.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1582"] <- "59.2"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1583"] <- "63.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1587"] <- "65.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1592"] <- "60.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1594"] <- "56.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1682"] <- "61.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1683"] <- "64.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1684"] <- "76.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1689"] <- "85.2"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1713"] <- "59.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1730"] <- "69.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1731"] <- "100.04"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1733"] <- "77.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1734"] <- "58.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1736"] <- "47.1"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1738"] <- "44.2"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1739"] <- "71.8"
+# as.numeric(nodups$CP_Weight..kg.)
+
+# AGE AT TIME OF CAPTURE:
+# as.character(nodups$CP_AgeYears)
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1420"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1428"] <- "3"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1490"] <- "7"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1492"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1493"] <- "7"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1494"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1563"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1565"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1574"] <- "10"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1575"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1576"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1577"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1581"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1582"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1583"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1587"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1592"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1594"] <- "7"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1682"] <- "3"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1683"] <- "3"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1684"] <- "12"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1689"] <- "9"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1713"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1730"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1731"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1733"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1734"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1736"] <- "2"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1738"] <- "1"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1739"] <- "4"
+# as.integer(nodups$CP_AgeYears)
+
+
+library(tidyverse)
+renodups <- distinct(nodups)
+# table(duplicated(renodups))
+# table(duplicated(renodups$DateObsTimeIDwaterspecific))
+# Before Age Years, 177 duplicates.
+# Down to 80 duplicates after Age Years fixed.
+# Now down to 54 duplicates.
+# No more duplicates! Yay!
+# View(duplicated(renodups$DateObsTimeIDwaterspecific))
+
+```
+
+Then, just to be sure, I cut the visitation data to the time periods when all cameras were running. This data should have already been cut, but I know that Ashley was not super meticulous in only going through the photos in the time period when all of the cameras in the range were running, so I feel like this is a good check.
+
+At this time, I also checked that the GO_WaterSource and GO_RangeCode made sense for each range. I changed two entries that were actually Nopah but mistakenly CMPR.
+
+``` {r}
+
+as.character(renodups$GO_Date, renodups$GO_Time_HHMM)
+renodups$DateTime <- paste(renodups$GO_Date, renodups$GO_Time_HHMM, sep = " ")
+library(lubridate)
+renodups$DateTime <- strptime(renodups$DateTime, "%Y%m%d %H:%M")
+renodups$DateTimect <- as.POSIXct(renodups$DateTime, tz = "America/Los_Angeles", format = "%Y%m%d %H:%M")
+
+# Making the GO_Date into a Date:
+renodups$GO_Date <- strptime(renodups$GO_Date, "%Y%m%d")
+renodups$GO_Date <- as.POSIXct(renodups$GO_Date, tz = "America/Los_Angeles", format = "%Y%m%d")
+
+Marbobs <- renodups[renodups$GO_RangeCode == "Marb", ]
+Marbcutobs <- Marbobs[(Marbobs$DateTimect >= as.POSIXct("2019-05-17 10:49:00") & Marbobs$DateTimect <= as.POSIXct("2019-05-24 23:59:59")) | (Marbobs$DateTimect >= as.POSIXct("2019-06-04 20:00:00") & Marbobs$DateTimect <= as.POSIXct("2019-06-12 13:32:00")) | (Marbobs$DateTimect >= as.POSIXct("2019-06-18 17:19:00") & Marbobs$DateTimect <= as.POSIXct("2019-06-22 23:59:59"))| (Marbobs$DateTimect >= as.POSIXct("2019-06-25 14:49:00") & Marbobs$DateTimect <= as.POSIXct("2019-06-30 10:46:00"))| (Marbobs$DateTimect >= as.POSIXct("2019-07-10 08:45:00") & Marbobs$DateTimect <= as.POSIXct("2019-07-13 23:00:18")) | (Marbobs$DateTimect >= as.POSIXct("2019-07-17 11:46:00") & Marbobs$DateTimect <= as.POSIXct("2019-07-25 10:30:00")) | (Marbobs$DateTimect >= as.POSIXct("2019-07-31 20:52:00") & Marbobs$DateTimect <= as.POSIXct("2019-08-04 13:13:03")) | (Marbobs$DateTimect >= as.POSIXct("2019-08-06 12:03:00") & Marbobs$DateTimect <= as.POSIXct("2019-08-10 12:03:23")), ]
+
+BrsSobs <- renodups[renodups$GO_RangeCode == "BrsS", ]
+BrsScutobs <- BrsSobs[(BrsSobs$DateTimect >= as.POSIXct("2019-06-04 15:04:00") & BrsSobs$DateTimect <= as.POSIXct("2019-06-16 08:27:00")) | (BrsSobs$DateTimect >= as.POSIXct("2019-06-18 17:36:00") & BrsSobs$DateTimect <= as.POSIXct("2019-06-25 16:25:00")) | (BrsSobs$DateTimect >= as.POSIXct("2019-06-25 17:05:00") & BrsSobs$DateTimect <= as.POSIXct("2019-07-29 10:36:00")) | (BrsSobs$DateTimect >= as.POSIXct("2019-08-01 14:32:00") & BrsSobs$DateTimect <= as.POSIXct("2019-08-12 11:13:00")),]
+
+# I found a couple of entries that need to be fixed.
+# as.character(renodups$GO_RangeCode)
+renodups$GO_RangeCode[renodups$DateObsTimeIDwaterspecific == "20190718BHS_174112:46NopaNA"] <- "Nopa"
+renodups$GO_RangeCode[renodups$DateObsTimeIDwaterspecific == "20190722BHS_17405:26NopaNA"] <- "Nopa"
+# as.factor(renodups$GO_RangeCode)
+
+cmprobs <- renodups[renodups$GO_RangeCode == "CMPR", ]
+cmprcutobs <-  cmprobs[(cmprobs$DateTimect >= as.POSIXct("2019-05-23 15:48:00") & cmprobs$DateTimect <= as.POSIXct("2019-05-31 11:18:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-06-20 17:47:00") & cmprobs$DateTimect <= as.POSIXct("2019-06-27 02:09:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-07-11 18:25:00") & cmprobs$DateTimect <= as.POSIXct("2019-07-14 18:28:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-07-30 14:30:00") & cmprobs$DateTimect <= as.POSIXct("2019-08-03 16:46:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-08-05 19:10:00") & cmprobs$DateTimect <= as.POSIXct("2019-08-15 07:27:00")),]
+
+nopaobs <- renodups[renodups$GO_RangeCode == "Nopa", ]
+nopacutobs <- nopaobs[(nopaobs$DateTimect >= as.POSIXct("2019-06-06 09:18:00") & nopaobs$DateTimect <= as.POSIXct("2019-06-13 11:04:00")) | (nopaobs$DateTimect >= as.POSIXct("2019-06-25 09:00:00") & nopaobs$DateTimect <= as.POSIXct("2019-07-08 12:35:00")) | (nopaobs$DateTimect >= as.POSIXct("2019-07-16 19:03:00") & nopaobs$DateTimect <= as.POSIXct("2019-07-29 15:06:00")) | (nopaobs$DateTimect >= as.POSIXct("2019-07-29 19:55:00") & nopaobs$DateTimect <= as.POSIXct("2019-08-07 14:49:00")),]
+
+allcut <- rbind(Marbcutobs, BrsScutobs, cmprcutobs, nopacutobs)
+# write.xlsx(allcut, file = "allcutVisitationData122719.xlsx")
+```
+
+I checked to make sure that every sheep that I thought was alive for the summer actually had documented proof of life for the entire summer. When counting the number of sheep in my sample, I made sure not to include sheep that are assumed dead (Marbles: BHS_1413 (dead harvest), BHS_1496, BHS_1597, South Bristols: BHS_1340, BHS_1331, BHS_1598). I also made sure to include sheep that were not seen at water all summer, but are documented to be alive (Marbles BHS_1497, Nopah BHS_1737). All of the South Bristols, and all of the CMPR sheep that I limited this analysis to (for reasons listed below), came into water at least once during the summer.
+
+Some notes on the whereabouts of the sheep that were not see at water as per their GPS collars. Marb BHS_1589 literally just chilled on Castle Peak. BHS_1497's collar is no longer working. Nopah BHS_1737 was between the Nopah and El Si Guzzler - looks like stayed as high elevation? I specifically examined BHS_1595, which only had 3 visitations prior to its death on 8/5. BHS_1595 was in the southern Marbles, then moved up to just south of Castle Peak. There is a chance that there is an unknown water source in this location.
+
+It is worth noting that a couple Marbles sheep died during the summer. BHS_ 1367 was heard dead on flight on 8/19 and last seen 6/12 at Theresa. Given this information, I am making the conservative assumption in analyses that it died 6/12 and only including it through 6/11 in analyses. BHS_1595 died on either 8/5 or 8/6, but stopped moving on the 5th. Therefore, I am only including it in analyses through 8/4.
+
+After looking at the GPS data for the summer, I realized that sheep at Paiute Guzzler were making their way down to a water source in the south of the Castle Piutes that I did not put a camera on. As such, I limited my analysis to the sheep that were only located in the far north section of the range, by Viceroy Mine.
+
+I fixed some observations that were incorrect, and added some observations that were supposed to be in the Marbles but were in the South Bristols to the Marbles.
+
+```{r}
+## Individually Identifiable Bighorn in Visitation Preliminary Analyses
+
+# Marbles: BHS_1367, BHS_1365, BHS_1361, BHS_1362", BHS_1357, BHS_1416, BHS_1421, BHS_1581, BHS_1577, BHS_1574, BHS_1576, BHS_1583, BHS_1584, BHS_1585, BHS_1587, BHS_1582, BHS_1575, BHS_1592, BHS_1594, BHS_1420, BHS_1493, BHS_1494, BHS_1590, BHS_1591, BHS_1682, BHS_1683, BHS_1684, BHS_1366, BHS_1497, BHS_1588, BHS_1595, BHS_1589"
+# *** This currently includes 1497 (never visited, Lily said seen alive last November) and 1592 (gps track and visited twice), but not 1496 (assumed dead).
+
+# South Bristols: BHS_1330, BHS_1337, BHS_1334, BHS_1329, BHS_1328, BHS_1333, BHS_1425, BHS_1426, BHS_1489, BHS_1491, BHS_1578, BHS_1579, BHS_1580, BHS_1596, BHS_1599, BHS_1687, BHS_1486, BHS_1490, BHS_1492, BHS_1428, BHS_1685, BHS_1686, BHS_1688, BHS_1689
+
+# Nopah: BHS_1737, BHS_1740, BHS_1741, BHS_1738, BHS_1736, BHS_1739
+
+# Castle Piutes: BHS_1730, BHS_1733, BHS_1734, BHS_1728
+
+# *** DG note to self: 1728 doesn't have a working GPS collar
+
+## Fixing observations
+
+# One observation accidentally 1578 instead of 1576
+Marbcutobs$KI_Known_ID[Marbcutobs$DateObsTimeIDwaterspecific == "20190804BHS_15787:24VernNA"] <- "BHS_1576"
+# A different observation 1685 instead of 1590
+Marbcutobs$KI_Known_ID[Marbcutobs$DateObsTimeIDwaterspecific == "20190722BHS_168511:23TherBoss Tank"] <- "BHS_1590"
+# Another observation changing 1713 for 1582
+Marbcutobs$KI_Known_ID[Marbcutobs$DateObsTimeIDwaterspecific == "20190803BHS_17139:37TherBoss Tank"] <- "BHS_1582"
+```
+
+I then created figures of the number of individual sheep coming into water by day. I only included times when all cameras in the mountain range were running. This is given that sheep use more than one water source and move around throughout the mountain range. When examining the data, I noticed that the days at the beginning and end of each period when all of the cameras were running had a lower number of sheep coming in than the rest of the days. This is easily attributable to the cameras being up and running for only part of these days. As such, I cut out these days from my dataset (which probably decreased by dataset by about ~10%).
+
+I did leave in a couple of days that had very near complete coverage. I decided that it was ok to keep these days given the short periods of time when 1 of the cameras was down for, and the relative bias of sheep for diurnality, which was confirmed when going through camera photos. For the Marbles, I did leave in one day when the cameras were only not running between 11 pm and 12 am. In the South Bristols, I included 6/25/19 which was not fully covered for 45 minutes. In the Castle Piutes, I included 7/14 and 8/3 because one of the cameras went out at night. I will need to limit other analyses to these time periods given the incomplete data on the start/end days.
+
+Afterwards, I realized that the plots that I made here are not nearly as useful as percent visitation by day, as I did in the next chunk.
+
+```{r}
+# Number of Individual Sheep Coming into Water by Day
+
+# Marbles
+
+marballsheepvisitsday <- as.data.frame(table(Marbcutobs$KI_Known_ID, Marbcutobs$GO_Date))
+# View(marballsheepvisitsday)
+# Took out 1413 b/c dead, 1589 and 1597 because assumed dead
+marballsheepvisitsday1 <- marballsheepvisitsday[(marballsheepvisitsday$Var1 == "BHS_1367") |  (marballsheepvisitsday$Var1 == "BHS_1365") | (marballsheepvisitsday$Var1 == "BHS_1361") |(marballsheepvisitsday$Var1 == "BHS_1362") | (marballsheepvisitsday$Var1 == "BHS_1357") | (marballsheepvisitsday$Var1 == "BHS_1416") | (marballsheepvisitsday$Var1 == "BHS_1421") | (marballsheepvisitsday$Var1 == "BHS_1581") | (marballsheepvisitsday$Var1 == "BHS_1577") | (marballsheepvisitsday$Var1 == "BHS_1574") | (marballsheepvisitsday$Var1 == "BHS_1576") | (marballsheepvisitsday$Var1 == "BHS_1583") | (marballsheepvisitsday$Var1 == "BHS_1584") | (marballsheepvisitsday$Var1 == "BHS_1585") | (marballsheepvisitsday$Var1 == "BHS_1587") | (marballsheepvisitsday$Var1 == "BHS_1582") | (marballsheepvisitsday$Var1 == "BHS_1575") | (marballsheepvisitsday$Var1 == "BHS_1592") | (marballsheepvisitsday$Var1 == "BHS_1594") | (marballsheepvisitsday$Var1 == "BHS_1420") | (marballsheepvisitsday$Var1 == "BHS_1493") | (marballsheepvisitsday$Var1 == "BHS_1494") | (marballsheepvisitsday$Var1 == "BHS_1590") | (marballsheepvisitsday$Var1 == "BHS_1591") | (marballsheepvisitsday$Var1 == "BHS_1682") | (marballsheepvisitsday$Var1 == "BHS_1683") | (marballsheepvisitsday$Var1 == "BHS_1684") | (marballsheepvisitsday$Var1 == "BHS_1366") | (marballsheepvisitsday$Var1 == "BHS_1497") | (marballsheepvisitsday$Var1 == "BHS_1588") | (marballsheepvisitsday$Var1 == "BHS_1595") | (marballsheepvisitsday$Var1 == "BHS_1589"), ]
+
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 2] <- 1
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 3] <- 1
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 4] <- 1
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 5] <- 1
+marbindsheepvisitperday <- as.data.frame(tapply(marballsheepvisitsday1$Freq, list(marballsheepvisitsday1$Var2), sum))
+# View(marbindsheepvisitperday)
+marbindsheepvisitperday <- cbind(rownames(marbindsheepvisitperday), data.frame(marbindsheepvisitperday, row.names = NULL))
+marbindsheepvisitperday$datenum <- as.character(marbindsheepvisitperday$`rownames(marbindsheepvisitperday)`)
+marbindsheepvisitperday$datenum <- as.Date(marbindsheepvisitperday$`rownames(marbindsheepvisitperday)`, format = "%Y-%m-%d")
+marbindsheepvisitperday$datenum <- as.numeric(marbindsheepvisitperday$datenum)
+
+#Cutting the rows where the day wasn't complete. Inputting NA rows for uncovered days.
+marbindsheepvisitperday <- marbindsheepvisitperday[(marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-06-12") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-06-18") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-06-30") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-07-10") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-07-17") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-07-25") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-08-04") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-08-06") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-08-10"), ]
+
+marbdatena <- read.csv("TotalSheepVisitationPerDayMarbNAs122919.csv", header = TRUE, sep = ",")
+marbdatena$tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2...[marbdatena$tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2... == "#N/A"] <- NA
+names(marbdatena)[names(marbdatena) == "rownames.marbindsheepvisitperday."] <- "rownames(marbindsheepvisitperday)"
+
+names(marbindsheepvisitperday)[names(marbindsheepvisitperday) == "tapply.marballsheepvisitsday1.Freq..list.marballsheepvisitsday1.Var2..."] <- "visits"
+names(marbdatena)[names(marbdatena) == "tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2..."] <- "visits"
+
+
+marbdatena$datenum <- as.Date(marbdatena$datenum, format = "%Y-%m-%d")
+marbdatena$datenum <- as.numeric(marbdatena$datenum)
+marbindsheepvisitperday1 <- rbind(marbindsheepvisitperday, marbdatena)
+marbindsheepvisitperday1$visits <- as.integer(marbindsheepvisitperday1$visits)
+marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` <- as.Date(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)`, "%Y-%m-%d")
+
+#Barplot can't get NA spaces
+# barplot(tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2... ~ `rownames(marbindsheepvisitperday)`, data = marbindsheepvisitperday1, main = "Marbles Number of Individual Sheep Coming to Water by Day", xlab = "Date", ylab = "Number of Individual Sheep")
+# xlim = c(0, 85), width = 1
+
+# GGPLOT WORKS!
+library(ggplot2)
+plotmarbnumsheep <- ggplot(data = marbindsheepvisitperday1, aes(x = `rownames(marbindsheepvisitperday)`, y = visits, fill = "supp")) +
+  geom_bar(stat="identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Marbles") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 32)
+print(plotmarbnumsheep)
+
+## DG note to self: Marbles when sheep died not added as line in this figure, but added in the better figure below.
+
+
+
+# SOUTH BRISTOLS
+
+#### NEED TO CHECK AND POTENTIALLY FIX ALso BHS_1591 Teresa Seep 7/19 21:59 and 7/20 2:43 - probably need to change to Marb. -- I did change to Marbles but I'm not sure if still showing up in South Bristols data?
+
+BrsScutobs$KI_Known_ID <- as.character(BrsScutobs$KI_Known_ID)
+BrsScutobs$KI_Known_ID[BrsScutobs$DateObsTimeIDwaterspecific == "20190623BHS_149910:04TalcNA"] <- "BHS_1599"
+BrsScutobs$KI_Known_ID <- as.factor(BrsScutobs$KI_Known_ID)
+
+BrsScutobs$GO_RangeCode <- as.character(BrsScutobs$GO_RangeCode)
+BrsScutobs$GO_RangeCode[BrsScutobs$DateObsTimeIDwaterspecific == "20190719BHS_159121:59TherSeep"] <- "Marb"
+BrsScutobs$GO_RangeCode[BrsScutobs$DateObsTimeIDwaterspecific == "20190720BHS_15912:43TherSeep"] <- "Marb"
+BrsScutobs$GO_RangeCode <- as.factor(BrsScutobs$GO_RangeCode)
+# Still shows up when type in View(BrsScutobs[BrsScutobs$KI_Known_ID == "BHS_1591", ]) though now says Marb -- DID I FIX IT?
+
+# This might be good. Need to check that it is in the right place in the code.
+# brstomarb <- BrsScutobs[BrsScutobs$KI_Known_ID == "BHS_1591",]
+# Marbcutobs <- rbind(Marbcutobs, brstomarb)
+
+sbrssheepvisitsday <- as.data.frame(table(BrsScutobs$KI_Known_ID, BrsScutobs$GO_Date))
+sbrssheepvisitsday1 <- sbrssheepvisitsday[(sbrssheepvisitsday$Var1 == "BHS_1330") | (sbrssheepvisitsday$Var1 == "BHS_1337") | (sbrssheepvisitsday$Var1 == "BHS_1334") | (sbrssheepvisitsday$Var1 == "BHS_1329") | (sbrssheepvisitsday$Var1 == "BHS_1328") | (sbrssheepvisitsday$Var1 == "BHS_1333") | (sbrssheepvisitsday$Var1 == "BHS_1425") | (sbrssheepvisitsday$Var1 == "BHS_1426") | (sbrssheepvisitsday$Var1 == "BHS_1489") | (sbrssheepvisitsday$Var1 == "BHS_1491") | (sbrssheepvisitsday$Var1 == "BHS_1578") | (sbrssheepvisitsday$Var1 == "BHS_1579") | (sbrssheepvisitsday$Var1 == "BHS_1580") | (sbrssheepvisitsday$Var1 == "BHS_1596") | (sbrssheepvisitsday$Var1 == "BHS_1599") | (sbrssheepvisitsday$Var1 == "BHS_1687") | (sbrssheepvisitsday$Var1 == "BHS_1486") | (sbrssheepvisitsday$Var1 == "BHS_1490") | (sbrssheepvisitsday$Var1 == "BHS_1492") | (sbrssheepvisitsday$Var1 == "BHS_1428") | (sbrssheepvisitsday$Var1 == "BHS_1685") | (sbrssheepvisitsday$Var1 == "BHS_1686") | (sbrssheepvisitsday$Var1 == "BHS_1688") | (sbrssheepvisitsday$Var1 == "BHS_1689"),]
+# table(sbrssheepvisitsday1$Freq) - through 5
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 2] <- 1
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 3] <- 1
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 4] <- 1
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 5] <- 1
+sbrsindsheepvisitperday <- as.data.frame(tapply(sbrssheepvisitsday1$Freq, list(sbrssheepvisitsday1$Var2), sum))
+# View(sbrsindsheepvisitperday)
+sbrsindsheepvisitperday <- cbind(rownames(sbrsindsheepvisitperday), data.frame(sbrsindsheepvisitperday, row.names = NULL))
+names(sbrsindsheepvisitperday)[names(sbrsindsheepvisitperday) == "rownames(sbrsindsheepvisitperday)"] <- "Date"
+names(sbrsindsheepvisitperday)[names(sbrsindsheepvisitperday) == "tapply.sbrssheepvisitsday1.Freq..list.sbrssheepvisitsday1.Var2..."] <- "NumIndSheep"
+sbrsindsheepvisitperday$Date <- as.Date(sbrsindsheepvisitperday$Date, format = "%Y-%m-%d")
+sbrsindsheepvisitperday1 <- sbrsindsheepvisitperday[(sbrsindsheepvisitperday$Date != "2019-06-04") & (sbrsindsheepvisitperday$Date != "2019-06-16") & (sbrsindsheepvisitperday$Date != "2019-06-18") & (sbrsindsheepvisitperday$Date != "2019-07-29") & (sbrsindsheepvisitperday$Date != "2019-08-01") & (sbrsindsheepvisitperday$Date != "2019-08-12"), ]
+sbrsdatena <- read.csv("SBrsNAIndSheepVisits1320.csv", header = TRUE, sep = ",")
+sbrsdatena$Date <- as.Date(sbrsdatena$Date, format = "%Y-%m-%d")
+sbrsdatena$NumIndSheep <- as.numeric(sbrsdatena$NumIndSheep)
+sbrsindsheepvisitperday2 <- rbind(sbrsindsheepvisitperday1, sbrsdatena)
+library(ggplot2)
+plotsbrsnumsheep <- ggplot(data = sbrsindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("South Bristols") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 24)
+
+#Nopah
+nopaallsheepvisitsday <- as.data.frame(table(nopacutobs$KI_Known_ID, nopacutobs$GO_Date))
+# View(nopaallsheepvisitsday)
+nopaallsheepvisitsday1 <- nopaallsheepvisitsday[(nopaallsheepvisitsday$Var1 == "BHS_1737") | (nopaallsheepvisitsday$Var1 == "BHS_1740") | (nopaallsheepvisitsday$Var1 == "BHS_1741") | (nopaallsheepvisitsday$Var1 == "BHS_1738") | (nopaallsheepvisitsday$Var1 == "BHS_1736") | (nopaallsheepvisitsday$Var1 == "BHS_1739"), ]
+# Nopah only has up to 2 visits in a day, so only need to change 2 to 1.
+nopaallsheepvisitsday1$Freq[nopaallsheepvisitsday1$Freq == 2] <- 1
+nopaindsheepvisitperday <- as.data.frame(tapply(nopaallsheepvisitsday1$Freq, list(nopaallsheepvisitsday1$Var2), sum))
+View(nopaindsheepvisitperday)
+nopaindsheepvisitperday <- cbind(rownames(nopaindsheepvisitperday), data.frame(nopaindsheepvisitperday, row.names = NULL))
+names(nopaindsheepvisitperday)[names(nopaindsheepvisitperday) == "rownames(nopaindsheepvisitperday)"] <- "Date"
+names(nopaindsheepvisitperday)[names(nopaindsheepvisitperday) == "tapply.nopaallsheepvisitsday1.Freq..list.nopaallsheepvisitsday1.Var2..."] <- "NumIndSheep"
+nopaindsheepvisitperday$Date <- as.Date(nopaindsheepvisitperday$Date, format = "%Y-%m-%d")
+# Need to input days that have zero observations, as well as the NA days.
+nopaindsheepvisitperday1 <- nopaindsheepvisitperday[(nopaindsheepvisitperday$Date != "2019-06-25") & (nopaindsheepvisitperday$Date != "2019-08-07"), ]
+nopadatena <- read.csv("NopaNAIndSheepVisits1620.csv", header= TRUE, sep = ",")
+nopadatena$Date <- as.Date(nopadatena$Date, format = "%Y-%m-%d")
+nopadatena$NumIndSheep <- as.numeric(nopadatena$NumIndSheep)
+nopaindsheepvisitperday2 <- rbind(nopaindsheepvisitperday1, nopadatena)
+library(ggplot2)
+plotnopasheepnum <- ggplot(data = nopaindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Nopah") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 6)
+
+# CASTLE-PIUTE
+
+cmprallsheepvisitsday <- as.data.frame(table(cmprcutobs$KI_Known_ID, cmprcutobs$GO_Date))
+# Also due to the lack of coverage in the Castle Piutes along the southern stream, I limited the analysis to bighorn that located in the mine area (1730, 1733, 1734, 1728 - which doesn't have a working GPS collar).
+cmprallsheepvisitsday1 <- cmprallsheepvisitsday[(cmprallsheepvisitsday$Var1 == "BHS_1730") | (cmprallsheepvisitsday$Var1 == "BHS_1733") | (cmprallsheepvisitsday$Var1 == "BHS_1734") | (cmprallsheepvisitsday$Var1 == "BHS_1728"), ]
+# CMPR only has up to 2 visits in a day, so only need to change 2 to 1.
+cmprallsheepvisitsday1$Freq[cmprallsheepvisitsday1$Freq == 2] <- 1
+cmprindsheepvisitperday <- as.data.frame(tapply(cmprallsheepvisitsday1$Freq, list(cmprallsheepvisitsday1$Var2), sum))
+cmprindsheepvisitperday <- cbind(rownames(cmprindsheepvisitperday), data.frame(cmprindsheepvisitperday, row.names = NULL))
+names(cmprindsheepvisitperday)[names(cmprindsheepvisitperday) == "rownames(cmprindsheepvisitperday)"] <- "Date"
+names(cmprindsheepvisitperday)[names(cmprindsheepvisitperday) == "tapply.cmprallsheepvisitsday1.Freq..list.cmprallsheepvisitsday1.Var2..."] <- "NumIndSheep"
+cmprindsheepvisitperday$Date <- as.Date(cmprindsheepvisitperday$Date, format = "%Y-%m-%d")
+# There were no dates that at the end of camera periods that needed to be deleted for the Castle Piutes.
+cmprdatena <- read.csv("CmprNAIndSheepVisits1820.csv", header = TRUE, sep = ",")
+cmprdatena$Date <- as.Date(cmprdatena$Date, format = "%Y-%m-%d")
+cmprdatena$NumIndSheep <- as.numeric(cmprdatena$NumIndSheep)
+cmprindsheepvisitperday2 <- rbind(cmprindsheepvisitperday, cmprdatena)
+library(ggplot2)
+plotcmprnumsheep <- ggplot(data = cmprindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Castle Piute") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 4)
+
+# Getting all plots in same file
+# library(gridExtra)
+# grid.arrange(plotmarbnumsheep, plotsbrsnumsheep, plotnopasheepnum, plotcmprnumsheep, nrow = 2, top = "Number of Individual Sheep Coming to Water by Day")
+
+```
+
+I then made figures of the percent of individual sheep coming into water by day. Given the extreme difference in the number of sheep between different mountain ranges, I also included the absolute number of sheep coming in as a secondary y axis. For the Marbles, the absolute number of collared sheep decreases towards the end of the summer due to multiple mortalities.
+
+```{r}
+
+# MARBLES
+# Had to change the total number because sheep died.
+
+marbindsheepvisitperday1$TotalNumSheep <- NA
+marbindsheepvisitperday1$TotalNumSheep <- as.character(marbindsheepvisitperday1$TotalNumSheep)
+marbindsheepvisitperday1$TotalNumSheep[(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` <= as.Date("2019-06-12"))] <- 32
+marbindsheepvisitperday1$TotalNumSheep[(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` >= as.Date("2019-06-13")) & (marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` <= as.Date("2019-08-04"))] <- 31
+marbindsheepvisitperday1$TotalNumSheep[(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` >= as.Date("2019-08-05"))] <- 30
+marbindsheepvisitperday1$TotalNumSheep <- as.numeric(marbindsheepvisitperday1$TotalNumSheep)
+
+marbindsheepvisitperday1$Percentvisited <- (marbindsheepvisitperday1$visits / marbindsheepvisitperday1$TotalNumSheep)
+library(ggplot2)
+plotmarbpercentsheep <- ggplot(data = marbindsheepvisitperday1, aes(x = `rownames(marbindsheepvisitperday)`, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Marbles (n = 32*)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotmarbpercentsheep1 <- plotmarbpercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 32, name = "Number of Collared Sheep"))
+print(plotmarbpercentsheep1)
+
+# SOUTH BRISTOLS
+sbrsindsheepvisitperday2$TotalNumSheep <- 24
+sbrsindsheepvisitperday2$Percentvisited <- (sbrsindsheepvisitperday2$NumIndSheep / sbrsindsheepvisitperday2$TotalNumSheep)
+library(ggplot2)
+plotsbrspercentsheep <- ggplot(data = sbrsindsheepvisitperday2, aes(x = Date, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("South Bristols (n = 24)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotsbrspercentsheep1 <- plotsbrspercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 24, name = "Number of Collared Sheep"))
+print(plotsbrspercentsheep1)
+
+# NOPAH
+
+nopaindsheepvisitperday2$Percentvisited <- (nopaindsheepvisitperday2$NumIndSheep / 6)
+plotnopapercentsheep <- ggplot(data = nopaindsheepvisitperday2, aes(x = Date, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Nopah (n = 6)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotnopapercentsheep1 <- plotnopapercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 6, name = "Number of Collared Sheep"))
+print(plotnopapercentsheep1)
+
+# CASTLE PIUTE
+cmprindsheepvisitperday2$Percentvisited <- (cmprindsheepvisitperday2$NumIndSheep / 4)
+plotcmprpercentsheep <- ggplot(data = cmprindsheepvisitperday2, aes(x = Date, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Castle Piute (n = 4)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotcmprpercentsheep1 <- plotcmprpercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 4, name = "Number of Collared Sheep"))
+print(plotcmprpercentsheep1)
+
+library(gridExtra)
+grid.arrange(plotmarbpercentsheep1, plotsbrspercentsheep1, plotnopapercentsheep1, plotcmprpercentsheep1, nrow = 2, top = "Percent & Number of Individual Sheep Coming to Water by Day")
+# grid.arrange(plotmarbnumsheep, plotsbrsnumsheep, plotnopasheepnum, plotcmprnumsheep, nrow = 2, top = "Number of Individual Sheep Coming to Water by Day")
+
+```
+
+I then made figures of the mean number of visits per day by collared sheep. The error bars are the standard deviations around the mean for a given day.
+
+```{r}
+# Mean Number of Visits Per Day for all sheep (and Standard Deviations)
+ 
+# MARBLES
+
+# I deleted the start and end days that weren't fully covered.
+Marbcutobsrd <- Marbcutobs[(Marbcutobs$GO_Date != "2019-06-12") & (Marbcutobs$GO_Date != "2019-06-18") & (Marbcutobs$GO_Date != "2019-06-30") & (Marbcutobs$GO_Date != "2019-07-10") & (Marbcutobs$GO_Date != "2019-07-17") & (Marbcutobs$GO_Date != "2019-07-25") & (Marbcutobs$GO_Date != "2019-08-04") & (Marbcutobs$GO_Date != "2019-08-06") & (Marbcutobs$GO_Date != "2019-08-10"), ]
+
+# In order to calculate the number of visits that each sheep had to water on a given day, I duplicated the rows with multiple visits in a single observation. If an observation had three visits in it, I duplicated the row 3x.
+
+# The Marbles had no observations with multiple visits once cut to the appropriate dates.
+
+marballrd <- as.data.frame(table(Marbcutobsrd$KI_Known_ID, Marbcutobsrd$GO_Date))
+
+marballrd1 <- marballrd[(marballrd$Var1 == "BHS_1367") |  (marballrd$Var1 == "BHS_1365") | (marballrd$Var1 == "BHS_1361") | (marballrd$Var1 == "BHS_1362") | (marballrd$Var1 == "BHS_1357") | (marballrd$Var1 == "BHS_1416") | (marballrd$Var1 == "BHS_1421") | (marballrd$Var1 == "BHS_1581") | (marballrd$Var1 == "BHS_1577") | (marballrd$Var1 == "BHS_1574") | (marballrd$Var1 == "BHS_1576") | (marballrd$Var1 == "BHS_1583") | (marballrd$Var1 == "BHS_1584") | (marballrd$Var1 == "BHS_1585") | (marballrd$Var1 == "BHS_1587") | (marballrd$Var1 == "BHS_1582") | (marballrd$Var1 == "BHS_1575") | (marballrd$Var1 == "BHS_1592") | (marballrd$Var1 == "BHS_1594") | (marballrd$Var1 == "BHS_1420") | (marballrd$Var1 == "BHS_1493") | (marballrd$Var1 == "BHS_1494") | (marballrd$Var1 == "BHS_1590") | (marballrd$Var1 == "BHS_1591") | (marballrd$Var1 == "BHS_1682") | (marballrd$Var1 == "BHS_1683") | (marballrd$Var1 == "BHS_1684") | (marballrd$Var1 == "BHS_1366") | (marballrd$Var1 == "BHS_1497") | (marballrd$Var1 == "BHS_1588") | (marballrd$Var1 == "BHS_1595") | (marballrd$Var1 == "BHS_1589"), ]
+# Adding in sheep that never visited water all summer
+Marbinsert1497 <- read.csv("Marbinsert1497.csv", header = TRUE, sep = ",")
+marballrd1 <- rbind(marballrd1, Marbinsert1497)
+
+marbindrd <- as.data.frame(tapply(marballrd1$Freq, list(marballrd1$Var2), mean))
+marbindrd$sd <- tapply(marballrd1$Freq, list(marballrd1$Var2), sd)
+marbindrd <- cbind(rownames(marbindrd), data.frame(marbindrd, row.names = NULL))
+
+marbna2 <- read.csv("MarbNAv21120.csv", header = TRUE, sep = ",")
+marbna2$tapply.marballrd.Freq..list.marballrd.Var2.mean[marbna2$tapply.marballrd.Freq..list.marballrd.Var2.mean == "#N/A"] <- NA
+marbna2$sd.tapply.marballrd.Freq..list.marballrd.Var2...sd.[marbna2$sd.tapply.marballrd.Freq..list.marballrd.Var2...sd. == "#N/A"] <- NA
+names(marbna2)[names(marbna2) == "rownames.marbindrd."] <- "rownames(marbindrd)"
+names(marbna2)[names(marbna2) == "tapply.marballrd.Freq..list.marballrd.Var2.mean"] <- "tapply.marballrd.Freq..list.marballrd.Var2...mean."
+names(marbna2)[names(marbna2) == "sd.tapply.marballrd.Freq..list.marballrd.Var2...sd."] <- "sd"
+
+names(marbindrd)[names(marbindrd) == "tapply.marballrd1.Freq..list.marballrd1.Var2...mean."] <- "visits"
+names(marbna2)[names(marbna2) == "tapply.marballrd.Freq..list.marballrd.Var2...mean."] <- "visits"
+
+marbindrd11 <- rbind(marbindrd, marbna2)
+marbindrd11$visits <- as.numeric(marbindrd11$visits)
+marbindrd11$sd <- as.numeric(marbindrd11$sd)
+marbindrd11$`rownames(marbindrd)` <- as.Date(marbindrd11$`rownames(marbindrd)` , "%Y-%m-%d")
+library(ggplot2)
+p <- ggplot(data = marbindrd11, aes(x = `rownames(marbindrd)`, y = visits)) + geom_point() + geom_errorbar(aes(ymin = visits - sd, ymax = visits + sd), width = .2) + labs(title = "Marbles (n = 32*)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(p)
+
+# An Attempt to make it boxplots ggplot(data = marbindrd11, aes(x = `rownames(marbindrd)`, y = visits)) + geom_boxplot((aes(group = cut_width(`rownames(marbindrd)`, 1))
+
+# SOUTH BRISTOLS
+
+BrsScutobsrd <- BrsScutobs[(BrsScutobs$GO_Date != "2019-06-04") & (BrsScutobs$GO_Date != "2019-06-16") & (BrsScutobs$GO_Date != "2019-06-18") & (BrsScutobs$GO_Date != "2019-07-29") & (BrsScutobs$GO_Date != "2019-08-01") & (BrsScutobs$GO_Date != "2019-08-12"), ]
+
+# In order to calculate the number of visits that each sheep had to water on a given day, I duplicated the rows with multiple visits in a single observation. If an observation had three visits in it, I duplicated the row 3x.
+
+# Divided the observations up into how many visits/observation.
+BrsSonevisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime) == FALSE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime2) == TRUE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime3) == TRUE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == TRUE), ]
+BrsStwovisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime2) == FALSE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime3) == TRUE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == TRUE), ]
+BrsSthreevisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime3) == FALSE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == TRUE),]
+BrsSfourvisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == FALSE) ,]
+#Duplicated the rows
+BrsStwovisitdup <-  do.call("rbind", replicate(2, BrsStwovisitperobs, simplify = FALSE))
+BrsSthreevisitdup <- do.call("rbind", replicate(3, BrsSthreevisitperobs, simplify = FALSE))
+BrsSfourvisitdup <- do.call("rbind", replicate(4, BrsSfourvisitperobs, simplify = FALSE))
+# Combining these duplicated dataframes
+BrsScutobsrdwithdups <- rbind(BrsSonevisitperobs, BrsStwovisitdup, BrsSthreevisitdup, BrsSfourvisitdup)
+sbrsallrd <- as.data.frame(table(BrsScutobsrdwithdups$KI_Known_ID, BrsScutobsrdwithdups$GO_Date))
+# I double-checked that the table function did not remove the duplicates before calculation. It didn't, so this worked.
+# tocompare <- as.data.frame(table(BrsScutobsrd$KI_Known_ID, BrsScutobsrd$GO_Date))
+sbrsallrd1 <- sbrsallrd[(sbrsallrd$Var1 == "BHS_1330") | (sbrsallrd$Var1 == "BHS_1337") | (sbrsallrd$Var1 == "BHS_1334") | (sbrsallrd$Var1 == "BHS_1329") | (sbrsallrd$Var1 == "BHS_1328") | (sbrsallrd$Var1 == "BHS_1333") | (sbrsallrd$Var1 == "BHS_1425") | (sbrsallrd$Var1 == "BHS_1426") | (sbrsallrd$Var1 == "BHS_1489") | (sbrsallrd$Var1 == "BHS_1491") | (sbrsallrd$Var1 == "BHS_1578") | (sbrsallrd$Var1 == "BHS_1579") | (sbrsallrd$Var1 == "BHS_1580") | (sbrsallrd$Var1 == "BHS_1596") | (sbrsallrd$Var1 == "BHS_1599") | (sbrsallrd$Var1 == "BHS_1687") | (sbrsallrd$Var1 == "BHS_1486") | (sbrsallrd$Var1 == "BHS_1490") | (sbrsallrd$Var1 == "BHS_1492") | (sbrsallrd$Var1 == "BHS_1428") | (sbrsallrd$Var1 == "BHS_1685") | (sbrsallrd$Var1 == "BHS_1686") | (sbrsallrd$Var1 == "BHS_1688") | (sbrsallrd$Var1 == "BHS_1689"), ]
+sbrsindrd <- as.data.frame(tapply(sbrsallrd1$Freq, list(sbrsallrd1$Var2), mean))
+sbrsindrd$sd <- tapply(sbrsallrd1$Freq, list(sbrsallrd1$Var2), sd)
+sbrsindrd <- cbind(rownames(sbrsindrd), data.frame(sbrsindrd, row.names = NULL))
+names(sbrsindrd)[names(sbrsindrd) == "rownames(sbrsindrd)"] <- "Date"
+names(sbrsindrd)[names(sbrsindrd) == "tapply.sbrsallrd1.Freq..list.sbrsallrd1.Var2...mean."] <- "Meannumvisits"
+sbrsna2 <- read.csv("SBrsNAv21520.csv", header = TRUE, sep = ",")
+sbrsrd11 <- rbind(sbrsindrd, sbrsna2)
+sbrsrd11$Meannumvisits <- as.numeric(sbrsrd11$Meannumvisits)
+sbrsrd11$sd <- as.numeric(sbrsrd11$sd)
+sbrsrd11$Date <- as.Date(sbrsrd11$Date, "%Y-%m-%d")
+library(ggplot2)
+sbrsrd11plot <- ggplot(data = sbrsrd11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = .2) + labs(title = "South Bristols (n = 24)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(sbrsrd11plot)
+
+#NOPAH
+
+nopacutobsrd <- nopacutobs[(nopacutobs$GO_Date != "2019-06-06") & (nopacutobs$GO_Date != "2019-06-13") & (nopacutobs$GO_Date != "2019-06-25") & (nopacutobs$GO_Date != "2019-07-08") & (nopacutobs$GO_Date != "2019-07-16") & (nopacutobs$GO_Date != "2019-07-29") & (nopacutobs$GO_Date != "2019-08-07"), ]
+nopaallrd <- as.data.frame(table(nopacutobsrd$KI_Known_ID, nopacutobsrd$GO_Date))
+nopaallrd1 <- nopaallrd[(nopaallrd$Var1 == "BHS_1737") | (nopaallrd$Var1 == "BHS_1740") | (nopaallrd$Var1 == "BHS_1741") | (nopaallrd$Var1 == "BHS_1738") | (nopaallrd$Var1 == "BHS_1736") | (nopaallrd$Var1 == "BHS_1739"), ]
+nopaindrd <- as.data.frame(tapply(nopaallrd1$Freq, list(nopaallrd1$Var2), mean))
+nopaindrd$sd <- tapply(nopaallrd1$Freq, list(nopaallrd1$Var2), sd)
+nopaindrd <- cbind(rownames(nopaindrd), data.frame(nopaindrd, row.names = NULL))
+names(nopaindrd)[names(nopaindrd) == "rownames(nopaindrd)"] <- "Date"
+names(nopaindrd)[names(nopaindrd) == "tapply.nopaallrd1.Freq..list.nopaallrd1.Var2...mean."] <- "Meannumvisits"
+# I then needed to add in both the NA time periods and the mean = zero time periods.
+nopana2 <- read.csv("NopaNAZerov21620.csv", header = TRUE, sep = ",")
+nopard11 <- rbind(nopaindrd, nopana2)
+nopard11$Meannumvisits <- as.numeric(nopard11$Meannumvisits)
+nopard11$sd <- as.numeric(nopard11$sd)
+nopard11$Date <- as.Date(nopard11$Date, "%Y-%m-%d")
+library(ggplot2)
+nopard11plot <- ggplot(data = nopard11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = 0.2) + labs(title = "Nopah (n = 6)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(nopard11plot)
+
+# CASTLE PIUTE
+
+# Cmpr data already good for start and end dates based on decisions made while making the previous figures.
+cmprallrd <- as.data.frame(table(cmprcutobs$KI_Known_ID, cmprcutobs$GO_Date))
+cmprallrd1 <- cmprallrd[(cmprallrd$Var1 == "BHS_1730") | (cmprallrd$Var1 == "BHS_1733") | (cmprallrd$Var1 == "BHS_1734") | (cmprallrd$Var1 == "BHS_1728"), ]
+cmprindrd <- as.data.frame(tapply(cmprallrd1$Freq, list(cmprallrd1$Var2), mean))
+cmprindrd$sd <- tapply(cmprallrd1$Freq, list(cmprallrd1$Var2), sd)
+cmprindrd <- cbind(rownames(cmprindrd), data.frame(cmprindrd, row.names = NULL))
+names(cmprindrd)[names(cmprindrd) == "rownames(cmprindrd)"] <- "Date"
+names(cmprindrd)[names(cmprindrd) == "tapply.cmprallrd1.Freq..list.cmprallrd1.Var2...mean."] <- "Meannumvisits"
+cmprna2 <- read.csv("CmprNAZerov21820.csv", header = TRUE, sep = ",")
+cmprrd11 <- rbind(cmprindrd, cmprna2)
+cmprrd11$Meannumvisits <- as.numeric(cmprrd11$Meannumvisits)
+cmprrd11$sd <- as.numeric(cmprrd11$sd)
+cmprrd11$Date <- as.Date(cmprrd11$Date, "%Y-%m-%d")
+library(ggplot2)
+cmprrd11plot <- ggplot(data = cmprrd11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = 0.2) + labs(title = "Castle Piute (n = 4)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(cmprrd11plot)
+
+library(gridExtra)
+grid.arrange(p, sbrsrd11plot, nopard11plot, cmprrd11plot, nrow = 2, top = "Mean Number of Visits Per Day Given All Collared Sheep")
+```
+
+I then ran statistics associated with the previous figures. In the Marbles, there was a significant difference in the percent of collared sheep visiting water on a given day by month between May and June/July/August, though not among June, July, and August. In the South Bristols, there was a significant difference between July and August, and between June and August, thought not between June and July. In the Nopahs, June and July were not significant different, though they were both different from August. In the Castle Piutes, the only significant differences between months were between May and July, and May and August. Whether two months were significantly different on the mean number of visits to water on a given day was exactly the same as whether two months were significantly different in the percent of collared sheep visiting on a given day by month. To me, this suggests that the number of visits was not significantly different between different individual sheep.
+
+***The figures of the 'Mean Number of Visits to Water on a Given Day by Month' and 'Percent of Individual Sheep that Visited Water on a Given Day by Month' are exceedingly similar. When I double-checked how I calculated these, I didn't find a problem. Can someone double check me? If this is true, it suggests that there was basically no different in the number of visits to water between different sheep...
+
+There was a significant difference in the percentage of collared sheep coming into water between mountain ranges. All populations were significantly different from each other except the Marbles from the South Bristols. There was also a significant difference in the number of visitations to water between mountain ranges. All populations were significantly different from each other except the Marbles and the South Bristols, and the Castle Piutes and Nopah.
+
+```{r}
+## whether there is a significant difference in the percentage of collared sheep visiting water among months within each mountain range ##
+
+# Marbles
+marbindsheepvisitperday1$Month <- month(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)`)
+qqnorm(marbindsheepvisitperday1$Percentvisited)
+qqline(marbindsheepvisitperday1$Percentvisited)
+hist(marbindsheepvisitperday1$Percentvisited)
+# slightly left skewed?
+boxplot(Percentvisited ~ Month, data = marbindsheepvisitperday1, main = "Marbles (n = 31*)", ylab = "Percent of Individual Sheep that Visited Water")
+marbindsheepvisitperday1$Month <- as.factor(marbindsheepvisitperday1$Month)
+PercentMonthMarb <- aov(formula = Percentvisited ~ Month, data = marbindsheepvisitperday1)
+summary.lm(PercentMonthMarb)
+TukeyHSD(PercentMonthMarb)
+# $Month
+#           diff         lwr       upr     p adj
+# 6-5 0.29677419  0.16952135 0.4240270 0.0000023
+# 7-5 0.36344086  0.22740185 0.4994799 0.0000002
+# 8-5 0.38709677  0.23500054 0.5391930 0.0000004
+# 7-6 0.06666667 -0.04088161 0.1742149 0.3517407
+# 8-6 0.09032258 -0.03693026 0.2175754 0.2394620
+# 8-7 0.02365591 -0.11238310 0.1596949 0.9650476
+
+# South Bristols
+library(lubridate)
+sbrsindsheepvisitperday2$Month <- month(sbrsindsheepvisitperday2$Date)
+#Having trouble getting this to show up 'inline' in Markdown, but qq plot looks good.
+qqnorm(sbrsindsheepvisitperday2$NumIndSheep)
+qqline(sbrsindsheepvisitperday2$NumIndSheep)
+hist(sbrsindsheepvisitperday2$NumIndSheep)
+boxplot(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2, main = "South Bristols (n = 24)", ylab = "Percent of Individual Sheep that Visited Water")
+bartlett.test(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2)
+# p value = 0.7447
+sbrsindsheepvisitperday2$Month <- as.factor(sbrsindsheepvisitperday2$Month)
+NISMonth <- aov(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2)
+summary.lm(NISMonth)
+# p-value = 0.01271
+TukeyHSD(NISMonth)
+#          diff         lwr      upr     p adj
+# 7-6 0.7531056 -1.25106927 2.757280 0.6400796
+# 8-6 3.4173913  0.71973569 6.115047 0.0095915
+# 8-7 2.6642857  0.04063367 5.287938 0.0457927
+# South Bristols significant
+
+PercentMonthsbrs <- aov(formula = Percentvisited ~ Month, data = sbrsindsheepvisitperday2)
+summary.lm(PercentMonthsbrs)
+TukeyHSD(PercentMonthsbrs)
+#          diff          lwr       upr     p adj
+# 7-6 0.02789280 -0.046335899 0.1021215 0.6400796
+# 8-6 0.12657005  0.026656877 0.2264832 0.0095915
+# 8-7 0.09867725  0.001504951 0.1958495 0.0457927
+
+# ANOVA on actual numbers and percentages yields the same exact result.
+
+# Nopah - very few sheep so results may not mean much?
+nopaindsheepvisitperday2$Month <- month(nopaindsheepvisitperday2$Date)
+qqnorm(nopaindsheepvisitperday2$NumIndSheep)
+qqline(nopaindsheepvisitperday2$NumIndSheep)
+hist(nopaindsheepvisitperday2$NumIndSheep)
+# right-skewed b/c very small sample size
+boxplot(Percentvisited ~ Month, data = nopaindsheepvisitperday2, main = "Nopah (n = 6)", ylab = "Percent of Individual Sheep that Visited Water")
+nopaindsheepvisitperday2$Month <- as.factor(nopaindsheepvisitperday2$Month)
+PercentMonthNopa <- aov(formula = Percentvisited ~ Month, data = nopaindsheepvisitperday2)
+summary.lm(PercentMonthNopa)
+# p-value: 1.247e-09
+TukeyHSD(PercentMonthNopa)
+#           diff        lwr       upr     p adj
+# 7-6 0.05555556 -0.0339505 0.1450616 0.2945005
+# 8-6 0.41666667  0.2946172 0.5387161 0.0000000
+# 8-7 0.36111111  0.2497894 0.4724329 0.0000000
+
+# Castle Piutes
+cmprindsheepvisitperday2$Month <- month(cmprindsheepvisitperday2$Date)
+qqnorm(cmprindsheepvisitperday2$NumIndSheep)
+qqline(cmprindsheepvisitperday2$NumIndSheep)
+hist(cmprindsheepvisitperday2$NumIndSheep)
+# right-skewed b/c very small sample size
+boxplot(Percentvisited ~ Month, data = cmprindsheepvisitperday2, main = "Castle Piutes (n = 4)", ylab = "Percent of Individual Sheep that Visited Water")
+cmprindsheepvisitperday2$Month <- as.factor(cmprindsheepvisitperday2$Month)
+PercentMonthCMPR <- aov(formula = Percentvisited ~ Month, data = cmprindsheepvisitperday2)
+summary.lm(PercentMonthCMPR)
+# p-value: 0.01747
+TukeyHSD(PercentMonthCMPR)
+#           diff          lwr       upr     p adj
+# 6-5 0.25000000 -0.147049891 0.6470499 0.3173379
+# 7-5 0.43750000 -0.009816973 0.8848170 0.0565871
+# 8-5 0.45833333  0.061283442 0.8553832 0.0202925
+# 7-6 0.18750000 -0.273172651 0.6481727 0.6675089
+# 8-6 0.20833333 -0.203704812 0.6203715 0.5018073
+# 8-7 0.02083333 -0.439839317 0.4815060 0.9992381
+
+
+par(mfrow = c(2,2))
+#title = "Percent of Individual Sheep that Visited Water by Month")
+boxplot(Percentvisited ~ Month, data = marbindsheepvisitperday1, main = "Marbles (n = 31*)", ylab = "% of Individual Sheep")
+boxplot(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2, main = "South Bristols (n = 24)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = nopaindsheepvisitperday2, main = "Nopah (n = 6)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = cmprindsheepvisitperday2, main = "Castle Piutes (n = 4)", ylab = "% of Individual Sheep")
+title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
+
+
+## whether there is a significant difference in the mean number of visitations of collared sheep visiting water among months within each mountain range ##
+
+
+library(lubridate)
+marbindrd11$Month <- month(marbindrd11$`rownames(marbindrd)`)
+qqnorm(marbindrd11$visits)
+qqline(marbindrd11$visits)
+hist(marbindrd11$visits)
+boxplot(visits ~ Month, data = marbindrd11, main = "Marbles (n = 32*)", ylab = "Mean Number of Visits")
+marbindrd11$Month <- as.factor(marbindrd11$Month)
+MeanVisitsMonthMarb <- aov(formula = visits ~ Month, data = marbindrd11)
+summary.lm(MeanVisitsMonthMarb)
+# p-value: 0.0002828
+TukeyHSD(MeanVisitsMonthMarb)
+#          diff         lwr       upr     p adj
+# 6-5 0.30213934  0.07318684 0.5310918 0.0054388
+# 7-5 0.39552316  0.15581593 0.6352304 0.0003925
+# 8-5 0.41789875  0.16192207 0.6738754 0.0004537
+# 7-6 0.09338382 -0.08339269 0.2701603 0.4984561
+# 8-6 0.11575941 -0.08251927 0.3140381 0.4110441
+# 8-7 0.02237559 -0.18823008 0.2329813 0.9918760
+
+# South Bristols
+sbrsrd11$Month <- month(sbrsrd11$Date)
+qqnorm(sbrsrd11$Meannumvisits)
+qqline(sbrsrd11$Meannumvisits)
+hist(sbrsrd11$Meannumvisits)
+boxplot(Meannumvisits ~ Month, data = sbrsrd11, main = "South Bristols (n = 24)", ylab = "Mean Number of Visits")
+sbrsrd11$Month <- as.factor(sbrsrd11$Month)
+MeanVisitsMonthSbrs <- aov(formula = Meannumvisits ~ Month, data = sbrsrd11)
+summary.lm(MeanVisitsMonthSbrs)
+# p-value: 0.001847
+TukeyHSD(MeanVisitsMonthSbrs)
+# 7-6 0.1035732 -0.05770139 0.2648478 0.2784047
+# 8-6 0.3200483  0.11436138 0.5257352 0.0011822
+# 8-7 0.2164751  0.01821764 0.4147325 0.0291954
+
+#Nopah
+nopard11$Month <- month(nopard11$Date)
+qqnorm(nopard11$Meannumvisits)
+qqline(nopard11$Meannumvisits)
+hist(nopard11$Meannumvisits)
+boxplot(Meannumvisits ~ Month, data = nopard11, main = "Nopah (n = 6)", ylab = "Mean Number of Visits")
+nopard11$Month <- as.factor(nopard11$Month)
+MeanVisitsMonthNopa <- aov(formula = Meannumvisits ~ Month, data = nopard11)
+summary.lm(MeanVisitsMonthNopa)
+#  p-value: 3.149e-09
+TukeyHSD(MeanVisitsMonthNopa)
+# 7-6 0.0500000 -0.07666386 0.1766639 0.6040199
+# 8-6 0.5261905  0.35972154 0.6926594 0.0000000
+# 8-7 0.4761905  0.32342811 0.6289528 0.0000000
+
+#Castle Piutes
+cmprrd11$Month <- month(cmprrd11$Date)
+qqnorm(cmprrd11$Meannumvisits)
+qqline(cmprrd11$Meannumvisits)
+hist(cmprrd11$Meannumvisits)
+boxplot(Meannumvisits ~ Month, data = cmprrd11, main = "Castle Piutes (n = 4)", ylab = "Mean Number of Visits")
+cmprrd11$Month <- as.factor(cmprrd11$Month)
+MeanVisitsMonthCmpr <- aov(formula = Meannumvisits ~ Month, data = cmprrd11)
+summary.lm(MeanVisitsMonthCmpr)
+# p-value: 0.02232
+TukeyHSD(MeanVisitsMonthCmpr)
+# 6-5 0.2916667 -0.14405020 0.7273835 0.2683879
+# 7-5 0.4375000 -0.05337924 0.9283792 0.0910373
+# 8-5 0.5000000  0.06428314 0.9357169 0.0211369
+# 7-6 0.1458333 -0.35970223 0.6513689 0.8484271
+# 8-6 0.2083333 -0.24383142 0.6604981 0.5767064
+# 8-7 0.0625000 -0.44303557 0.5680356 0.9851190
+
+# If not working, change visits to 'Meannumvisits' for Marbles
+par(mfrow = c(2,2))
+boxplot(Meannumvisits ~ Month, data = marbindrd11, main = "Marbles (n = 32*)", ylab = "Mean Number of Visits")
+boxplot(Meannumvisits ~ Month, data = sbrsrd11, main = "South Bristols (n = 24)", ylab = "Mean Number of Visits")
+boxplot(Meannumvisits ~ Month, data = nopard11, main = "Nopah (n = 6)", ylab = "Mean Number of Visits")
+boxplot(Meannumvisits ~ Month, data = cmprrd11, main = "Castle Piutes (n = 4)", ylab = "Mean Number of Visits")
+title("Mean Number of Visits to Water on a Given Day by Month", line = -1, outer = TRUE)
+
+## whether there is a significant difference in the percent of collared sheep visiting water between mountain ranges ##
+
+# Need to change the names of the rows for Marb
+names(marbindsheepvisitperday1)[names(marbindsheepvisitperday1) == "rownames(marbindsheepvisitperday)"] <- "Date"
+names(marbindsheepvisitperday1)[names(marbindsheepvisitperday1) == "visits"] <- "NumIndSheep"
+marbindsheepvisitperday1$datenum <- NULL
+library(lubridate)
+marbindsheepvisitperday1$Month <- month(marbindsheepvisitperday1$Date)
+# Need to add a row in all four data sets saying what mountain range it is
+marbindsheepvisitperday1$MtnRange <- "Marb"
+sbrsindsheepvisitperday2$MtnRange <- "BrsS"
+nopaindsheepvisitperday2$MtnRange <- "Nopa"
+cmprindsheepvisitperday2$MtnRange <- "CMPR"
+marbindsheepvisitperday1$MtnRange <- as.factor(marbindsheepvisitperday1$MtnRange)
+sbrsindsheepvisitperday2$MtnRange <- as.factor(sbrsindsheepvisitperday2$MtnRange)
+nopaindsheepvisitperday2$MtnRange <- as.factor(nopaindsheepvisitperday2$MtnRange)
+cmprindsheepvisitperday2$MtnRange <- as.factor(cmprindsheepvisitperday2$MtnRange)
+# then rbind the four mountain ranges
+nopaindsheepvisitperday2$TotalNumSheep <- 6
+cmprindsheepvisitperday2$TotalNumSheep <- 4
+allindsheepvisitperday <- rbind(marbindsheepvisitperday1, sbrsindsheepvisitperday2, nopaindsheepvisitperday2, cmprindsheepvisitperday2)
+qqnorm(allindsheepvisitperday$Percentvisited)
+qqline(allindsheepvisitperday$Percentvisited)
+# IS THIS HISTOGRAM OK?
+hist(allindsheepvisitperday$Percentvisited)
+boxplot(Percentvisited ~ MtnRange, data = allindsheepvisitperday, main = "Percent of Individual Sheep that Visited Water in a Given Day by Mountain Range", ylab = "Percent of Individual Sheep", xlab = "Mountain Range")
+allindsheepvisitperday$MtnRange <- as.factor(allindsheepvisitperday$MtnRange)
+PercentVisitMtnRange <- aov(Percentvisited ~ MtnRange, data = allindsheepvisitperday)
+summary.lm(PercentVisitMtnRange)
+#  p-value: < 2.2e-16
+TukeyHSD(PercentVisitMtnRange)
+#                   diff         lwr         upr     p adj
+# BrsS-Marb -0.006644472 -0.10476697  0.09147802 0.9980599
+# Nopa-Marb -0.356191495 -0.46494901 -0.24743398 0.0000000
+# CMPR-Marb -0.191813158 -0.31684832 -0.06677799 0.0005967
+# Nopa-BrsS -0.349547023 -0.44686256 -0.25223148 0.0000000
+# CMPR-BrsS -0.185168686 -0.30038982 -0.06994756 0.0002885
+# CMPR-Nopa  0.164378337  0.03997543  0.28878124 0.0042406
+
+
+## whether there is a significant difference in the number of visitations between mountain ranges ##
+names(marbindrd11)[names(marbindrd11) == "rownames(marbindrd)"] <- "Date"
+names(marbindrd11)[names(marbindrd11) == "visits"] <- "Meannumvisits"
+marbindrd11$MtnRange <- "Marb"
+sbrsrd11$MtnRange <- "BrsS"
+nopard11$MtnRange <- "Nopa"
+cmprrd11$MtnRange <- "CMPR"
+marbindrd11$MtnRange <- as.factor(marbindrd11$MtnRange)
+sbrsrd11$MtnRange <- as.factor(sbrsrd11$MtnRange)
+nopard11$MtnRange <- as.factor(nopard11$MtnRange)
+cmprrd11$MtnRange <- as.factor(cmprrd11$MtnRange)
+allindrd11 <- rbind(marbindrd11, sbrsrd11, nopard11, cmprrd11)
+qqnorm(allindrd11$Meannumvisits)
+qqline(allindrd11$Meannumvisits)
+hist(allindrd11$Meannumvisits)
+boxplot(Meannumvisits ~ MtnRange, data = allindrd11, main = "Mean Number of Visitations of Collared Bighorn to Water in a Given Day by Mountain Range", ylab = "Mean Number of Visitations", xlab = "Mountain Range")
+allindrd11$MtnRange <- as.factor(allindrd11$MtnRange)
+MeanVisitationMtnRange <- aov(Meannumvisits ~ MtnRange, data = allindrd11)
+summary.lm(MeanVisitationMtnRange)
+# p-value: 1.084e-15
+TukeyHSD(MeanVisitationMtnRange)
+#                  diff        lwr         upr     p adj
+# BrsS-Marb  0.08276173 -0.0457863  0.21130977 0.3424864
+# Nopa-Marb -0.37468619 -0.5184595 -0.23091286 0.0000000
+# CMPR-Marb -0.22707749 -0.3969096 -0.05724541 0.0036673
+# Nopa-BrsS -0.45744792 -0.5914880 -0.32340783 0.0000000
+# CMPR-BrsS -0.30983922 -0.4715145 -0.14816390 0.0000096
+# CMPR-Nopa  0.14760870 -0.0264174  0.32163479 0.1271620
+
+```
+
+
+```{r}
+# Whether there is a large spread in the number of individual visits between individual sheep
+
+## It is worth noting that I have not deleted replicate observations from Theresa from this dataset. So if a sheep went to 'Theresa Seep' and 'Theresa Drinker Box' within the same visit, it still counts as two visits to water. SHOULD I FIX THIS AT SOME POINT, OR SHOULD THESE COUNT AS SEPARATE OBSERVATIONS?
+# Also, Marbles has including the total, completely covered time frame (only includes complete days)
+# Note that the exact numbers are not comparable between mountain ranges b/c of different amounts of time that cameras were functioning within each range. Didn't use a modifer b/c comparing between ranges isn't what I'm interested in right now.
+
+MarbNumVisitbyID <- as.data.frame(table(Marbcutobsrd$KI_Known_ID))
+## Removing the two sheep that didn't live through the whole time period: BHS_1595 & BHS_1367
+MarbNumVisitbyID1 <- MarbNumVisitbyID[(MarbNumVisitbyID$Var1 == "BHS_1365") | (MarbNumVisitbyID$Var1 == "BHS_1361") | (MarbNumVisitbyID$Var1 == "BHS_1362") | (MarbNumVisitbyID$Var1 == "BHS_1357") | (MarbNumVisitbyID$Var1 == "BHS_1416") | (MarbNumVisitbyID$Var1 == "BHS_1421") | (MarbNumVisitbyID$Var1 == "BHS_1581") | (MarbNumVisitbyID$Var1 == "BHS_1577") | (MarbNumVisitbyID$Var1 == "BHS_1574") | (MarbNumVisitbyID$Var1 == "BHS_1576") | (MarbNumVisitbyID$Var1 == "BHS_1583") | (MarbNumVisitbyID$Var1 == "BHS_1584") | (MarbNumVisitbyID$Var1 == "BHS_1585") | (MarbNumVisitbyID$Var1 == "BHS_1587") | (MarbNumVisitbyID$Var1 == "BHS_1582") | (MarbNumVisitbyID$Var1 == "BHS_1575") | (MarbNumVisitbyID$Var1 == "BHS_1592") | (MarbNumVisitbyID$Var1 == "BHS_1594") | (MarbNumVisitbyID$Var1 == "BHS_1420") | (MarbNumVisitbyID$Var1 == "BHS_1493") | (MarbNumVisitbyID$Var1 == "BHS_1494") | (MarbNumVisitbyID$Var1 == "BHS_1590") | (MarbNumVisitbyID$Var1 == "BHS_1591") | (MarbNumVisitbyID$Var1 == "BHS_1682") | (MarbNumVisitbyID$Var1 == "BHS_1683") | (MarbNumVisitbyID$Var1 == "BHS_1684") | (MarbNumVisitbyID$Var1 == "BHS_1366") | (MarbNumVisitbyID$Var1 == "BHS_1497") | (MarbNumVisitbyID$Var1 == "BHS_1588") | (MarbNumVisitbyID$Var1 == "BHS_1589"), ]
+boxplot(MarbNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Marbles (n = 29)")
+summary(MarbNumVisitbyID1$Freq)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+#   2.00   22.00   25.00   25.41   30.00   46.00
+
+# South Bristols only covers complete days
+BrsSNumVisitbyID <- as.data.frame(table(BrsScutobsrdwithdups$KI_Known_ID))
+boxplot(BrsSNumVisitbyID$Freq, ylab = "Number of Visits", main = "South Bristols (n = 27)")
+summary(BrsSNumVisitbyID$Freq)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+#   2.00   23.00   35.00   36.48   54.00   78.00
+
+# Nopah
+NopaNumVisitbyID <- as.data.frame(table((nopacutobsrd$KI_Known_ID)))
+NopaNumVisitbyID1 <- NopaNumVisitbyID[(NopaNumVisitbyID$Var1 == "BHS_1737") | (NopaNumVisitbyID == "BHS_1740") | (NopaNumVisitbyID$Var1 == "BHS_1741") | (NopaNumVisitbyID$Var1 == "BHS_1738") | (NopaNumVisitbyID$Var1 == "BHS_1736") | (NopaNumVisitbyID$Var1 == "BHS_1739"),]
+boxplot(NopaNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Nopah (n = 6)")
+summary(NopaNumVisitbyID1$Freq)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's
+#    1.0     4.0     5.0     5.4     5.0    12.0
+
+CMPRNumVisitbyID <- as.data.frame(table((cmprcutobs$KI_Known_ID)))
+CMPRNumVisitbyID1 <- CMPRNumVisitbyID[(CMPRNumVisitbyID$Var1 == "BHS_1730") | (CMPRNumVisitbyID$Var1 == "BHS_1733") | (CMPRNumVisitbyID$Var1 == "BHS_1734") | (CMPRNumVisitbyID$Var1 == "BHS_1728"), ]
+boxplot(CMPRNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Castle Piute (n = 4)")
+summary(CMPRNumVisitbyID$Freq)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+# 0.0000  0.0000  0.0000  0.4085  0.0000 11.0000
+
+# Note - different mountain ranges are not comparable b/c are over different amounts of time. Just looking at spread within each mountain range.
+
+# Time between sheep coming into water
+
+BrsScutobslong <- BrsScutobs[(BrsScutobs$DateTimect >= as.POSIXct("2019-06-25 17:05:00") & BrsScutobs$DateTimect <= as.POSIXct("2019-07-29 10:36:00")), ]
+# 25 sheep
+# https://stackoverflow.com/questions/32999460/how-to-calculate-time-difference-with-previous-row-of-a-data-frame-by-group/32999651
+BrsScutobslong$DateTime <- as.POSIXct(BrsScutobslong$DateTime, format = )
+library(dplyr)
+BrsSlongtimedif <- BrsScutobslong %>%
+  arrange(KI_Known_ID, DateTimect) %>%
+  group_by(KI_Known_ID) %>%
+  mutate(Timediff = DateTimect - lag(DateTimect), diff_hours = as.numeric(Timediff, units = 'hours'))
+# mean(BrsSlongtimedif$diff_hours, na.rm = TRUE)
+# [1] 37.57339
+# boxplot(BrsSlongtimedif$diff_hours, ylab = "Time Between Visits to Water (hours)", main = "Time between Visits to Water for all Sheep")
+summary(BrsSlongtimedif$diff_hours)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's
+#  0.10   11.87   28.53   37.57   47.16  456.88      25
+qqnorm(BrsSlongtimedif$diff_hours)
+qqline(BrsSlongtimedif$diff_hours)
+shapiro.test(BrsSlongtimedif$diff_hours)
+# p-value < 2.2e-16 NOT NORMALLY DISTRIBUTED? Shouldn't use anova?
+hist(BrsSlongtimedif$diff_hours)
+# very right-skewed - log transform
+hist(log(BrsSlongtimedif$diff_hours))
+boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+# Looking at the non-logged boxplot, there is one sheep that is super off compared to the rest of them???
+BrsSdiffhoursindsheep <- aov(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+summary.lm(BrsSdiffhoursindsheep)
+# p-value: < 8.52e-16
+TukeyHSD(BrsSdiffhoursindsheep)
+# Just a few combos are significantly different?
+# DID I DO THIS RIGHT???
+
+# 276 combos - 36 of which are significant- 13% are significant
+# Combos that are significantly different:
+# BHS_1486 - BHS_1328
+# BHS_1337 - BHS_1329
+# 1486 - 1329
+# 1490 - 1329
+# 1596 - 1329
+# 1685 - 1329
+# 1486 - 1330
+# 1490 - 1330
+# 1683 - 1330
+# 1337 - 1333
+# 1486 - 1333
+# 1490 - 1333
+# 1596 - 1333
+# 1685 - 1333
+# 1688 - 1333
+# 1580 - 1337
+# 1486 - 1425
+# 1486 - 1426
+# 1490 - 1426
+# 1685 - 1426
+# 1489 - 1486
+# 1491 - 1486
+# 1492 - 1486
+# 1578 - 1486
+# 1580 - 1486
+# 1687 - 1486
+# 1490 - 1489
+# 1685 - 1489
+# 1492 - 1490
+# 1580 - 1490
+# 1687 - 1490
+# 1685 - 1492
+# 1596 - 1580
+# 1685 - 1580
+# 1688 - 1580
+# 1687 - 1685
+
+
+
+
+
+```
+
+Does it make sense to do these separately by mountain range???
+
+
+- whether there is a statistical difference in visitation between ewes and rams within mountain ranges - chi squared
+- whether there is a statistical difference in visitation between bighorn of different ages - chi-squared?
+
+
+```{r}
+# SEX
+
+# Marbles has 23 ewes and 8 rams of collared sheep
+nrow(Marbcutobsrd[Marbcutobsrd$KI_Sex == "F", ])
+#544 rows for F
+nrow(Marbcutobsrd[Marbcutobsrd$KI_Sex == "M", ])
+# 201 rows for M
+# nrow(Marbcutobs)
+# Checked that this was the total number of rows - it was.
+chisq.test(x = c(544, 201), p = c(23/31, 8/31))
+# X-squared = 0.53575, df = 1, p-value = 0.4642
+# No significant difference between males and females in Marbles.
+
+# South Bristols has 16 ewes and 8 rams.
+nrow(BrsScutobsrdwithdups[BrsScutobsrdwithdups$KI_Sex == "F", ])
+# 635 rows for F
+nrow(BrsScutobsrdwithdups[BrsScutobsrdwithdups$KI_Sex == "M", ])
+# 277 rows for M
+# nrow(BrsScutobsrdwithdups)
+# Checked that this was the total number of rows - it was.
+chisq.test(x = c(635, 277), p = c(16/24, 8/24))
+# X-squared = 3.597, df = 1, p-value = 0.05788
+# Though close to significant, still not significant
+
+# Nopah has 5 females and 1 male.
+nrow(nopacutobsrd[nopacutobsrd$KI_Sex == "F", ])
+# 22 rows for F
+nrow(nopacutobsrd[nopacutobsrd$KI_Sex == "M", ])
+# 5 rows for M
+# nrow(nopacutobs)
+# correct number of rows
+chisq.test(x = c(22, 5), p = c(5/6, 1/6))
+# There is a warning associated with the small sample size but:
+# X-squared = 0.066667, df = 1, p-value = 0.7963
+
+# Castle Piutes has 3 females and 1 male.
+View(cmprcutobs)
+cmprcutobs1 <- cmprcutobs[(cmprcutobs$KI_Known_ID == "BHS_1730") | (cmprcutobs$KI_Known_ID == "BHS_1733") | (cmprcutobs$KI_Known_ID == "BHS_1734") | (cmprcutobs$KI_Known_ID == "BHS_1728"), ]
+nrow(cmprcutobs1[cmprcutobs1$KI_Sex == "F", ])
+# 22 rows for F
+nrow(cmprcutobs1[cmprcutobs1$KI_Sex == "M", ])
+# 7 rows for M
+nrow(cmprcutobs1)
+# ONLY 26 ROWS - there are some NA's in sex here!
+# but there really is: 20 F, 6 M
+chisq.test(x = c(20, 6), p = c(3/4, 1/4))
+# X-squared = 0.051282, df = 1, p-value = 0.8208
+
+# There is not a significant difference in visitation by sex in any mountain range.
+
+# AGE
+
+# See BighornAgeSummer2019 for age calculations
+Marbcutobsrd$Age2019 <- NA
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1365"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1361"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1362"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1357"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1416"] <- 11
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1421"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1581"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1577"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1574"] <- 12
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1576"] <- 10
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1583"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1584"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1585"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1587"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1582"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1575"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1592"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1594"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1590"] <- 12
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1591"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1682"] <- 4
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1683"] <- 4
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1684"] <- 13
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1588"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1595"] <- 8
+# 1367, 1366, and 1497 were of unknown age
+table(Marbcutobsrd$Age2019[(Marbcutobsrd$KI_Known_ID != "BHS_1367") & (Marbcutobsrd$KI_Known_ID != "BHS_1366") & (Marbcutobsrd$KI_Known_ID != "BHS_1497")])
+#  4   7   8   9  10  11  12  13
+# 76 184 132 150  25  15  51  10
+chisq.test(x = c(76, 184, 132, 150, 25, 15, 51, 10), p = c(2/25, 6/25, 6/25, 6/25, 1/25, 1/25, 2/25, 1/25))
+# p-value = 1.176e-05
+# But is this really a significant finding? I'm question it.
+
+BrsScutobsrdwithdups$Age2019 <- NA
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1330"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1334"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1333"] <- 9
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1425"] <- 10
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1489"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1491"] <- 10
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1578"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1579"] <- 3
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1596"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1599"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1687"] <- 9
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1486"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1490"] <- 12
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1492"] <- 10
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1428"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1685"] <- 3
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1686"] <- 6
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1688"] <- 2
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1689"] <- 10
+table(BrsScutobsrdwithdups$Age2019)
+ # 2   3   6   7   8   9  10  12
+ # 58 101  23 239 120  48 103  54
+chisq.test(x = c(58, 101, 23, 239, 120, 48, 103, 54), p = c(1/19, 2/19, 1/19, 4/19, 4/19, 2/19, 4/19, 1/19))
+# X-squared = 109.61, df = 7, p-value < 2.2e-16
+# Could it be that middle-aged sheep are visiting water more often b/c they are more likely to have lambs make it to the summer? Is that even true???? Though ewes did not visit more than rams
+
+nopacutobsrd$Age2019 <- NA
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1737"] <- 3
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1740"] <- 2
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1741"] <- 8
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1738"] <- 2
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1736"] <- 3
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1739"] <- 5
+table(nopacutobsrd$Age2019)
+# 2  3  5  8
+# 16  5  5  1
+chisq.test( x = c(16, 5, 5, 1), p = c(2/6, 2/6, 1/6, 1/6))
+# X-squared = 10, df = 3, p-value = 0.01857
+# warning: Chi-squared approximation may be incorrect
+
+cmprcutobs1$Age2019 <- NA
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1730"] <- 5
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1733"] <- 9
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1734"] <- 7
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1728"] <- 9
+table(cmprcutobs1$Age2019)
+# 5  7  9
+# 4 11 11
+chisq.test(x = c(4, 11, 11), p = c(1/4, 1/4, 2/4))
+# X-squared = 4.3846, df = 2, p-value = 0.1117
+
+
+
+
+
+```
+
+- whether there is a significant difference in the amount of time spent drinking between sheep
+- whether there is a significant different in the number of visits by time of day
+- whether there is a significant difference in how often ewes with lambs come in vs. ewes without lambs
+- whether there is a significant difference in how often sheep in large groups come in vs. sheep in small groups come in
+
+
+```{r}
+# Decided to break the day down into 1-5, 5-9, 9-13, 13-17, 17-21, 21-1. This is b/c hottest time of day is 3pm, sunset during the midpoint during the study period (June 23rd) in the Mojave is at 8:05 pm, and sunrise during the midpoint during the study period in the Mojave is at 5:35 am
+
+# First need to put
+
+allrangetime <- rbind(Marbcutobsrd, BrsScutobsrdwithdups, nopacutobsrd, cmprcutobs1)
+allrangetime$timeofday <- allrangetime$KI_DG_FirstPhotoTime
+write.csv(allrangetime, 'allrangetime.csv')
+# Because it seemed easier to just transfer the times of the 2nd/3rd/4th visits in the few observations with multiple visits/observations into the same column by hand than write out a complicated code, I did just that.
+allrangetime1 <- read.csv("allrangetime.csv", header = TRUE, sep = ",")
+# View(allrangetime1)
+# Double-checked that everything was correct - it was
+allrangetime1$X.1 <- NULL
+allrangetime1$X.2 <- NULL
+allrangetime1$X.3 <- NULL
+allrangetime1$X.4 <- NULL
+allrangetime1$TimeBreaks <- NA
+allrangetime1$TimeBreaks <- as.character(allrangetime1$TimeBreaks)
+# There are empty cells for allrangetime1$Hour - need to go back through photos and fix these entries!
+library(lubridate)
+allrangetime1$timeofday <- hm(allrangetime1$timeofday)
+allrangetime1$Hour <- hour(allrangetime1$timeofday)
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 1) & (allrangetime1$Hour <= 4)] <- "1to5"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 5) & (allrangetime1$Hour <= 8)] <- "5to9"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 9) & (allrangetime1$Hour <= 12)] <- "9to13"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 13) & (allrangetime1$Hour <= 16)] <- "13to17"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 17) & (allrangetime1$Hour <= 20)] <- "17to21"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 21) | (allrangetime1$Hour <= 0)] <- "21to1"
+allrangetime1$TimeBreaks <- as.factor(allrangetime1$TimeBreaks)
+table(allrangetime1$TimeBreaks)
+# 13to17 17to21   1to5  21to1   5to9  9to13
+#   297    129     19     27    453    773
+slices <- c(19, 453, 773, 297, 129)
+lbls <- c("1 to 5", "5 to 9", "9 to 13", "13 to 17", "17 to 21")
+pie(slices, labels = lbls, main = "Number of Visits by Time of Day")
+
+
+```
+
+```{r}
+# NOPAH PLOT
+NopahData <- read.csv("NopahBighornVisitsSummer2019csv.csv", header = TRUE, sep = ",")
+View(NopahData)
+str(NopahData)
+library(tidyverse)
+library(lubridate)
+NopahData$DateAttempt <- ymd(NopahData$GO_Date)
+# Need to calculate number of visitations/day.
+visitationsbyday <- as.data.frame(table(NopahData$KI_Known_ID, NopahData$DateAttempt))
+View(visitationsbyday)
+str(visitationsbyday)
+colnames(visitationsbyday)[colnames(visitationsbyday) == "Var1"] <- "sheep"
+colnames(visitationsbyday)[colnames(visitationsbyday) == "Var2"] <- "date"
+colnames(visitationsbyday)[colnames(visitationsbyday) == "Freq"] <- "visits"
+
+test <- data.frame(date = rep(seq(from = as.Date("2019-06-06"), to = as.Date("2019-08-07"), "days"), 5), sheep = c(rep("BHS_1736", 63), rep("BHS_1737", 63), rep("BHS_1738", 63), rep("BHS_1739", 63), rep("BHS_1740", 63)))
+View(test)
+mergedvisit <- merge(test, visitationsbyday,by = c("sheep","date"), all = TRUE)
+View(mergedvisit)
+str(mergedvisit)
+mergedvisit$datenum <- as.numeric(mergedvisit$date)
+# for 6/6-6/13
+mergedvisit$visits[is.na(mergedvisit$visits) == TRUE & (18053 <= mergedvisit$datenum & mergedvisit$datenum <= 18060)] <- 0
+# For 6/25-7/8
+mergedvisit$visits[is.na(mergedvisit$visits) == TRUE & (18072 <= mergedvisit$datenum & mergedvisit$datenum <= 18085)] <- 0
+# For 7/19-8/7 **** NOte - 4 hour period on 7/29 when wasn't covered... shouldn't include 7/29?
+mergedvisit$visits[is.na(mergedvisit$visits) == TRUE & (18096 <= mergedvisit$datenum & mergedvisit$datenum <= 18115)] <- 0
+
+# Systematically jittering the results by sheep so can see them on the plot.
+
+mergedvisit$jitter <- mergedvisit$visits
+mergedvisit$jitter[mergedvisit$sheep == "BHS_1737"] <- (mergedvisit$jitter[mergedvisit$sheep == "BHS_1737"] + 0.05)
+mergedvisit$jitter[mergedvisit$sheep == "BHS_1736"] <- (mergedvisit$jitter[mergedvisit$sheep == "BHS_1736"] + 0.1)
+mergedvisit$jitter[mergedvisit$sheep == "BHS_1739"] <- (mergedvisit$jitter[mergedvisit$sheep == "BHS_1739"] - 0.05)
+mergedvisit$jitter[mergedvisit$sheep == "BHS_1740"] <- (mergedvisit$jitter[mergedvisit$sheep == "BHS_1740"] - 0.1)
+
+plot(jitter ~ date, data = mergedvisit, type = "p", col = mergedvisit$sheep, main = "Nopah", xlab = "Date", ylab = "Visitations of Surface Water per Day")
+# NEEDS TO BE FIXED legend(x = "topleft", legend = levels(mergedvisit$sheep), col = mergedvisit$sheep, cex = 1)
+
+
+
+
+
+
+
+
+
+# for(i in 2019-06-06:2019-08-07){if ((visitationsbyday$Freq != 1 OR 2) AND (visitationsbyday$Var1 == "BHS_1736" | "BHS_1737" | "BHS_1738" | "BHS_1739" | "BHS_1740") AND (visitationsbyday$Var2 == i)) {
+#          visitationsbyday$Freq == 0}}
+?merge
+# visitationsbyday <- count(NopahData$KI_Known_ID ~ NopahData$DateAttempt)
+# plot(KI_Known_ID ~ GO_Date, data = NopahData)
+# as.data.frame(table(count(nrow( NopahData[NopahData$KI_Known_ID == ""]))))
+# for
+
+# Attempt a different way:
+NopahData2 <- read.csv("NopahRearranged2.csv", header = TRUE, sep = ",")
+View(NopahData2)
+plot(Visitations ~ Date, data = NopahData2, type = "b")
+
+```
+
+
+
+```{r}
+# CASTLE PIUTE PLOT
+
+CMPRData <- read.csv("CMPRBighornVisitsSummer2019csv.csv", header = TRUE, sep = ",")
+View(CMPRData)
+str(CMPRData)
+CMPRData$DateAttempt <- ymd(CMPRData$GO_Date)
+CMPRvisitationsbyday <- as.data.frame(table(CMPRData$KI_Known_ID, CMPRData$DateAttempt))
+View(CMPRvisitationsbyday)
+str(CMPRvisitationsbyday)
+colnames(CMPRvisitationsbyday)[colnames(CMPRvisitationsbyday) == "Var1"] <- "sheep"
+colnames(CMPRvisitationsbyday)[colnames(CMPRvisitationsbyday) == "Var2"] <- "date"
+colnames(CMPRvisitationsbyday)[colnames(CMPRvisitationsbyday) == "Freq"] <- "visits"
+### test1 <- data.frame( date = rep(seq(from = as.Date("2019-05-23"), to = as.Date("2019-08-15"), "days"), ))
+
+# NEED TO DECIDE WHAT I'M DOING ABOUT STUPID PIUTE MTNS - SHEEP GOING BETWEEN PIUTE GUZZLER & SOUTH CREEK THING!!!!!
+```
+
+
+This is an attempt to make it so I can do the real number of visits, accounting for the difference between the number of observations and the number of visits.
+
+```{r}
+
+# df.expanded <- df[rep(row.names(df), df$freq), 1:2]
+
+```
+
+
+
+
+
+```{r}
+# SOUTH BRISTOLS PLOT
+
+BrsSData <- read.csv("BrsSBighornVisitsSummer2019csv.csv", header = TRUE, sep = ",")
+str(BrsSData)
+View(BrsSData)
+library(tidyverse)
+library(lubridate)
+BrsSData$DateAttempt <- ymd(BrsSData$GO_Date)
+BrsSvisitationsbyday <- as.data.frame(table(BrsSData$KI_Known_ID, BrsSData$DateAttempt))
+View(BrsSvisitationsbyday)
+str(BrsSvisitationsbyday)
+colnames(BrsSvisitationsbyday)[colnames(BrsSvisitationsbyday) == "Var1"] <- "sheep"
+colnames(BrsSvisitationsbyday)[colnames(BrsSvisitationsbyday) == "Var2"] <- "date"
+colnames(BrsSvisitationsbyday)[colnames(BrsSvisitationsbyday) == "Freq"] <- "visits"
+test1 <- data.frame(date = rep(seq(from = as.Date("2019-06-04"), to = as.Date("2019-08-06"), "days"), 27), sheep = c(rep("BHS_1330", 64), rep("BHS_1340", 64), rep("BHS_1337", 64), rep("BHS_1334", 64), rep("BHS_1331", 64), rep("BHS_1329", 64), rep("BHS_1328", 64), rep("BHS_1333", 64), rep("BHS_1425", 64), rep("BHS_1426", 64), rep("BHS_1489", 64), rep("BHS_1491", 64), rep("BHS_1578", 64), rep("BHS_1579", 64), rep("BHS_1580", 64), rep("BHS_1596", 64), rep("BHS_1598", 64), rep("BHS_1599", 64), rep("BHS_1687", 64), rep("BHS_1486", 64), rep("BHS_1490", 64), rep("BHS_1492", 64), rep("BHS_1428", 64), rep("BHS_1685", 64), rep("BHS_1686", 64), rep("BHS_1688", 64), rep("BHS_1689", 64)))
+View(test1)
+BrsSmergedvisit <- merge(test1, BrsSvisitationsbyday, by = c("sheep", "date"), all = TRUE)
+View(BrsSmergedvisit)
+str(BrsSmergedvisit)
+BrsSmergedvisit$datenum <- as.numeric(BrsSmergedvisit$date)
+# for SBRS 6/4 - 6/16
+BrsSmergedvisit$visits[is.na(BrsSmergedvisit$visits) == TRUE & (18051 <= BrsSmergedvisit$datenum & BrsSmergedvisit$datenum <= 18063)] <- 0
+# for SBrs 6/18 - 7/29
+BrsSmergedvisit$visits[is.na(BrsSmergedvisit$visits) == TRUE & (18065 <= BrsSmergedvisit$datenum & BrsSmergedvisit$datenum <= 18106)] <- 0
+# for SBrs 8/1-8/6
+BrsSmergedvisit$visits[is.na(BrsSmergedvisit$visits) == TRUE & (18109 <= BrsSmergedvisit$datenum & BrsSmergedvisit$datenum <= 18114)] <- 0
+BrsSmergedvisit$jitter <- BrsSmergedvisit$visits
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1330"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1330"] + 0.02)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1340"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1340"] - 0.02)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1337"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1337"] + 0.04)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1334"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1334"] - 0.04)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1331"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1331"] + 0.06)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1329"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1329"] - 0.06)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1328"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1328"] + 0.08)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1333"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1333"] - 0.08)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1425"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1425"] + 0.10)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1426"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1426"] - 0.10)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1489"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1489"] + 0.12)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1580"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1580"] - 0.12)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1491"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1491"] + 0.14)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1596"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1596"] - 0.14)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1578"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1578"] + 0.16)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1579"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1579"] - 0.16)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1598"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1598"] + 0.18)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1599"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1599"] - 0.18)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1687"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1687"] + 0.20)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1486"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1486"] - 0.20)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1490"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1490"] + 0.22)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1492"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1492"] - 0.22)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1428"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1428"] + 0.24)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1685"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1685"] - 0.24)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1686"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1686"] + 0.26)
+BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1688"] <- (BrsSmergedvisit$jitter[BrsSmergedvisit$sheep == "BHS_1688"] - 0.26)
+plot(jitter ~ date, data = BrsSmergedvisit, type = "p", col = BrsSmergedvisit$sheep, main = "South Bristols", xlab = "Date", ylab = "Visitations to Surface Water per Day", cex = 0.75)
+
+
+allgpsdata <- read.csv("AllGPSData20190501to20190912.csv", header = TRUE, sep = ",")
+
+#hi
+```
+
+
+
+On Mon, Jan 27, 2020 at 7:52 PM Danielle Glass <daglass55@gmail.com> wrote:
+---
+title: "RBighornVisitationAnalysis"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is my preliminary analysis of bighorn visitation to water, Summer 2019. First, I combined all of my observations into one dataframe. Due to some technical difficulties with the database at the CDFW office, I included observations from both a version of the database from 7/3 and 7/22 since I thought some had gotten deleted from the 7/22. I then removed fully duplicated rows in order to remove data that were in both the 7/3 and 7/22 database. The dataframe had 2108 observations before eliminating duplicated rows, and 2062 observations after the removal of duplicated rows. This makes sense as the approximate number of observations that I had input into the database by 7/3. Before coding further, I went through the SBrs and Marb data and visually checked that there were observations for every date that were supposedly covered. The only discrepancy that I found was that there were no observations in the Marbles on 6/25 after 14:49 pm. I went into the photo data and confirmed that this was indeed the case. Perhaps it was a really cool afternoon?
+
+I then formatted the data where major things needed to be fixed. I changed the cells of  KI_DG_FirstPhotoTime2, KI_DG_FirstPhotoTime3, KI_DG_FirstPhotoTime4, KI_DG_LastPhotoTime2, KI_DG_LastPhotoTime3, and KI_DG_LastPhotoTime4 that were '0' or blank to NAs. I also changed the cells of KI_DG_SheepDrank2, KI_DG_SheepDrank3, and KI_DG_SheepDrank4 that were blank to NAs.
+
+```{r}
+AshleyDataall <- read.csv("AshleyDatabasequeryall121419.csv", header = TRUE, sep = ",")
+twodbobs <- read.csv("ObservationsBeginningoftheSummer2databases121419.csv", header = TRUE, sep = ",")
+firstpartdgobs <- read.csv("NopaCMPRMarbfirstpartofsummerDanielleObservations.csv", header = TRUE, sep = ",")
+threedf <- rbind(AshleyDataall, twodbobs, firstpartdgobs)
+library(tidyverse)
+nodups <- distinct(threedf)
+# table(duplicated(nodups))
+# table(duplicated(nodups$DateObsTimeIDwaterspecific))
+# THERE ARE NO DUPLICATES OF THE ROWS OVERALL, BUT THERE ARE 204 DUPLICATES OF THE NODUPS$DateObsTimeODwaterspecific. WHY?!!!!!!! B/C some of the observations have the capture data and some don't. I SHOULD BE ABLE TO FIX THIS AFTER INPUTTING THE CORRECT WEIGHTS, BODY LENGTHS, AND CHEST GIRTHS THAT ARE MISSING.
+# View(duplicated(nodups$DateObsTimeIDwaterspecific))
+
+# as.character(nodups$KI_DG_FirstPhotoTime2, nodups$KI_DG_LastPhotoTime2, nodups$KI_DG_FirstPhotoTime3, nodups$KI_DG_LastPhotoTime3, nodups$KI_DG_FirstPhotoTime4, nodups$KI_DG_LastPhotoTime4)
+nodups$KI_DG_FirstPhotoTime2[nodups$KI_DG_FirstPhotoTime2 == "0"] <- NA
+nodups$KI_DG_FirstPhotoTime2[nodups$KI_DG_FirstPhotoTime2 == ""] <- NA
+nodups$KI_DG_LastPhotoTime2[nodups$KI_DG_LastPhotoTime2 == "0"] <- NA
+nodups$KI_DG_LastPhotoTime2[nodups$KI_DG_LastPhotoTime2 == ""] <- NA
+nodups$KI_DG_FirstPhotoTime3[nodups$KI_DG_FirstPhotoTime3 == "0"] <- NA
+nodups$KI_DG_FirstPhotoTime3[nodups$KI_DG_FirstPhotoTime3 == ""] <- NA
+nodups$KI_DG_LastPhotoTime3[nodups$KI_DG_LastPhotoTime3 == "0"] <- NA
+nodups$KI_DG_LastPhotoTime3[nodups$KI_DG_LastPhotoTime3 == ""] <- NA
+nodups$KI_DG_FirstPhotoTime4[nodups$KI_DG_FirstPhotoTime4 == "0"] <- NA
+nodups$KI_DG_FirstPhotoTime4[nodups$KI_DG_FirstPhotoTime4 == ""] <- NA
+nodups$KI_DG_LastPhotoTime4[nodups$KI_DG_LastPhotoTime4 == "0"] <- NA
+nodups$KI_DG_LastPhotoTime4[nodups$KI_DG_LastPhotoTime4 == ""] <- NA
+
+
+# as.character(nodups$KI_DG_SheepDrank2, nodups$KI_DG_SheepDrank3, nodups$KI_DG_SheepDrank4)
+nodups$KI_DG_SheepDrank2[nodups$KI_DG_SheepDrank2 == ""] <- NA
+nodups$KI_DG_SheepDrank3[nodups$KI_DG_SheepDrank3 == ""] <- NA
+nodups$KI_DG_SheepDrank4[nodups$KI_DG_SheepDrank4 == ""] <- NA
+
+# as.character(nodups$GO_DG_SpecificSource)
+nodups$GO_DG_SpecificSource[nodups$GO_DG_SpecificSource == ""] <- NA
+# as.factor(nodups$GO_DG_SpecificSource)
+
+```
+A List of everything that needs to be fixed:
+- input the GPS location as per the GO_WaterSource. Make sure to input the type of GPS data (UTM, latlong) that is relevant to the GPS Data cleaning stuff.
+- change the data type of every column to the correct type
+- at some point, subset the KI_Known_ID for the sheep I am interested in for the GPS analysis
+- input the missing KI_Sex cells - DONE
+- input the missing KI_DG_FirstPhotoTime and KI_DG_LastPhotoTime times, and the missing Ki_DG_SheepDrank (there's a ton of these - Ashley???)- Don't need to - these are the other sheep - DONE
+- check that all of the comp numbers are numbers and are appropriate. And that there are no blanks and NAs.
+- If possible, fill in the weights, body lengths, and chest girths that are missing.- DONE
+-KI_DatObsT_ID has 1858 levels, but there are 2062 entries - DONE
+- GO_DatObsTime and KI_DatObsT_ID are wrong for some entries. Need to remake in order to use!- DONE
+- put in age for some of them- DONE
+- also missing chest girth, body length, weight for some (BHS_1492)- DONE
+- Fix ages
+
+- subset to the correct mtn ranges
+- figure out the replication for the ones that have multiple visits in 1 observation -DONE
+- sheep drank has 53 blanks and 1 problematic Y
+- Cat 2 has a NA that probs should be 0?
+
+
+
+I noted that there were still some duplicate observations that had not been removed despite the previous code chunk. In an attempt to figure out why there were still duplicated rows, I made a column with everything needed to make each observation individually identifiable. I discovered that some rows did not have the capture data needed, and that this was what was making the duplicated rows not seen as duplicated. I then worked to input the missing information - weight, body length, and chest girth. I subset by the distinct rows and this equaled the previous number of individually identifiable observations. No more duplicates!
+
+```{r}
+# as.character(nodups$GO_Date, nodups$KI_Known_ID, nodups$GO_Time_HHMM, nodups$GO_WaterSource, nodups$GO_DG_SpecificSource)
+nodups$DateObsTimeIDwaterspecific <- paste(nodups$GO_Date, nodups$KI_Known_ID, nodups$GO_Time_HHMM, nodups$GO_WaterSource, nodups$GO_DG_SpecificSource, sep = "")
+# as.character(nodups$KI_Sex)
+# as.character(nodups$KI_Known_ID)
+# table(nodups$KI_Sex)
+nodups$KI_Sex[nodups$KI_Known_ID == "BHS_1489" | nodups$KI_Known_ID == "BHS_1596" | nodups$KI_Known_ID == "BHS_1361" | nodups$KI_Known_ID == "BHS_1357" | nodups$KI_Known_ID == "BHS_1367" | nodups$KI_Known_ID == "BHS_1362" | nodups$KI_Known_ID == "BHS_1584" | nodups$KI_Known_ID == "BHS_1585" | nodups$KI_Known_ID == "BHS_1583" | nodups$KI_Known_ID == "BHS_1582" | nodups$KI_Known_ID == "BHS_1588" | nodups$KI_Known_ID == "BHS_1365" | nodups$KI_Known_ID == "BHS_1574" | nodups$KI_Known_ID == "BHS_1366" | nodups$KI_Known_ID == "BHS_1594" | nodups$KI_Known_ID == "BHS_1577" | nodups$KI_Known_ID == "BHS_1581" | nodups$KI_Known_ID == "BHS_1576" | nodups$KI_Known_ID == "BHS_1416" | nodups$KI_Known_ID == "BHS_1587" | nodups$KI_Known_ID == "BHS_1575" | nodups$KI_Known_ID == "BHS_1592" | nodups$KI_Known_ID == "BHS_1589" | nodups$KI_Known_ID == "BHS_1421" | nodups$KI_Known_ID == "BHS_1740" | nodups$KI_Known_ID == "BHS_1738" | nodups$KI_Known_ID == "BHS_1736" | nodups$KI_Known_ID == "BHS_1734" | nodups$KI_Known_ID == "BHS_1733" | nodups$KI_Known_ID == "BHS_1741"] <- "F"
+
+nodups$KI_Sex[nodups$KI_Known_ID == "BHS_1494" | nodups$KI_Known_ID == "BHS_1684" | nodups$KI_Known_ID == "BHS_1683" | nodups$KI_Known_ID == "BHS_1682" | nodups$KI_Known_ID == "BHS_1493" | nodups$KI_Known_ID == "BHS_1591" | nodups$KI_Known_ID == "BHS_1590" | nodups$KI_Known_ID == "BHS_1420" | nodups$KI_Known_ID == "1728" | nodups$KI_Known_ID == "BHS_1739"] <- "M"
+
+# table(nodups$KI_Known_ID) - going through the individual sheep to check and make sure their weight, body length, and chest girth are filled out correctly.
+# table(nodups$KI_Known_ID[!is.na()])
+
+# LIST OF SHEEP THAT HAVE MEASUREMENTS (* sheep that had different measurements?, ^ sheep that I am checking measurements with CDFW): BHS_1420^, BHS_1428*, BHS_1490*, BHS_1492^, 1493*, 1494*, 1563, 1565, 1574, 1575, 1576, 1577, 1581, 1582, 1583, 1587, 1592, 1594, 1682, 1683, 1684, 1689, 1713, 1730, 1731, 1733, 1734, 1736, 1738, 1739
+# nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == ""]
+#### NEED TO FIX ID THAT HAS "BHs_1596" to "BHS_1596"!!!!!!!!
+
+# as.character(nodups$KI_Known_ID)
+nodups$KI_Known_ID[nodups$KI_Known_ID == "BHs_1596"] <- "BHS_1596"
+# as.factor(nodups$KI_Known_ID)
+# now comes back at BHs_1596 = 0, BHS_1596=78 - did this truly fix the problem?
+
+# Four of the bighorn have two different numbers at their measurements. I am going to set them to the lower number b/c the higher number is probably the untarred number.
+#BHS_1428 - body length comes back at both 151.3 and 149.0. I am going to set it to 149.0 b/c that is what in the 7/22 database and because the higher number is probably the untarred number.
+
+# There are measurements that are not in the 7/22 database that are in my datasheet. I need to add the measurements for the sheep that this is true so as to make there be no duplicated rows.
+
+# BODY LENGTHS:
+# as.character(nodups$CP_BdyLgth_cm)
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1420"] <- "155.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1428"] <- "149.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1490"] <- "158.2"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1492"] <- "152.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1493"] <- "162.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1494"] <- "145.1"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1563"] <- "165.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1565"] <- "136.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1574"] <- "146.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1575"] <- "143.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1576"] <- "141.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1577"] <- "141.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1581"] <- "139.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1582"] <- "138.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1583"] <- "142.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1587"] <- "139.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1592"] <- "137.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1594"] <- "125.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1682"] <- "140.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1683"] <- "144.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1684"] <- "149.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1689"] <- "155.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1713"] <- "140.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1730"] <- "152.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1731"] <- "161.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1733"] <- "153.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1734"] <- "149.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1736"] <- "118.0"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1738"] <- "130.5"
+nodups$CP_BdyLgth_cm[nodups$KI_Known_ID == "BHS_1739"] <- "145.0"
+# as.numeric(nodups$CP_BdyLgth_cm)
+
+
+#CHEST GIRTHS
+# as.character(nodups$CP_ChstGth_cm)
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1420"] <- "111.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1428"] <- "100.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1490"] <- "101.8"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1492"] <- "105.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1493"] <- "111.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1494"] <- "104.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1563"] <- "107.2"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1565"] <- "99.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1574"] <- "95.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1575"] <- "99.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1576"] <- "97.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1577"] <- "99.1"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1581"] <- "101.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1582"] <- "92.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1583"] <- "93.2"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1587"] <- "97.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1592"] <- "103.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1594"] <- "98.9"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1682"] <- "98.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1683"] <- "95.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1684"] <- "102.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1689"] <- "108.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1713"] <- "97.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1730"] <- "101.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1731"] <- "115.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1733"] <- "109.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1734"] <- "96.0"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1736"] <- "82.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1738"] <- "84.5"
+nodups$CP_ChstGth_cm[nodups$KI_Known_ID == "BHS_1739"] <- "96.0"
+# as.numeric(nodups$CP_ChstGth_cm)
+
+#WEIGHT - this is unadjusted, raw weight (no tar)b/c the vast majority of the entries do not have a tar weight or a net weight.
+# as.character(nodups$CP_Weight..kg.)
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1420"] <- "96.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1428"] <- "63.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1490"] <- "82.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1492"] <- "88.4"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1493"] <- "87.4"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1494"] <- "64.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1563"] <- "89.8"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1565"] <- "61.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1574"] <- "63.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1575"] <- "67.1"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1576"] <- "58.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1577"] <- "61.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1581"] <- "68.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1582"] <- "59.2"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1583"] <- "63.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1587"] <- "65.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1592"] <- "60.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1594"] <- "56.5"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1682"] <- "61.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1683"] <- "64.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1684"] <- "76.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1689"] <- "85.2"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1713"] <- "59.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1730"] <- "69.0"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1731"] <- "100.04"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1733"] <- "77.3"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1734"] <- "58.6"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1736"] <- "47.1"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1738"] <- "44.2"
+nodups$CP_Weight..kg.[nodups$KI_Known_ID == "BHS_1739"] <- "71.8"
+# as.numeric(nodups$CP_Weight..kg.)
+
+# AGE AT TIME OF CAPTURE:
+# as.character(nodups$CP_AgeYears)
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1420"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1428"] <- "3"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1490"] <- "7"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1492"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1493"] <- "7"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1494"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1563"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1565"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1574"] <- "10"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1575"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1576"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1577"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1581"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1582"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1583"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1587"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1592"] <- "5"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1594"] <- "7"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1682"] <- "3"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1683"] <- "3"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1684"] <- "12"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1689"] <- "9"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1713"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1730"] <- "4"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1731"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1733"] <- "8"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1734"] <- "6"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1736"] <- "2"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1738"] <- "1"
+nodups$CP_AgeYears[nodups$KI_Known_ID == "BHS_1739"] <- "4"
+# as.integer(nodups$CP_AgeYears)
+
+
+library(tidyverse)
+renodups <- distinct(nodups)
+# table(duplicated(renodups))
+# table(duplicated(renodups$DateObsTimeIDwaterspecific))
+# Before Age Years, 177 duplicates.
+# Down to 80 duplicates after Age Years fixed.
+# Now down to 54 duplicates.
+# No more duplicates! Yay!
+# View(duplicated(renodups$DateObsTimeIDwaterspecific))
+
+```
+Then, just to be sure, I cut the visitation data to the time periods when all cameras were running. This data should have already been cut, but I know that Ashley was not super meticulous in only going through the photos in the time period when all of the cameras in the range were running, so I feel like this is a good check.
+
+At this time, I also checked that the GO_WaterSource and GO_RangeCode made sense for each range. I changed two entries that were actually Nopah but mistakenly CMPR.
+
+``` {r}
+
+as.character(renodups$GO_Date, renodups$GO_Time_HHMM)
+renodups$DateTime <- paste(renodups$GO_Date, renodups$GO_Time_HHMM, sep = " ")
+library(lubridate)
+renodups$DateTime <- strptime(renodups$DateTime, "%Y%m%d %H:%M")
+renodups$DateTimect <- as.POSIXct(renodups$DateTime, tz = "America/Los_Angeles", format = "%Y%m%d %H:%M")
+
+# Making the GO_Date into a Date:
+renodups$GO_Date <- strptime(renodups$GO_Date, "%Y%m%d")
+renodups$GO_Date <- as.POSIXct(renodups$GO_Date, tz = "America/Los_Angeles", format = "%Y%m%d")
+
+Marbobs <- renodups[renodups$GO_RangeCode == "Marb", ]
+Marbcutobs <- Marbobs[(Marbobs$DateTimect >= as.POSIXct("2019-05-17 10:49:00") & Marbobs$DateTimect <= as.POSIXct("2019-05-24 23:59:59")) | (Marbobs$DateTimect >= as.POSIXct("2019-06-04 20:00:00") & Marbobs$DateTimect <= as.POSIXct("2019-06-12 13:32:00")) | (Marbobs$DateTimect >= as.POSIXct("2019-06-18 17:19:00") & Marbobs$DateTimect <= as.POSIXct("2019-06-22 23:59:59"))| (Marbobs$DateTimect >= as.POSIXct("2019-06-25 14:49:00") & Marbobs$DateTimect <= as.POSIXct("2019-06-30 10:46:00"))| (Marbobs$DateTimect >= as.POSIXct("2019-07-10 08:45:00") & Marbobs$DateTimect <= as.POSIXct("2019-07-13 23:00:18")) | (Marbobs$DateTimect >= as.POSIXct("2019-07-17 11:46:00") & Marbobs$DateTimect <= as.POSIXct("2019-07-25 10:30:00")) | (Marbobs$DateTimect >= as.POSIXct("2019-07-31 20:52:00") & Marbobs$DateTimect <= as.POSIXct("2019-08-04 13:13:03")) | (Marbobs$DateTimect >= as.POSIXct("2019-08-06 12:03:00") & Marbobs$DateTimect <= as.POSIXct("2019-08-10 12:03:23")), ]
+
+BrsSobs <- renodups[renodups$GO_RangeCode == "BrsS", ]
+BrsScutobs <- BrsSobs[(BrsSobs$DateTimect >= as.POSIXct("2019-06-04 15:04:00") & BrsSobs$DateTimect <= as.POSIXct("2019-06-16 08:27:00")) | (BrsSobs$DateTimect >= as.POSIXct("2019-06-18 17:36:00") & BrsSobs$DateTimect <= as.POSIXct("2019-06-25 16:25:00")) | (BrsSobs$DateTimect >= as.POSIXct("2019-06-25 17:05:00") & BrsSobs$DateTimect <= as.POSIXct("2019-07-29 10:36:00")) | (BrsSobs$DateTimect >= as.POSIXct("2019-08-01 14:32:00") & BrsSobs$DateTimect <= as.POSIXct("2019-08-12 11:13:00")),]
+
+# I found a couple of entries that need to be fixed.
+# as.character(renodups$GO_RangeCode)
+renodups$GO_RangeCode[renodups$DateObsTimeIDwaterspecific == "20190718BHS_174112:46NopaNA"] <- "Nopa"
+renodups$GO_RangeCode[renodups$DateObsTimeIDwaterspecific == "20190722BHS_17405:26NopaNA"] <- "Nopa"
+# as.factor(renodups$GO_RangeCode)
+
+cmprobs <- renodups[renodups$GO_RangeCode == "CMPR", ]
+cmprcutobs <-  cmprobs[(cmprobs$DateTimect >= as.POSIXct("2019-05-23 15:48:00") & cmprobs$DateTimect <= as.POSIXct("2019-05-31 11:18:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-06-20 17:47:00") & cmprobs$DateTimect <= as.POSIXct("2019-06-27 02:09:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-07-11 18:25:00") & cmprobs$DateTimect <= as.POSIXct("2019-07-14 18:28:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-07-30 14:30:00") & cmprobs$DateTimect <= as.POSIXct("2019-08-03 16:46:00")) | (cmprobs$DateTimect >= as.POSIXct("2019-08-05 19:10:00") & cmprobs$DateTimect <= as.POSIXct("2019-08-15 07:27:00")),]
+
+nopaobs <- renodups[renodups$GO_RangeCode == "Nopa", ]
+nopacutobs <- nopaobs[(nopaobs$DateTimect >= as.POSIXct("2019-06-06 09:18:00") & nopaobs$DateTimect <= as.POSIXct("2019-06-13 11:04:00")) | (nopaobs$DateTimect >= as.POSIXct("2019-06-25 09:00:00") & nopaobs$DateTimect <= as.POSIXct("2019-07-08 12:35:00")) | (nopaobs$DateTimect >= as.POSIXct("2019-07-16 19:03:00") & nopaobs$DateTimect <= as.POSIXct("2019-07-29 15:06:00")) | (nopaobs$DateTimect >= as.POSIXct("2019-07-29 19:55:00") & nopaobs$DateTimect <= as.POSIXct("2019-08-07 14:49:00")),]
+
+allcut <- rbind(Marbcutobs, BrsScutobs, cmprcutobs, nopacutobs)
+# write.xlsx(allcut, file = "allcutVisitationData122719.xlsx")
+```
+
+I checked to make sure that every sheep that I thought was alive for the summer actually had documented proof of life for the entire summer. When counting the number of sheep in my sample, I made sure not to include sheep that are assumed dead (Marbles: BHS_1413 (dead harvest), BHS_1496, BHS_1597, South Bristols: BHS_1340, BHS_1331, BHS_1598). I also made sure to include sheep that were not seen at water all summer, but are documented to be alive (Marbles BHS_1497, Nopah BHS_1737). All of the South Bristols, and all of the CMPR sheep that I limited this analysis to (for reasons listed below), came into water at least once during the summer.
+
+Some notes on the whereabouts of the sheep that were not see at water as per their GPS collars. Marb BHS_1589 literally just chilled on Castle Peak. BHS_1497's collar is no longer working. Nopah BHS_1737 was between the Nopah and El Si Guzzler - looks like stayed as high elevation? I specifically examined BHS_1595, which only had 3 visitations prior to its death on 8/5. BHS_1595 was in the southern Marbles, then moved up to just south of Castle Peak. There is a chance that there is an unknown water source in this location.
+
+It is worth noting that a couple Marbles sheep died during the summer. BHS_ 1367 was heard dead on flight on 8/19 and last seen 6/12 at Theresa. Given this information, I am making the conservative assumption in analyses that it died 6/12 and only including it through 6/11 in analyses. BHS_1595 died on either 8/5 or 8/6, but stopped moving on the 5th. Therefore, I am only including it in analyses through 8/4.
+
+After looking at the GPS data for the summer, I realized that sheep at Paiute Guzzler were making their way down to a water source in the south of the Castle Piutes that I did not put a camera on. As such, I limited my analysis to the sheep that were only located in the far north section of the range, by Viceroy Mine.
+
+I fixed some observations that were incorrect, and added some observations that were supposed to be in the Marbles but were in the South Bristols to the Marbles.
+
+```{r}
+## Individually Identifiable Bighorn in Visitation Preliminary Analyses
+
+# Marbles: BHS_1367, BHS_1365, BHS_1361, BHS_1362", BHS_1357, BHS_1416, BHS_1421, BHS_1581, BHS_1577, BHS_1574, BHS_1576, BHS_1583, BHS_1584, BHS_1585, BHS_1587, BHS_1582, BHS_1575, BHS_1592, BHS_1594, BHS_1420, BHS_1493, BHS_1494, BHS_1590, BHS_1591, BHS_1682, BHS_1683, BHS_1684, BHS_1366, BHS_1497, BHS_1588, BHS_1595, BHS_1589"
+# *** This currently includes 1497 (never visited, Lily said seen alive last November) and 1592 (gps track and visited twice), but not 1496 (assumed dead).
+
+# South Bristols: BHS_1330, BHS_1337, BHS_1334, BHS_1329, BHS_1328, BHS_1333, BHS_1425, BHS_1426, BHS_1489, BHS_1491, BHS_1578, BHS_1579, BHS_1580, BHS_1596, BHS_1599, BHS_1687, BHS_1486, BHS_1490, BHS_1492, BHS_1428, BHS_1685, BHS_1686, BHS_1688, BHS_1689
+
+# Nopah: BHS_1737, BHS_1740, BHS_1741, BHS_1738, BHS_1736, BHS_1739
+
+# Castle Piutes: BHS_1730, BHS_1733, BHS_1734, BHS_1728
+
+# *** DG note to self: 1728 doesn't have a working GPS collar
+
+## Fixing observations
+
+# One observation accidentally 1578 instead of 1576
+Marbcutobs$KI_Known_ID[Marbcutobs$DateObsTimeIDwaterspecific == "20190804BHS_15787:24VernNA"] <- "BHS_1576"
+# A different observation 1685 instead of 1590
+Marbcutobs$KI_Known_ID[Marbcutobs$DateObsTimeIDwaterspecific == "20190722BHS_168511:23TherBoss Tank"] <- "BHS_1590"
+# Another observation changing 1713 for 1582
+Marbcutobs$KI_Known_ID[Marbcutobs$DateObsTimeIDwaterspecific == "20190803BHS_17139:37TherBoss Tank"] <- "BHS_1582"
+```
+
+
+I then created figures of the number of individual sheep coming into water by day. I only included times when all cameras in the mountain range were running. This is given that sheep use more than one water source and move around throughout the mountain range. When examining the data, I noticed that the days at the beginning and end of each period when all of the cameras were running had a lower number of sheep coming in than the rest of the days. This is easily attributable to the cameras being up and running for only part of these days. As such, I cut out these days from my dataset (which probably decreased by dataset by about ~10%).
+
+I did leave in a couple of days that had very near complete coverage. I decided that it was ok to keep these days given the short periods of time when 1 of the cameras was down for, and the relative bias of sheep for diurnality, which was confirmed when going through camera photos. For the Marbles, I did leave in one day when the cameras were only not running between 11 pm and 12 am. In the South Bristols, I included 6/25/19 which was not fully covered for 45 minutes. In the Castle Piutes, I included 7/14 and 8/3 because one of the cameras went out at night. I will need to limit other analyses to these time periods given the incomplete data on the start/end days.
+
+Afterwards, I realized that the plots that I made here are not nearly as useful as percent visitation by day, as I did in the next chunk.
+
+
+```{r}
+# Number of Individual Sheep Coming into Water by Day
+
+# Marbles
+
+marballsheepvisitsday <- as.data.frame(table(Marbcutobs$KI_Known_ID, Marbcutobs$GO_Date))
+# View(marballsheepvisitsday)
+# Took out 1413 b/c dead, 1589 and 1597 because assumed dead
+marballsheepvisitsday1 <- marballsheepvisitsday[(marballsheepvisitsday$Var1 == "BHS_1367") |  (marballsheepvisitsday$Var1 == "BHS_1365") | (marballsheepvisitsday$Var1 == "BHS_1361") |(marballsheepvisitsday$Var1 == "BHS_1362") | (marballsheepvisitsday$Var1 == "BHS_1357") | (marballsheepvisitsday$Var1 == "BHS_1416") | (marballsheepvisitsday$Var1 == "BHS_1421") | (marballsheepvisitsday$Var1 == "BHS_1581") | (marballsheepvisitsday$Var1 == "BHS_1577") | (marballsheepvisitsday$Var1 == "BHS_1574") | (marballsheepvisitsday$Var1 == "BHS_1576") | (marballsheepvisitsday$Var1 == "BHS_1583") | (marballsheepvisitsday$Var1 == "BHS_1584") | (marballsheepvisitsday$Var1 == "BHS_1585") | (marballsheepvisitsday$Var1 == "BHS_1587") | (marballsheepvisitsday$Var1 == "BHS_1582") | (marballsheepvisitsday$Var1 == "BHS_1575") | (marballsheepvisitsday$Var1 == "BHS_1592") | (marballsheepvisitsday$Var1 == "BHS_1594") | (marballsheepvisitsday$Var1 == "BHS_1420") | (marballsheepvisitsday$Var1 == "BHS_1493") | (marballsheepvisitsday$Var1 == "BHS_1494") | (marballsheepvisitsday$Var1 == "BHS_1590") | (marballsheepvisitsday$Var1 == "BHS_1591") | (marballsheepvisitsday$Var1 == "BHS_1682") | (marballsheepvisitsday$Var1 == "BHS_1683") | (marballsheepvisitsday$Var1 == "BHS_1684") | (marballsheepvisitsday$Var1 == "BHS_1366") | (marballsheepvisitsday$Var1 == "BHS_1497") | (marballsheepvisitsday$Var1 == "BHS_1588") | (marballsheepvisitsday$Var1 == "BHS_1595") | (marballsheepvisitsday$Var1 == "BHS_1589"), ]
+
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 2] <- 1
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 3] <- 1
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 4] <- 1
+marballsheepvisitsday1$Freq[marballsheepvisitsday1$Freq == 5] <- 1
+marbindsheepvisitperday <- as.data.frame(tapply(marballsheepvisitsday1$Freq, list(marballsheepvisitsday1$Var2), sum))
+# View(marbindsheepvisitperday)
+marbindsheepvisitperday <- cbind(rownames(marbindsheepvisitperday), data.frame(marbindsheepvisitperday, row.names = NULL))
+marbindsheepvisitperday$datenum <- as.character(marbindsheepvisitperday$`rownames(marbindsheepvisitperday)`)
+marbindsheepvisitperday$datenum <- as.Date(marbindsheepvisitperday$`rownames(marbindsheepvisitperday)`, format = "%Y-%m-%d")
+marbindsheepvisitperday$datenum <- as.numeric(marbindsheepvisitperday$datenum)
+
+#Cutting the rows where the day wasn't complete. Inputting NA rows for uncovered days.
+marbindsheepvisitperday <- marbindsheepvisitperday[(marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-06-12") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-06-18") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-06-30") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-07-10") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-07-17") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-07-25") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-08-04") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-08-06") & (marbindsheepvisitperday$`rownames(marbindsheepvisitperday)` != "2019-08-10"), ]
+
+marbdatena <- read.csv("TotalSheepVisitationPerDayMarbNAs122919.csv", header = TRUE, sep = ",")
+marbdatena$tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2...[marbdatena$tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2... == "#N/A"] <- NA
+names(marbdatena)[names(marbdatena) == "rownames.marbindsheepvisitperday."] <- "rownames(marbindsheepvisitperday)"
+
+names(marbindsheepvisitperday)[names(marbindsheepvisitperday) == "tapply.marballsheepvisitsday1.Freq..list.marballsheepvisitsday1.Var2..."] <- "visits"
+names(marbdatena)[names(marbdatena) == "tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2..."] <- "visits"
+
+
+marbdatena$datenum <- as.Date(marbdatena$datenum, format = "%Y-%m-%d")
+marbdatena$datenum <- as.numeric(marbdatena$datenum)
+marbindsheepvisitperday1 <- rbind(marbindsheepvisitperday, marbdatena)
+marbindsheepvisitperday1$visits <- as.integer(marbindsheepvisitperday1$visits)
+marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` <- as.Date(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)`, "%Y-%m-%d")
+
+#Barplot can't get NA spaces
+# barplot(tapply.marballsheepvisitsday.Freq..list.marballsheepvisitsday.Var2... ~ `rownames(marbindsheepvisitperday)`, data = marbindsheepvisitperday1, main = "Marbles Number of Individual Sheep Coming to Water by Day", xlab = "Date", ylab = "Number of Individual Sheep")
+# xlim = c(0, 85), width = 1
+
+# GGPLOT WORKS!
+library(ggplot2)
+plotmarbnumsheep <- ggplot(data = marbindsheepvisitperday1, aes(x = `rownames(marbindsheepvisitperday)`, y = visits, fill = "supp")) +
+  geom_bar(stat="identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Marbles") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 32)
+print(plotmarbnumsheep)
+
+## DG note to self: MARBLES NEED TO KNOW WHEN SHEEP DIED AND ADD IN LINE!!!
+
+
+
+# SOUTH BRISTOLS
+
+#### NEED TO CHECK AND POTENTIALLY FIX ALso BHS_1591 Teresa Seep 7/19 21:59 and 7/20 2:43 - probably need to change to Marb. -- I did change to Marbles but I'm not sure if still showing up in South Bristols data?
+
+BrsScutobs$KI_Known_ID <- as.character(BrsScutobs$KI_Known_ID)
+BrsScutobs$KI_Known_ID[BrsScutobs$DateObsTimeIDwaterspecific == "20190623BHS_149910:04TalcNA"] <- "BHS_1599"
+BrsScutobs$KI_Known_ID <- as.factor(BrsScutobs$KI_Known_ID)
+
+BrsScutobs$GO_RangeCode <- as.character(BrsScutobs$GO_RangeCode)
+BrsScutobs$GO_RangeCode[BrsScutobs$DateObsTimeIDwaterspecific == "20190719BHS_159121:59TherSeep"] <- "Marb"
+BrsScutobs$GO_RangeCode[BrsScutobs$DateObsTimeIDwaterspecific == "20190720BHS_15912:43TherSeep"] <- "Marb"
+BrsScutobs$GO_RangeCode <- as.factor(BrsScutobs$GO_RangeCode)
+# Still shows up when type in View(BrsScutobs[BrsScutobs$KI_Known_ID == "BHS_1591", ]) though now says Marb -- DID I FIX IT?
+
+# This might be good. Need to check that it is in the right place in the code.
+# brstomarb <- BrsScutobs[BrsScutobs$KI_Known_ID == "BHS_1591",]
+# Marbcutobs <- rbind(Marbcutobs, brstomarb)
+
+sbrssheepvisitsday <- as.data.frame(table(BrsScutobs$KI_Known_ID, BrsScutobs$GO_Date))
+sbrssheepvisitsday1 <- sbrssheepvisitsday[(sbrssheepvisitsday$Var1 == "BHS_1330") | (sbrssheepvisitsday$Var1 == "BHS_1337") | (sbrssheepvisitsday$Var1 == "BHS_1334") | (sbrssheepvisitsday$Var1 == "BHS_1329") | (sbrssheepvisitsday$Var1 == "BHS_1328") | (sbrssheepvisitsday$Var1 == "BHS_1333") | (sbrssheepvisitsday$Var1 == "BHS_1425") | (sbrssheepvisitsday$Var1 == "BHS_1426") | (sbrssheepvisitsday$Var1 == "BHS_1489") | (sbrssheepvisitsday$Var1 == "BHS_1491") | (sbrssheepvisitsday$Var1 == "BHS_1578") | (sbrssheepvisitsday$Var1 == "BHS_1579") | (sbrssheepvisitsday$Var1 == "BHS_1580") | (sbrssheepvisitsday$Var1 == "BHS_1596") | (sbrssheepvisitsday$Var1 == "BHS_1599") | (sbrssheepvisitsday$Var1 == "BHS_1687") | (sbrssheepvisitsday$Var1 == "BHS_1486") | (sbrssheepvisitsday$Var1 == "BHS_1490") | (sbrssheepvisitsday$Var1 == "BHS_1492") | (sbrssheepvisitsday$Var1 == "BHS_1428") | (sbrssheepvisitsday$Var1 == "BHS_1685") | (sbrssheepvisitsday$Var1 == "BHS_1686") | (sbrssheepvisitsday$Var1 == "BHS_1688") | (sbrssheepvisitsday$Var1 == "BHS_1689"),]
+# table(sbrssheepvisitsday1$Freq) - through 5
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 2] <- 1
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 3] <- 1
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 4] <- 1
+sbrssheepvisitsday1$Freq[sbrssheepvisitsday1$Freq == 5] <- 1
+sbrsindsheepvisitperday <- as.data.frame(tapply(sbrssheepvisitsday1$Freq, list(sbrssheepvisitsday1$Var2), sum))
+# View(sbrsindsheepvisitperday)
+sbrsindsheepvisitperday <- cbind(rownames(sbrsindsheepvisitperday), data.frame(sbrsindsheepvisitperday, row.names = NULL))
+names(sbrsindsheepvisitperday)[names(sbrsindsheepvisitperday) == "rownames(sbrsindsheepvisitperday)"] <- "Date"
+names(sbrsindsheepvisitperday)[names(sbrsindsheepvisitperday) == "tapply.sbrssheepvisitsday1.Freq..list.sbrssheepvisitsday1.Var2..."] <- "NumIndSheep"
+sbrsindsheepvisitperday$Date <- as.Date(sbrsindsheepvisitperday$Date, format = "%Y-%m-%d")
+sbrsindsheepvisitperday1 <- sbrsindsheepvisitperday[(sbrsindsheepvisitperday$Date != "2019-06-04") & (sbrsindsheepvisitperday$Date != "2019-06-16") & (sbrsindsheepvisitperday$Date != "2019-06-18") & (sbrsindsheepvisitperday$Date != "2019-07-29") & (sbrsindsheepvisitperday$Date != "2019-08-01") & (sbrsindsheepvisitperday$Date != "2019-08-12"), ]
+sbrsdatena <- read.csv("SBrsNAIndSheepVisits1320.csv", header = TRUE, sep = ",")
+sbrsdatena$Date <- as.Date(sbrsdatena$Date, format = "%Y-%m-%d")
+sbrsdatena$NumIndSheep <- as.numeric(sbrsdatena$NumIndSheep)
+sbrsindsheepvisitperday2 <- rbind(sbrsindsheepvisitperday1, sbrsdatena)
+library(ggplot2)
+plotsbrsnumsheep <- ggplot(data = sbrsindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("South Bristols") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 24)
+
+#Nopah
+nopaallsheepvisitsday <- as.data.frame(table(nopacutobs$KI_Known_ID, nopacutobs$GO_Date))
+# View(nopaallsheepvisitsday)
+nopaallsheepvisitsday1 <- nopaallsheepvisitsday[(nopaallsheepvisitsday$Var1 == "BHS_1737") | (nopaallsheepvisitsday$Var1 == "BHS_1740") | (nopaallsheepvisitsday$Var1 == "BHS_1741") | (nopaallsheepvisitsday$Var1 == "BHS_1738") | (nopaallsheepvisitsday$Var1 == "BHS_1736") | (nopaallsheepvisitsday$Var1 == "BHS_1739"), ]
+# Nopah only has up to 2 visits in a day, so only need to change 2 to 1.
+nopaallsheepvisitsday1$Freq[nopaallsheepvisitsday1$Freq == 2] <- 1
+nopaindsheepvisitperday <- as.data.frame(tapply(nopaallsheepvisitsday1$Freq, list(nopaallsheepvisitsday1$Var2), sum))
+View(nopaindsheepvisitperday)
+nopaindsheepvisitperday <- cbind(rownames(nopaindsheepvisitperday), data.frame(nopaindsheepvisitperday, row.names = NULL))
+names(nopaindsheepvisitperday)[names(nopaindsheepvisitperday) == "rownames(nopaindsheepvisitperday)"] <- "Date"
+names(nopaindsheepvisitperday)[names(nopaindsheepvisitperday) == "tapply.nopaallsheepvisitsday1.Freq..list.nopaallsheepvisitsday1.Var2..."] <- "NumIndSheep"
+nopaindsheepvisitperday$Date <- as.Date(nopaindsheepvisitperday$Date, format = "%Y-%m-%d")
+# Need to input days that have zero observations, as well as the NA days.
+nopaindsheepvisitperday1 <- nopaindsheepvisitperday[(nopaindsheepvisitperday$Date != "2019-06-25") & (nopaindsheepvisitperday$Date != "2019-08-07"), ]
+nopadatena <- read.csv("NopaNAIndSheepVisits1620.csv", header= TRUE, sep = ",")
+nopadatena$Date <- as.Date(nopadatena$Date, format = "%Y-%m-%d")
+nopadatena$NumIndSheep <- as.numeric(nopadatena$NumIndSheep)
+nopaindsheepvisitperday2 <- rbind(nopaindsheepvisitperday1, nopadatena)
+library(ggplot2)
+plotnopasheepnum <- ggplot(data = nopaindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Nopah") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 6)
+
+# CASTLE-PIUTE
+
+cmprallsheepvisitsday <- as.data.frame(table(cmprcutobs$KI_Known_ID, cmprcutobs$GO_Date))
+# Also due to the lack of coverage in the Castle Piutes along the southern stream, I limited the analysis to bighorn that located in the mine area (1730, 1733, 1734, 1728 - which doesn't have a working GPS collar).
+cmprallsheepvisitsday1 <- cmprallsheepvisitsday[(cmprallsheepvisitsday$Var1 == "BHS_1730") | (cmprallsheepvisitsday$Var1 == "BHS_1733") | (cmprallsheepvisitsday$Var1 == "BHS_1734") | (cmprallsheepvisitsday$Var1 == "BHS_1728"), ]
+# CMPR only has up to 2 visits in a day, so only need to change 2 to 1.
+cmprallsheepvisitsday1$Freq[cmprallsheepvisitsday1$Freq == 2] <- 1
+cmprindsheepvisitperday <- as.data.frame(tapply(cmprallsheepvisitsday1$Freq, list(cmprallsheepvisitsday1$Var2), sum))
+cmprindsheepvisitperday <- cbind(rownames(cmprindsheepvisitperday), data.frame(cmprindsheepvisitperday, row.names = NULL))
+names(cmprindsheepvisitperday)[names(cmprindsheepvisitperday) == "rownames(cmprindsheepvisitperday)"] <- "Date"
+names(cmprindsheepvisitperday)[names(cmprindsheepvisitperday) == "tapply.cmprallsheepvisitsday1.Freq..list.cmprallsheepvisitsday1.Var2..."] <- "NumIndSheep"
+cmprindsheepvisitperday$Date <- as.Date(cmprindsheepvisitperday$Date, format = "%Y-%m-%d")
+# There were no dates that at the end of camera periods that needed to be deleted for the Castle Piutes.
+cmprdatena <- read.csv("CmprNAIndSheepVisits1820.csv", header = TRUE, sep = ",")
+cmprdatena$Date <- as.Date(cmprdatena$Date, format = "%Y-%m-%d")
+cmprdatena$NumIndSheep <- as.numeric(cmprdatena$NumIndSheep)
+cmprindsheepvisitperday2 <- rbind(cmprindsheepvisitperday, cmprdatena)
+library(ggplot2)
+plotcmprnumsheep <- ggplot(data = cmprindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Castle Piute") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 4)
+
+# Getting all plots in same file
+# library(gridExtra)
+# grid.arrange(plotmarbnumsheep, plotsbrsnumsheep, plotnopasheepnum, plotcmprnumsheep, nrow = 2, top = "Number of Individual Sheep Coming to Water by Day")
+
+```
+I then made figures of the percent of individual sheep coming into water by day. Given the extreme difference in the number of sheep between different mountain ranges, I also included the absolute number of sheep coming in as a secondary y axis. For the Marbles, the absolute number of collared sheep decreases towards the end of the summer due to multiple mortalities.
+```{r}
+
+# MARBLES
+# Had to change the total number because sheep died.
+
+marbindsheepvisitperday1$TotalNumSheep <- NA
+marbindsheepvisitperday1$TotalNumSheep <- as.character(marbindsheepvisitperday1$TotalNumSheep)
+marbindsheepvisitperday1$TotalNumSheep[(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` <= as.Date("2019-06-12"))] <- 32
+marbindsheepvisitperday1$TotalNumSheep[(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` >= as.Date("2019-06-13")) & (marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` <= as.Date("2019-08-04"))] <- 31
+marbindsheepvisitperday1$TotalNumSheep[(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)` >= as.Date("2019-08-05"))] <- 30
+marbindsheepvisitperday1$TotalNumSheep <- as.numeric(marbindsheepvisitperday1$TotalNumSheep)
+
+marbindsheepvisitperday1$Percentvisited <- (marbindsheepvisitperday1$visits / marbindsheepvisitperday1$TotalNumSheep)
+library(ggplot2)
+plotmarbpercentsheep <- ggplot(data = marbindsheepvisitperday1, aes(x = `rownames(marbindsheepvisitperday)`, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Marbles (n = 32*)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotmarbpercentsheep1 <- plotmarbpercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 32, name = "Number of Collared Sheep"))
+print(plotmarbpercentsheep1)
+
+# SOUTH BRISTOLS
+sbrsindsheepvisitperday2$TotalNumSheep <- 24
+sbrsindsheepvisitperday2$Percentvisited <- (sbrsindsheepvisitperday2$NumIndSheep / sbrsindsheepvisitperday2$TotalNumSheep)
+library(ggplot2)
+plotsbrspercentsheep <- ggplot(data = sbrsindsheepvisitperday2, aes(x = Date, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("South Bristols (n = 24)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotsbrspercentsheep1 <- plotsbrspercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 24, name = "Number of Collared Sheep"))
+print(plotsbrspercentsheep1)
+
+# NOPAH
+
+nopaindsheepvisitperday2$Percentvisited <- (nopaindsheepvisitperday2$NumIndSheep / 6)
+plotnopapercentsheep <- ggplot(data = nopaindsheepvisitperday2, aes(x = Date, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Nopah (n = 6)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotnopapercentsheep1 <- plotnopapercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 6, name = "Number of Collared Sheep"))
+print(plotnopapercentsheep1)
+
+# CASTLE PIUTE
+cmprindsheepvisitperday2$Percentvisited <- (cmprindsheepvisitperday2$NumIndSheep / 4)
+plotcmprpercentsheep <- ggplot(data = cmprindsheepvisitperday2, aes(x = Date, y = Percentvisited, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Castle Piute (n = 4)") + xlab("Date") + ylab("Percent of Sheep") + theme(legend.position = "none") + ylim(0, 1)
+plotcmprpercentsheep1 <- plotcmprpercentsheep %+% scale_y_continuous((name = "Percent of Collared Sheep"), sec.axis = sec_axis(~. * 4, name = "Number of Collared Sheep"))
+print(plotcmprpercentsheep1)
+
+library(gridExtra)
+grid.arrange(plotmarbpercentsheep1, plotsbrspercentsheep1, plotnopapercentsheep1, plotcmprpercentsheep1, nrow = 2, top = "Percent & Number of Individual Sheep Coming to Water by Day")
+# grid.arrange(plotmarbnumsheep, plotsbrsnumsheep, plotnopasheepnum, plotcmprnumsheep, nrow = 2, top = "Number of Individual Sheep Coming to Water by Day")
+
+```
+I then made figures of the mean number of visits per day by collared sheep. The error bars are the standard deviations around the mean for a given day.
+```{r}
+# Mean Number of Visits Per Day for all sheep (and Standard Deviations)
+ 
+# MARBLES
+
+# I deleted the start and end days that weren't fully covered.
+Marbcutobsrd <- Marbcutobs[(Marbcutobs$GO_Date != "2019-06-12") & (Marbcutobs$GO_Date != "2019-06-18") & (Marbcutobs$GO_Date != "2019-06-30") & (Marbcutobs$GO_Date != "2019-07-10") & (Marbcutobs$GO_Date != "2019-07-17") & (Marbcutobs$GO_Date != "2019-07-25") & (Marbcutobs$GO_Date != "2019-08-04") & (Marbcutobs$GO_Date != "2019-08-06") & (Marbcutobs$GO_Date != "2019-08-10"), ]
+
+# In order to calculate the number of visits that each sheep had to water on a given day, I duplicated the rows with multiple visits in a single observation. If an observation had three visits in it, I duplicated the row 3x.
+
+# The Marbles had no observations with multiple visits once cut to the appropriate dates.
+
+marballrd <- as.data.frame(table(Marbcutobsrd$KI_Known_ID, Marbcutobsrd$GO_Date))
+
+marballrd1 <- marballrd[(marballrd$Var1 == "BHS_1367") |  (marballrd$Var1 == "BHS_1365") | (marballrd$Var1 == "BHS_1361") | (marballrd$Var1 == "BHS_1362") | (marballrd$Var1 == "BHS_1357") | (marballrd$Var1 == "BHS_1416") | (marballrd$Var1 == "BHS_1421") | (marballrd$Var1 == "BHS_1581") | (marballrd$Var1 == "BHS_1577") | (marballrd$Var1 == "BHS_1574") | (marballrd$Var1 == "BHS_1576") | (marballrd$Var1 == "BHS_1583") | (marballrd$Var1 == "BHS_1584") | (marballrd$Var1 == "BHS_1585") | (marballrd$Var1 == "BHS_1587") | (marballrd$Var1 == "BHS_1582") | (marballrd$Var1 == "BHS_1575") | (marballrd$Var1 == "BHS_1592") | (marballrd$Var1 == "BHS_1594") | (marballrd$Var1 == "BHS_1420") | (marballrd$Var1 == "BHS_1493") | (marballrd$Var1 == "BHS_1494") | (marballrd$Var1 == "BHS_1590") | (marballrd$Var1 == "BHS_1591") | (marballrd$Var1 == "BHS_1682") | (marballrd$Var1 == "BHS_1683") | (marballrd$Var1 == "BHS_1684") | (marballrd$Var1 == "BHS_1366") | (marballrd$Var1 == "BHS_1497") | (marballrd$Var1 == "BHS_1588") | (marballrd$Var1 == "BHS_1595") | (marballrd$Var1 == "BHS_1589"), ]
+# Adding in sheep that never visited water all summer
+Marbinsert1497 <- read.csv("Marbinsert1497.csv", header = TRUE, sep = ",")
+marballrd1 <- rbind(marballrd1, Marbinsert1497)
+
+marbindrd <- as.data.frame(tapply(marballrd1$Freq, list(marballrd1$Var2), mean))
+marbindrd$sd <- tapply(marballrd1$Freq, list(marballrd1$Var2), sd)
+marbindrd <- cbind(rownames(marbindrd), data.frame(marbindrd, row.names = NULL))
+
+marbna2 <- read.csv("MarbNAv21120.csv", header = TRUE, sep = ",")
+marbna2$tapply.marballrd.Freq..list.marballrd.Var2.mean[marbna2$tapply.marballrd.Freq..list.marballrd.Var2.mean == "#N/A"] <- NA
+marbna2$sd.tapply.marballrd.Freq..list.marballrd.Var2...sd.[marbna2$sd.tapply.marballrd.Freq..list.marballrd.Var2...sd. == "#N/A"] <- NA
+names(marbna2)[names(marbna2) == "rownames.marbindrd."] <- "rownames(marbindrd)"
+names(marbna2)[names(marbna2) == "tapply.marballrd.Freq..list.marballrd.Var2.mean"] <- "tapply.marballrd.Freq..list.marballrd.Var2...mean."
+names(marbna2)[names(marbna2) == "sd.tapply.marballrd.Freq..list.marballrd.Var2...sd."] <- "sd"
+
+names(marbindrd)[names(marbindrd) == "tapply.marballrd1.Freq..list.marballrd1.Var2...mean."] <- "visits"
+names(marbna2)[names(marbna2) == "tapply.marballrd.Freq..list.marballrd.Var2...mean."] <- "visits"
+
+marbindrd11 <- rbind(marbindrd, marbna2)
+marbindrd11$visits <- as.numeric(marbindrd11$visits)
+marbindrd11$sd <- as.numeric(marbindrd11$sd)
+marbindrd11$`rownames(marbindrd)` <- as.Date(marbindrd11$`rownames(marbindrd)` , "%Y-%m-%d")
+library(ggplot2)
+p <- ggplot(data = marbindrd11, aes(x = `rownames(marbindrd)`, y = visits)) + geom_point() + geom_errorbar(aes(ymin = visits - sd, ymax = visits + sd), width = .2) + labs(title = "Marbles (n = 32*)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(p)
+
+# An Attempt to make it boxplots ggplot(data = marbindrd11, aes(x = `rownames(marbindrd)`, y = visits)) + geom_boxplot((aes(group = cut_width(`rownames(marbindrd)`, 1))
+
+# SOUTH BRISTOLS
+
+BrsScutobsrd <- BrsScutobs[(BrsScutobs$GO_Date != "2019-06-04") & (BrsScutobs$GO_Date != "2019-06-16") & (BrsScutobs$GO_Date != "2019-06-18") & (BrsScutobs$GO_Date != "2019-07-29") & (BrsScutobs$GO_Date != "2019-08-01") & (BrsScutobs$GO_Date != "2019-08-12"), ]
+
+# In order to calculate the number of visits that each sheep had to water on a given day, I duplicated the rows with multiple visits in a single observation. If an observation had three visits in it, I duplicated the row 3x.
+
+# Divided the observations up into how many visits/observation.
+BrsSonevisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime) == FALSE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime2) == TRUE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime3) == TRUE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == TRUE), ]
+BrsStwovisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime2) == FALSE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime3) == TRUE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == TRUE), ]
+BrsSthreevisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime3) == FALSE) & (is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == TRUE),]
+BrsSfourvisitperobs <- BrsScutobsrd[(is.na(BrsScutobsrd$KI_DG_FirstPhotoTime4) == FALSE) ,]
+#Duplicated the rows
+BrsStwovisitdup <-  do.call("rbind", replicate(2, BrsStwovisitperobs, simplify = FALSE))
+BrsSthreevisitdup <- do.call("rbind", replicate(3, BrsSthreevisitperobs, simplify = FALSE))
+BrsSfourvisitdup <- do.call("rbind", replicate(4, BrsSfourvisitperobs, simplify = FALSE))
+# Combining these duplicated dataframes
+BrsScutobsrdwithdups <- rbind(BrsSonevisitperobs, BrsStwovisitdup, BrsSthreevisitdup, BrsSfourvisitdup)
+sbrsallrd <- as.data.frame(table(BrsScutobsrdwithdups$KI_Known_ID, BrsScutobsrdwithdups$GO_Date))
+# I double-checked that the table function did not remove the duplicates before calculation. It didn't, so this worked.
+# tocompare <- as.data.frame(table(BrsScutobsrd$KI_Known_ID, BrsScutobsrd$GO_Date))
+sbrsallrd1 <- sbrsallrd[(sbrsallrd$Var1 == "BHS_1330") | (sbrsallrd$Var1 == "BHS_1337") | (sbrsallrd$Var1 == "BHS_1334") | (sbrsallrd$Var1 == "BHS_1329") | (sbrsallrd$Var1 == "BHS_1328") | (sbrsallrd$Var1 == "BHS_1333") | (sbrsallrd$Var1 == "BHS_1425") | (sbrsallrd$Var1 == "BHS_1426") | (sbrsallrd$Var1 == "BHS_1489") | (sbrsallrd$Var1 == "BHS_1491") | (sbrsallrd$Var1 == "BHS_1578") | (sbrsallrd$Var1 == "BHS_1579") | (sbrsallrd$Var1 == "BHS_1580") | (sbrsallrd$Var1 == "BHS_1596") | (sbrsallrd$Var1 == "BHS_1599") | (sbrsallrd$Var1 == "BHS_1687") | (sbrsallrd$Var1 == "BHS_1486") | (sbrsallrd$Var1 == "BHS_1490") | (sbrsallrd$Var1 == "BHS_1492") | (sbrsallrd$Var1 == "BHS_1428") | (sbrsallrd$Var1 == "BHS_1685") | (sbrsallrd$Var1 == "BHS_1686") | (sbrsallrd$Var1 == "BHS_1688") | (sbrsallrd$Var1 == "BHS_1689"), ]
+sbrsindrd <- as.data.frame(tapply(sbrsallrd1$Freq, list(sbrsallrd1$Var2), mean))
+sbrsindrd$sd <- tapply(sbrsallrd1$Freq, list(sbrsallrd1$Var2), sd)
+sbrsindrd <- cbind(rownames(sbrsindrd), data.frame(sbrsindrd, row.names = NULL))
+names(sbrsindrd)[names(sbrsindrd) == "rownames(sbrsindrd)"] <- "Date"
+names(sbrsindrd)[names(sbrsindrd) == "tapply.sbrsallrd1.Freq..list.sbrsallrd1.Var2...mean."] <- "Meannumvisits"
+sbrsna2 <- read.csv("SBrsNAv21520.csv", header = TRUE, sep = ",")
+sbrsrd11 <- rbind(sbrsindrd, sbrsna2)
+sbrsrd11$Meannumvisits <- as.numeric(sbrsrd11$Meannumvisits)
+sbrsrd11$sd <- as.numeric(sbrsrd11$sd)
+sbrsrd11$Date <- as.Date(sbrsrd11$Date, "%Y-%m-%d")
+library(ggplot2)
+sbrsrd11plot <- ggplot(data = sbrsrd11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = .2) + labs(title = "South Bristols (n = 24)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(sbrsrd11plot)
+
+#NOPAH
+
+nopacutobsrd <- nopacutobs[(nopacutobs$GO_Date != "2019-06-06") & (nopacutobs$GO_Date != "2019-06-13") & (nopacutobs$GO_Date != "2019-06-25") & (nopacutobs$GO_Date != "2019-07-08") & (nopacutobs$GO_Date != "2019-07-16") & (nopacutobs$GO_Date != "2019-07-29") & (nopacutobs$GO_Date != "2019-08-07"), ]
+nopaallrd <- as.data.frame(table(nopacutobsrd$KI_Known_ID, nopacutobsrd$GO_Date))
+nopaallrd1 <- nopaallrd[(nopaallrd$Var1 == "BHS_1737") | (nopaallrd$Var1 == "BHS_1740") | (nopaallrd$Var1 == "BHS_1741") | (nopaallrd$Var1 == "BHS_1738") | (nopaallrd$Var1 == "BHS_1736") | (nopaallrd$Var1 == "BHS_1739"), ]
+nopaindrd <- as.data.frame(tapply(nopaallrd1$Freq, list(nopaallrd1$Var2), mean))
+nopaindrd$sd <- tapply(nopaallrd1$Freq, list(nopaallrd1$Var2), sd)
+nopaindrd <- cbind(rownames(nopaindrd), data.frame(nopaindrd, row.names = NULL))
+names(nopaindrd)[names(nopaindrd) == "rownames(nopaindrd)"] <- "Date"
+names(nopaindrd)[names(nopaindrd) == "tapply.nopaallrd1.Freq..list.nopaallrd1.Var2...mean."] <- "Meannumvisits"
+# I then needed to add in both the NA time periods and the mean = zero time periods.
+nopana2 <- read.csv("NopaNAZerov21620.csv", header = TRUE, sep = ",")
+nopard11 <- rbind(nopaindrd, nopana2)
+nopard11$Meannumvisits <- as.numeric(nopard11$Meannumvisits)
+nopard11$sd <- as.numeric(nopard11$sd)
+nopard11$Date <- as.Date(nopard11$Date, "%Y-%m-%d")
+library(ggplot2)
+nopard11plot <- ggplot(data = nopard11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = 0.2) + labs(title = "Nopah (n = 6)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(nopard11plot)
+
+# CASTLE PIUTE
+
+# Cmpr data already good for start and end dates based on decisions made while making the previous figures.
+cmprallrd <- as.data.frame(table(cmprcutobs$KI_Known_ID, cmprcutobs$GO_Date))
+cmprallrd1 <- cmprallrd[(cmprallrd$Var1 == "BHS_1730") | (cmprallrd$Var1 == "BHS_1733") | (cmprallrd$Var1 == "BHS_1734") | (cmprallrd$Var1 == "BHS_1728"), ]
+cmprindrd <- as.data.frame(tapply(cmprallrd1$Freq, list(cmprallrd1$Var2), mean))
+cmprindrd$sd <- tapply(cmprallrd1$Freq, list(cmprallrd1$Var2), sd)
+cmprindrd <- cbind(rownames(cmprindrd), data.frame(cmprindrd, row.names = NULL))
+names(cmprindrd)[names(cmprindrd) == "rownames(cmprindrd)"] <- "Date"
+names(cmprindrd)[names(cmprindrd) == "tapply.cmprallrd1.Freq..list.cmprallrd1.Var2...mean."] <- "Meannumvisits"
+cmprna2 <- read.csv("CmprNAZerov21820.csv", header = TRUE, sep = ",")
+cmprrd11 <- rbind(cmprindrd, cmprna2)
+cmprrd11$Meannumvisits <- as.numeric(cmprrd11$Meannumvisits)
+cmprrd11$sd <- as.numeric(cmprrd11$sd)
+cmprrd11$Date <- as.Date(cmprrd11$Date, "%Y-%m-%d")
+library(ggplot2)
+cmprrd11plot <- ggplot(data = cmprrd11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = 0.2) + labs(title = "Castle Piute (n = 4)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
+# print(cmprrd11plot)
+
+library(gridExtra)
+grid.arrange(p, sbrsrd11plot, nopard11plot, cmprrd11plot, nrow = 2, top = "Mean Number of Visits Per Day Given All Collared Sheep")
+```
+I then ran statistics associated with the previous figures. In the Marbles, there was a significant difference in the percent of collared sheep visiting water on a given day by month between May and June/July/August, though not among June, July, and August. In the South Bristols, there was a significant difference between July and August, and between June and August, thought not between June and July. In the Nopahs, June and July were not significant different, though they were both different from August. In the Castle Piutes, the only significant differences between months were between May and July, and May and August. Whether two months were significantly different on the mean number of visits to water on a given day was exactly the same as whether two months were significantly different in the percent of collared sheep visiting on a given day by month. To me, this suggests that the number of visits was not significantly different between different individual sheep.
+
+***The figures of the 'Mean Number of Visits to Water on a Given Day by Month' and 'Percent of Individual Sheep that Visited Water on a Given Day by Month' are exceedingly similar. When I double-checked how I calculated these, I didn't find a problem. Can someone double check me? If this is true, it suggests that there was basically no different in the number of visits to water between different sheep...
+
+There was a significant difference in the percentage of collared sheep coming into water between mountain ranges. All populations were significantly different from each other except the Marbles from the South Bristols. There was also a significant difference in the number of visitations to water between mountain ranges. All populations were significantly different from each other except the Marbles and the South Bristols, and the Castle Piutes and Nopah.
+
+```{r}
+## whether there is a significant difference in the percentage of collared sheep visiting water among months within each mountain range ##
+
+# Marbles
+marbindsheepvisitperday1$Month <- month(marbindsheepvisitperday1$`rownames(marbindsheepvisitperday)`)
+qqnorm(marbindsheepvisitperday1$Percentvisited)
+qqline(marbindsheepvisitperday1$Percentvisited)
+hist(marbindsheepvisitperday1$Percentvisited)
+# slightly left skewed?
+boxplot(Percentvisited ~ Month, data = marbindsheepvisitperday1, main = "Marbles (n = 31*)", ylab = "Percent of Individual Sheep that Visited Water")
+marbindsheepvisitperday1$Month <- as.factor(marbindsheepvisitperday1$Month)
+PercentMonthMarb <- aov(formula = Percentvisited ~ Month, data = marbindsheepvisitperday1)
+summary.lm(PercentMonthMarb)
+TukeyHSD(PercentMonthMarb)
+# $Month
+#           diff         lwr       upr     p adj
+# 6-5 0.29677419  0.16952135 0.4240270 0.0000023
+# 7-5 0.36344086  0.22740185 0.4994799 0.0000002
+# 8-5 0.38709677  0.23500054 0.5391930 0.0000004
+# 7-6 0.06666667 -0.04088161 0.1742149 0.3517407
+# 8-6 0.09032258 -0.03693026 0.2175754 0.2394620
+# 8-7 0.02365591 -0.11238310 0.1596949 0.9650476
+
+# South Bristols
+library(lubridate)
+sbrsindsheepvisitperday2$Month <- month(sbrsindsheepvisitperday2$Date)
+#Having trouble getting this to show up 'inline' in Markdown, but qq plot looks good.
+qqnorm(sbrsindsheepvisitperday2$NumIndSheep)
+qqline(sbrsindsheepvisitperday2$NumIndSheep)
+hist(sbrsindsheepvisitperday2$NumIndSheep)
+boxplot(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2, main = "South Bristols (n = 24)", ylab = "Percent of Individual Sheep that Visited Water")
+bartlett.test(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2)
+# p value = 0.7447
+sbrsindsheepvisitperday2$Month <- as.factor(sbrsindsheepvisitperday2$Month)
+NISMonth <- aov(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2)
+summary.lm(NISMonth)
+# p-value = 0.01271
+TukeyHSD(NISMonth)
+#          diff         lwr      upr     p adj
+# 7-6 0.7531056 -1.25106927 2.757280 0.6400796
+# 8-6 3.4173913  0.71973569 6.115047 0.0095915
+# 8-7 2.6642857  0.04063367 5.287938 0.0457927
+# South Bristols significant
+
+PercentMonthsbrs <- aov(formula = Percentvisited ~ Month, data = sbrsindsheepvisitperday2)
+summary.lm(PercentMonthsbrs)
+TukeyHSD(PercentMonthsbrs)
+#          diff          lwr       upr     p adj
+# 7-6 0.02789280 -0.046335899 0.1021215 0.6400796
+# 8-6 0.12657005  0.026656877 0.2264832 0.0095915
+# 8-7 0.09867725  0.001504951 0.1958495 0.0457927
+
+# ANOVA on actual numbers and percentages yields the same exact result.
+
+# Nopah - very few sheep so results may not mean much?
+nopaindsheepvisitperday2$Month <- month(nopaindsheepvisitperday2$Date)
+qqnorm(nopaindsheepvisitperday2$NumIndSheep)
+qqline(nopaindsheepvisitperday2$NumIndSheep)
+hist(nopaindsheepvisitperday2$NumIndSheep)
+# right-skewed b/c very small sample size
+boxplot(Percentvisited ~ Month, data = nopaindsheepvisitperday2, main = "Nopah (n = 6)", ylab = "Percent of Individual Sheep that Visited Water")
+nopaindsheepvisitperday2$Month <- as.factor(nopaindsheepvisitperday2$Month)
+PercentMonthNopa <- aov(formula = Percentvisited ~ Month, data = nopaindsheepvisitperday2)
+summary.lm(PercentMonthNopa)
+# p-value: 1.247e-09
+TukeyHSD(PercentMonthNopa)
+#           diff        lwr       upr     p adj
+# 7-6 0.05555556 -0.0339505 0.1450616 0.2945005
+# 8-6 0.41666667  0.2946172 0.5387161 0.0000000
+# 8-7 0.36111111  0.2497894 0.4724329 0.0000000
+
+# Castle Piutes
+cmprindsheepvisitperday2$Month <- month(cmprindsheepvisitperday2$Date)
+qqnorm(cmprindsheepvisitperday2$NumIndSheep)
+qqline(cmprindsheepvisitperday2$NumIndSheep)
+hist(cmprindsheepvisitperday2$NumIndSheep)
+# right-skewed b/c very small sample size
+boxplot(Percentvisited ~ Month, data = cmprindsheepvisitperday2, main = "Castle Piutes (n = 4)", ylab = "Percent of Individual Sheep that Visited Water")
+cmprindsheepvisitperday2$Month <- as.factor(cmprindsheepvisitperday2$Month)
+PercentMonthCMPR <- aov(formula = Percentvisited ~ Month, data = cmprindsheepvisitperday2)
+summary.lm(PercentMonthCMPR)
+# p-value: 0.01747
+TukeyHSD(PercentMonthCMPR)
+#           diff          lwr       upr     p adj
+# 6-5 0.25000000 -0.147049891 0.6470499 0.3173379
+# 7-5 0.43750000 -0.009816973 0.8848170 0.0565871
+# 8-5 0.45833333  0.061283442 0.8553832 0.0202925
+# 7-6 0.18750000 -0.273172651 0.6481727 0.6675089
+# 8-6 0.20833333 -0.203704812 0.6203715 0.5018073
+# 8-7 0.02083333 -0.439839317 0.4815060 0.9992381
+
+
+par(mfrow = c(2,2))
+#title = "Percent of Individual Sheep that Visited Water by Month")
+boxplot(Percentvisited ~ Month, data = marbindsheepvisitperday1, main = "Marbles (n = 31*)", ylab = "% of Individual Sheep")
+boxplot(NumIndSheep ~ Month, data = sbrsindsheepvisitperday2, main = "South Bristols (n = 24)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = nopaindsheepvisitperday2, main = "Nopah (n = 6)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = cmprindsheepvisitperday2, main = "Castle Piutes (n = 4)", ylab = "% of Individual Sheep")
+title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
+
+
+## whether there is a significant difference in the mean number of visitations of collared sheep visiting water among months within each mountain range ##
+
+
+library(lubridate)
+marbindrd11$Month <- month(marbindrd11$`rownames(marbindrd)`)
+qqnorm(marbindrd11$visits)
+qqline(marbindrd11$visits)
+hist(marbindrd11$visits)
+boxplot(visits ~ Month, data = marbindrd11, main = "Marbles (n = 32*)", ylab = "Mean Number of Visits")
+marbindrd11$Month <- as.factor(marbindrd11$Month)
+MeanVisitsMonthMarb <- aov(formula = visits ~ Month, data = marbindrd11)
+summary.lm(MeanVisitsMonthMarb)
+# p-value: 0.0002828
+TukeyHSD(MeanVisitsMonthMarb)
+#          diff         lwr       upr     p adj
+# 6-5 0.30213934  0.07318684 0.5310918 0.0054388
+# 7-5 0.39552316  0.15581593 0.6352304 0.0003925
+# 8-5 0.41789875  0.16192207 0.6738754 0.0004537
+# 7-6 0.09338382 -0.08339269 0.2701603 0.4984561
+# 8-6 0.11575941 -0.08251927 0.3140381 0.4110441
+# 8-7 0.02237559 -0.18823008 0.2329813 0.9918760
+
+# South Bristols
+sbrsrd11$Month <- month(sbrsrd11$Date)
+qqnorm(sbrsrd11$Meannumvisits)
+qqline(sbrsrd11$Meannumvisits)
+hist(sbrsrd11$Meannumvisits)
+boxplot(Meannumvisits ~ Month, data = sbrsrd11, main = "South Bristols (n = 24)", ylab = "Mean Number of Visits")
+sbrsrd11$Month <- as.factor(sbrsrd11$Month)
+MeanVisitsMonthSbrs <- aov(formula = Meannumvisits ~ Month, data = sbrsrd11)
+summary.lm(MeanVisitsMonthSbrs)
+# p-value: 0.001847
+TukeyHSD(MeanVisitsMonthSbrs)
+# 7-6 0.1035732 -0.05770139 0.2648478 0.2784047
+# 8-6 0.3200483  0.11436138 0.5257352 0.0011822
+# 8-7 0.2164751  0.01821764 0.4147325 0.0291954
+
+#Nopah
+nopard11$Month <- month(nopard11$Date)
+qqnorm(nopard11$Meannumvisits)
+qqline(nopard11$Meannumvisits)
+hist(nopard11$Meannumvisits)
+boxplot(Meannumvisits ~ Month, data = nopard11, main = "Nopah (n = 6)", ylab = "Mean Number of Visits")
+nopard11$Month <- as.factor(nopard11$Month)
+MeanVisitsMonthNopa <- aov(formula = Meannumvisits ~ Month, data = nopard11)
+summary.lm(MeanVisitsMonthNopa)
+#  p-value: 3.149e-09
+TukeyHSD(MeanVisitsMonthNopa)
+# 7-6 0.0500000 -0.07666386 0.1766639 0.6040199
+# 8-6 0.5261905  0.35972154 0.6926594 0.0000000
+# 8-7 0.4761905  0.32342811 0.6289528 0.0000000
+
+#Castle Piutes
+cmprrd11$Month <- month(cmprrd11$Date)
+qqnorm(cmprrd11$Meannumvisits)
+qqline(cmprrd11$Meannumvisits)
+hist(cmprrd11$Meannumvisits)
+boxplot(Meannumvisits ~ Month, data = cmprrd11, main = "Castle Piutes (n = 4)", ylab = "Mean Number of Visits")
+cmprrd11$Month <- as.factor(cmprrd11$Month)
+MeanVisitsMonthCmpr <- aov(formula = Meannumvisits ~ Month, data = cmprrd11)
+summary.lm(MeanVisitsMonthCmpr)
+# p-value: 0.02232
+TukeyHSD(MeanVisitsMonthCmpr)
+# 6-5 0.2916667 -0.14405020 0.7273835 0.2683879
+# 7-5 0.4375000 -0.05337924 0.9283792 0.0910373
+# 8-5 0.5000000  0.06428314 0.9357169 0.0211369
+# 7-6 0.1458333 -0.35970223 0.6513689 0.8484271
+# 8-6 0.2083333 -0.24383142 0.6604981 0.5767064
+# 8-7 0.0625000 -0.44303557 0.5680356 0.9851190
+
+# If not working, change visits to 'Meannumvisits' for Marbles
+par(mfrow = c(2,2))
+boxplot(Meannumvisits ~ Month, data = marbindrd11, main = "Marbles (n = 32*)", ylab = "Mean Number of Visits")
+boxplot(Meannumvisits ~ Month, data = sbrsrd11, main = "South Bristols (n = 24)", ylab = "Mean Number of Visits")
+boxplot(Meannumvisits ~ Month, data = nopard11, main = "Nopah (n = 6)", ylab = "Mean Number of Visits")
+boxplot(Meannumvisits ~ Month, data = cmprrd11, main = "Castle Piutes (n = 4)", ylab = "Mean Number of Visits")
+title("Mean Number of Visits to Water on a Given Day by Month", line = -1, outer = TRUE)
+
+## whether there is a significant difference in the percent of collared sheep visiting water between mountain ranges ##
+
+# Need to change the names of the rows for Marb
+names(marbindsheepvisitperday1)[names(marbindsheepvisitperday1) == "rownames(marbindsheepvisitperday)"] <- "Date"
+names(marbindsheepvisitperday1)[names(marbindsheepvisitperday1) == "visits"] <- "NumIndSheep"
+marbindsheepvisitperday1$datenum <- NULL
+library(lubridate)
+marbindsheepvisitperday1$Month <- month(marbindsheepvisitperday1$Date)
+# Need to add a row in all four data sets saying what mountain range it is
+marbindsheepvisitperday1$MtnRange <- "Marb"
+sbrsindsheepvisitperday2$MtnRange <- "BrsS"
+nopaindsheepvisitperday2$MtnRange <- "Nopa"
+cmprindsheepvisitperday2$MtnRange <- "CMPR"
+marbindsheepvisitperday1$MtnRange <- as.factor(marbindsheepvisitperday1$MtnRange)
+sbrsindsheepvisitperday2$MtnRange <- as.factor(sbrsindsheepvisitperday2$MtnRange)
+nopaindsheepvisitperday2$MtnRange <- as.factor(nopaindsheepvisitperday2$MtnRange)
+cmprindsheepvisitperday2$MtnRange <- as.factor(cmprindsheepvisitperday2$MtnRange)
+# then rbind the four mountain ranges
+nopaindsheepvisitperday2$TotalNumSheep <- 6
+cmprindsheepvisitperday2$TotalNumSheep <- 4
+allindsheepvisitperday <- rbind(marbindsheepvisitperday1, sbrsindsheepvisitperday2, nopaindsheepvisitperday2, cmprindsheepvisitperday2)
+qqnorm(allindsheepvisitperday$Percentvisited)
+qqline(allindsheepvisitperday$Percentvisited)
+# IS THIS HISTOGRAM OK?
+hist(allindsheepvisitperday$Percentvisited)
+boxplot(Percentvisited ~ MtnRange, data = allindsheepvisitperday, main = "Percent of Individual Sheep that Visited Water in a Given Day by Mountain Range", ylab = "Percent of Individual Sheep", xlab = "Mountain Range")
+allindsheepvisitperday$MtnRange <- as.factor(allindsheepvisitperday$MtnRange)
+PercentVisitMtnRange <- aov(Percentvisited ~ MtnRange, data = allindsheepvisitperday)
+summary.lm(PercentVisitMtnRange)
+#  p-value: < 2.2e-16
+TukeyHSD(PercentVisitMtnRange)
+#                   diff         lwr         upr     p adj
+# BrsS-Marb -0.006644472 -0.10476697  0.09147802 0.9980599
+# Nopa-Marb -0.356191495 -0.46494901 -0.24743398 0.0000000
+# CMPR-Marb -0.191813158 -0.31684832 -0.06677799 0.0005967
+# Nopa-BrsS -0.349547023 -0.44686256 -0.25223148 0.0000000
+# CMPR-BrsS -0.185168686 -0.30038982 -0.06994756 0.0002885
+# CMPR-Nopa  0.164378337  0.03997543  0.28878124 0.0042406
+
+
+## whether there is a significant difference in the number of visitations between mountain ranges ##
+names(marbindrd11)[names(marbindrd11) == "rownames(marbindrd)"] <- "Date"
+names(marbindrd11)[names(marbindrd11) == "visits"] <- "Meannumvisits"
+marbindrd11$MtnRange <- "Marb"
+sbrsrd11$MtnRange <- "BrsS"
+nopard11$MtnRange <- "Nopa"
+cmprrd11$MtnRange <- "CMPR"
+marbindrd11$MtnRange <- as.factor(marbindrd11$MtnRange)
+sbrsrd11$MtnRange <- as.factor(sbrsrd11$MtnRange)
+nopard11$MtnRange <- as.factor(nopard11$MtnRange)
+cmprrd11$MtnRange <- as.factor(cmprrd11$MtnRange)
+allindrd11 <- rbind(marbindrd11, sbrsrd11, nopard11, cmprrd11)
+qqnorm(allindrd11$Meannumvisits)
+qqline(allindrd11$Meannumvisits)
+hist(allindrd11$Meannumvisits)
+boxplot(Meannumvisits ~ MtnRange, data = allindrd11, main = "Mean Number of Visitations of Collared Bighorn to Water in a Given Day by Mountain Range", ylab = "Mean Number of Visitations", xlab = "Mountain Range")
+allindrd11$MtnRange <- as.factor(allindrd11$MtnRange)
+MeanVisitationMtnRange <- aov(Meannumvisits ~ MtnRange, data = allindrd11)
+summary.lm(MeanVisitationMtnRange)
+# p-value: 1.084e-15
+TukeyHSD(MeanVisitationMtnRange)
+#                  diff        lwr         upr     p adj
+# BrsS-Marb  0.08276173 -0.0457863  0.21130977 0.3424864
+# Nopa-Marb -0.37468619 -0.5184595 -0.23091286 0.0000000
+# CMPR-Marb -0.22707749 -0.3969096 -0.05724541 0.0036673
+# Nopa-BrsS -0.45744792 -0.5914880 -0.32340783 0.0000000
+# CMPR-BrsS -0.30983922 -0.4715145 -0.14816390 0.0000096
+# CMPR-Nopa  0.14760870 -0.0264174  0.32163479 0.1271620
+
+```
+Next, I did a more general examination of the spread in the number of individual visits between individual sheep. In doing this, I was not trying to examine the difference in number of visits by individual sheep between mountain ranges, but rather what was the general spread of the number of visits within each mountain range (these spreads are therefore not comparable because I did not account for the different study time periods within the different ranges). In the Marbles, the spread of the data was relatively small (mean of 25.41, 1st quartile at 22, 3rd quartile at 30). In the South Bristols, the spread was larger (mean of 36.48, 1st quartile of 23, 3rd quartile of 54).
+
+I also looked at the amount of time between visits by individual sheep. The relatively small chunks of time when all of the cameras were running were not worth analyzing because they would be biased against long amounts of time between visits. Therefore, I only analyzed the time period in the South Bristols when the cameras ran for 33 complete days straight (6/26/19 - 7/28/19). I only included complete days to have this analysis be at the same relative time period as my other analyses.
+
+The mean number of hours between visits by an individual sheep was 37.57. The first quartile was 11.87 hours, while the third quartile was 47.16 hours. There was a significant difference between sheep in the amount of time between visits to water (p-value: < 8.52e-16), though only 13% of combinations between individual sheep (36 out of 276 possible combinations) were significantly different.
+```{r}
+# Whether there is a large spread in the number of individual visits between individual sheep
+
+## It is worth noting that I have not deleted replicate observations from Theresa from this dataset. So if a sheep went to 'Theresa Seep' and 'Theresa Drinker Box' within the same visit, it still counts as two visits to water. SHOULD I FIX THIS AT SOME POINT, OR SHOULD THESE COUNT AS SEPARATE OBSERVATIONS?
+# Also, Marbles has including the total, completely covered time frame (only includes complete days)
+# Note that the exact numbers are not comparable between mountain ranges b/c of different amounts of time that cameras were functioning within each range. Didn't use a modifer b/c comparing between ranges isn't what I'm interested in right now.
+
+MarbNumVisitbyID <- as.data.frame(table(Marbcutobsrd$KI_Known_ID))
+## Removing the two sheep that didn't live through the whole time period: BHS_1595 & BHS_1367
+MarbNumVisitbyID1 <- MarbNumVisitbyID[(MarbNumVisitbyID$Var1 == "BHS_1365") | (MarbNumVisitbyID$Var1 == "BHS_1361") | (MarbNumVisitbyID$Var1 == "BHS_1362") | (MarbNumVisitbyID$Var1 == "BHS_1357") | (MarbNumVisitbyID$Var1 == "BHS_1416") | (MarbNumVisitbyID$Var1 == "BHS_1421") | (MarbNumVisitbyID$Var1 == "BHS_1581") | (MarbNumVisitbyID$Var1 == "BHS_1577") | (MarbNumVisitbyID$Var1 == "BHS_1574") | (MarbNumVisitbyID$Var1 == "BHS_1576") | (MarbNumVisitbyID$Var1 == "BHS_1583") | (MarbNumVisitbyID$Var1 == "BHS_1584") | (MarbNumVisitbyID$Var1 == "BHS_1585") | (MarbNumVisitbyID$Var1 == "BHS_1587") | (MarbNumVisitbyID$Var1 == "BHS_1582") | (MarbNumVisitbyID$Var1 == "BHS_1575") | (MarbNumVisitbyID$Var1 == "BHS_1592") | (MarbNumVisitbyID$Var1 == "BHS_1594") | (MarbNumVisitbyID$Var1 == "BHS_1420") | (MarbNumVisitbyID$Var1 == "BHS_1493") | (MarbNumVisitbyID$Var1 == "BHS_1494") | (MarbNumVisitbyID$Var1 == "BHS_1590") | (MarbNumVisitbyID$Var1 == "BHS_1591") | (MarbNumVisitbyID$Var1 == "BHS_1682") | (MarbNumVisitbyID$Var1 == "BHS_1683") | (MarbNumVisitbyID$Var1 == "BHS_1684") | (MarbNumVisitbyID$Var1 == "BHS_1366") | (MarbNumVisitbyID$Var1 == "BHS_1497") | (MarbNumVisitbyID$Var1 == "BHS_1588") | (MarbNumVisitbyID$Var1 == "BHS_1589"), ]
+boxplot(MarbNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Marbles (n = 29)")
+summary(MarbNumVisitbyID1$Freq)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+#   2.00   22.00   25.00   25.41   30.00   46.00
+
+# South Bristols only covers complete days
+BrsSNumVisitbyID <- as.data.frame(table(BrsScutobsrdwithdups$KI_Known_ID))
+boxplot(BrsSNumVisitbyID$Freq, ylab = "Number of Visits", main = "South Bristols (n = 27)")
+summary(BrsSNumVisitbyID$Freq)
+#Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+#   2.00   23.00   35.00   36.48   54.00   78.00
+
+# Nopah
+NopaNumVisitbyID <- as.data.frame(table((nopacutobsrd$KI_Known_ID)))
+NopaNumVisitbyID1 <- NopaNumVisitbyID[(NopaNumVisitbyID$Var1 == "BHS_1737") | (NopaNumVisitbyID == "BHS_1740") | (NopaNumVisitbyID$Var1 == "BHS_1741") | (NopaNumVisitbyID$Var1 == "BHS_1738") | (NopaNumVisitbyID$Var1 == "BHS_1736") | (NopaNumVisitbyID$Var1 == "BHS_1739"),]
+boxplot(NopaNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Nopah (n = 6)")
+summary(NopaNumVisitbyID1$Freq)
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's
+#    1.0     4.0     5.0     5.4     5.0    12.0
+
+CMPRNumVisitbyID <- as.data.frame(table((cmprcutobs$KI_Known_ID)))
+CMPRNumVisitbyID1 <- CMPRNumVisitbyID[(CMPRNumVisitbyID$Var1 == "BHS_1730") | (CMPRNumVisitbyID$Var1 == "BHS_1733") | (CMPRNumVisitbyID$Var1 == "BHS_1734") | (CMPRNumVisitbyID$Var1 == "BHS_1728"), ]
+boxplot(CMPRNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Castle Piute (n = 4)")
+summary(CMPRNumVisitbyID$Freq)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+# 0.0000  0.0000  0.0000  0.4085  0.0000 11.0000
+
+# Note - different mountain ranges are not comparable b/c are over different amounts of time. Just looking at spread within each mountain range.
+
+# Time between sheep coming into water
+
+BrsScutobslong <- BrsScutobs[(BrsScutobs$DateTimect >= as.POSIXct("2019-06-25 17:05:00") & BrsScutobs$DateTimect <= as.POSIXct("2019-07-29 10:36:00")), ]
+# 25 sheep
+# https://stackoverflow.com/questions/32999460/how-to-calculate-time-difference-with-previous-row-of-a-data-frame-by-group/32999651
+BrsScutobslong$DateTime <- as.POSIXct(BrsScutobslong$DateTime, format = )
+library(dplyr)
+BrsSlongtimedif <- BrsScutobslong %>%
+  arrange(KI_Known_ID, DateTimect) %>%
+  group_by(KI_Known_ID) %>%
+  mutate(Timediff = DateTimect - lag(DateTimect), diff_hours = as.numeric(Timediff, units = 'hours'))
+# mean(BrsSlongtimedif$diff_hours, na.rm = TRUE)
+# [1] 37.57339
+# boxplot(BrsSlongtimedif$diff_hours, ylab = "Time Between Visits to Water (hours)", main = "Time between Visits to Water for all Sheep")
+summary(BrsSlongtimedif$diff_hours)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's
+#  0.10   11.87   28.53   37.57   47.16  456.88      25
+qqnorm(BrsSlongtimedif$diff_hours)
+qqline(BrsSlongtimedif$diff_hours)
+shapiro.test(BrsSlongtimedif$diff_hours)
+# p-value < 2.2e-16 NOT NORMALLY DISTRIBUTED? Shouldn't use anova?
+hist(BrsSlongtimedif$diff_hours)
+# very right-skewed - log transform
+hist(log(BrsSlongtimedif$diff_hours))
+boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+# Looking at the non-logged boxplot, there is one sheep that is super off compared to the rest of them???
+BrsSdiffhoursindsheep <- aov(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+summary.lm(BrsSdiffhoursindsheep)
+# p-value: < 8.52e-16
+TukeyHSD(BrsSdiffhoursindsheep)
+# Just a few combos are significantly different?
+# DID I DO THIS RIGHT???
+
+# 276 combos - 36 of which are significant- 13% are significant
+# Combos that are significantly different:
+# BHS_1486 - BHS_1328
+# BHS_1337 - BHS_1329
+# 1486 - 1329
+# 1490 - 1329
+# 1596 - 1329
+# 1685 - 1329
+# 1486 - 1330
+# 1490 - 1330
+# 1683 - 1330
+# 1337 - 1333
+# 1486 - 1333
+# 1490 - 1333
+# 1596 - 1333
+# 1685 - 1333
+# 1688 - 1333
+# 1580 - 1337
+# 1486 - 1425
+# 1486 - 1426
+# 1490 - 1426
+# 1685 - 1426
+# 1489 - 1486
+# 1491 - 1486
+# 1492 - 1486
+# 1578 - 1486
+# 1580 - 1486
+# 1687 - 1486
+# 1490 - 1489
+# 1685 - 1489
+# 1492 - 1490
+# 1580 - 1490
+# 1687 - 1490
+# 1685 - 1492
+# 1596 - 1580
+# 1685 - 1580
+# 1688 - 1580
+# 1687 - 1685
+
+
+
+
+
+```
+I examined whether there is a statistical difference in visitation between ewes and rams within each mountain range. There was no significant difference in visitation between the sexes in any mountain range (Marbles p-value = 0.4642, South Bristols p-value = 0.05788, Nopah p-value = 0.7963, Castle Piute = 0.8208).
+
+I also examined whether there is a statistical different in visitation between bighorn of different ages. There was significantly different visitation between bighorn of different ages in the Marbles (p-value = 1.176e-05), South Bristols (p-value < 2.2e-16), and Nopahs (p-value = 0.01857), but not in the Castle Piutes (p-value = 0.1117). Looking more closely at the numbers, I do not see an age in the Marbles data that is super different than the expected ratio. In the South Bristols, it seems like the visitation of middle-aged sheep (ages 7 through 10) are noteably different, though different ages within this subset have greater or less visitation than what would be expected if all ages had equal visitation. Overall, I don't think this significance is meaningful, as I don't know biologically why a 7 year-old sheep would go into water way more often than an 8 year-old sheep.
+
+Just checking, it does make sense to do these separately by mountain range???
+
+```{r}
+# SEX
+
+# Marbles has 23 ewes and 8 rams of collared sheep
+nrow(Marbcutobsrd[Marbcutobsrd$KI_Sex == "F", ])
+#544 rows for F
+nrow(Marbcutobsrd[Marbcutobsrd$KI_Sex == "M", ])
+# 201 rows for M
+# nrow(Marbcutobs)
+# Checked that this was the total number of rows - it was.
+chisq.test(x = c(544, 201), p = c(23/31, 8/31))
+# X-squared = 0.53575, df = 1, p-value = 0.4642
+# No significant difference between males and females in Marbles.
+
+# South Bristols has 16 ewes and 8 rams.
+nrow(BrsScutobsrdwithdups[BrsScutobsrdwithdups$KI_Sex == "F", ])
+# 635 rows for F
+nrow(BrsScutobsrdwithdups[BrsScutobsrdwithdups$KI_Sex == "M", ])
+# 277 rows for M
+# nrow(BrsScutobsrdwithdups)
+# Checked that this was the total number of rows - it was.
+chisq.test(x = c(635, 277), p = c(16/24, 8/24))
+# X-squared = 3.597, df = 1, p-value = 0.05788
+# Though close to significant, still not significant
+
+# Nopah has 5 females and 1 male.
+nrow(nopacutobsrd[nopacutobsrd$KI_Sex == "F", ])
+# 22 rows for F
+nrow(nopacutobsrd[nopacutobsrd$KI_Sex == "M", ])
+# 5 rows for M
+# nrow(nopacutobs)
+# correct number of rows
+chisq.test(x = c(22, 5), p = c(5/6, 1/6))
+# There is a warning associated with the small sample size but:
+# X-squared = 0.066667, df = 1, p-value = 0.7963
+
+# Castle Piutes has 3 females and 1 male.
+View(cmprcutobs)
+cmprcutobs1 <- cmprcutobs[(cmprcutobs$KI_Known_ID == "BHS_1730") | (cmprcutobs$KI_Known_ID == "BHS_1733") | (cmprcutobs$KI_Known_ID == "BHS_1734") | (cmprcutobs$KI_Known_ID == "BHS_1728"), ]
+nrow(cmprcutobs1[cmprcutobs1$KI_Sex == "F", ])
+# 22 rows for F
+nrow(cmprcutobs1[cmprcutobs1$KI_Sex == "M", ])
+# 7 rows for M
+nrow(cmprcutobs1)
+# ONLY 26 ROWS - there are some NA's in sex here!
+# but there really is: 20 F, 6 M
+chisq.test(x = c(20, 6), p = c(3/4, 1/4))
+# X-squared = 0.051282, df = 1, p-value = 0.8208
+
+# There is not a significant difference in visitation by sex in any mountain range.
+
+# AGE
+
+# See BighornAgeSummer2019 (in Danielle's google drive) for age calculations
+Marbcutobsrd$Age2019 <- NA
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1365"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1361"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1362"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1357"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1416"] <- 11
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1421"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1581"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1577"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1574"] <- 12
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1576"] <- 10
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1583"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1584"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1585"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1587"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1582"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1575"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1592"] <- 7
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1594"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1590"] <- 12
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1591"] <- 9
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1682"] <- 4
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1683"] <- 4
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1684"] <- 13
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1588"] <- 8
+Marbcutobsrd$Age2019[Marbcutobsrd$KI_Known_ID == "BHS_1595"] <- 8
+# 1367, 1366, and 1497 were of unknown age
+table(Marbcutobsrd$Age2019[(Marbcutobsrd$KI_Known_ID != "BHS_1367") & (Marbcutobsrd$KI_Known_ID != "BHS_1366") & (Marbcutobsrd$KI_Known_ID != "BHS_1497")])
+#  4   7   8   9  10  11  12  13
+# 76 184 132 150  25  15  51  10
+chisq.test(x = c(76, 184, 132, 150, 25, 15, 51, 10), p = c(2/25, 6/25, 6/25, 6/25, 1/25, 1/25, 2/25, 1/25))
+# p-value = 1.176e-05
+# But is this really a significant finding? I'm question it.
+
+BrsScutobsrdwithdups$Age2019 <- NA
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1330"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1334"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1333"] <- 9
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1425"] <- 10
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1489"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1491"] <- 10
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1578"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1579"] <- 3
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1596"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1599"] <- 7
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1687"] <- 9
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1486"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1490"] <- 12
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1492"] <- 10
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1428"] <- 8
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1685"] <- 3
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1686"] <- 6
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1688"] <- 2
+BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1689"] <- 10
+table(BrsScutobsrdwithdups$Age2019)
+ # 2   3   6   7   8   9  10  12
+ # 58 101  23 239 120  48 103  54
+chisq.test(x = c(58, 101, 23, 239, 120, 48, 103, 54), p = c(1/19, 2/19, 1/19, 4/19, 4/19, 2/19, 4/19, 1/19))
+# X-squared = 109.61, df = 7, p-value < 2.2e-16
+# Could it be that middle-aged sheep are visiting water more often b/c they are more likely to have lambs make it to the summer? Is that even true???? Though ewes did not visit more than rams
+
+nopacutobsrd$Age2019 <- NA
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1737"] <- 3
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1740"] <- 2
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1741"] <- 8
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1738"] <- 2
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1736"] <- 3
+nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1739"] <- 5
+table(nopacutobsrd$Age2019)
+# 2  3  5  8
+# 16  5  5  1
+chisq.test( x = c(16, 5, 5, 1), p = c(2/6, 2/6, 1/6, 1/6))
+# X-squared = 10, df = 3, p-value = 0.01857
+# warning: Chi-squared approximation may be incorrect
+
+cmprcutobs1$Age2019 <- NA
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1730"] <- 5
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1733"] <- 9
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1734"] <- 7
+cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1728"] <- 9
+table(cmprcutobs1$Age2019)
+# 5  7  9
+# 4 11 11
+chisq.test(x = c(4, 11, 11), p = c(1/4, 1/4, 2/4))
+# X-squared = 4.3846, df = 2, p-value = 0.1117
+
+```
+I looked at what time of day sheep come in to water. I decided to break down the day into comparable four-hour chunks: 1-5, 5-9, 9-13, 13-17, 17-21, 21-1. I decided on these specific time periods (1-5 instead of 0-4 for example) for the following reasons: 1) the hottest time of the day is 3 pm, 2)  sunset during the midpoint during the study period (June 23rd) in the Mojave is at 8:05 pm, and 3) sunrise during the midpoint during the study period in the Mojave is at 5:35 am. Visitation to water kept line with bighorn diurnality, with 97% of visits (1652/1698) occurring between 5 am and 9 pm. 45% of visits (773/1698) occurred between 9 am and 1 pm, while another 26% of visits (453/1698) occurred between 5 am and 9 pm. Needless to say, there was a significant difference in the number of visits to water among these time chunks (p-value < 2.2e-16).
+```{r}
+# Decided to break the day down into 1-5, 5-9, 9-13, 13-17, 17-21, 21-1. This is b/c hottest time of day is 3pm, sunset during the midpoint during the study period (June 23rd) in the Mojave is at 8:05 pm, and sunrise during the midpoint during the study period in the Mojave is at 5:35 am. 
+
+# First need to put
+
+allrangetime <- rbind(Marbcutobsrd, BrsScutobsrdwithdups, nopacutobsrd, cmprcutobs1)
+allrangetime$timeofday <- allrangetime$KI_DG_FirstPhotoTime
+write.csv(allrangetime, 'allrangetime.csv')
+# Because it seemed easier to just transfer the times of the 2nd/3rd/4th visits in the few observations with multiple visits/observations into the same column by hand than write out a complicated code, I did just that.
+allrangetime1 <- read.csv("allrangetime.csv", header = TRUE, sep = ",")
+# View(allrangetime1)
+# Double-checked that everything was correct - it was
+allrangetime1$X.1 <- NULL
+allrangetime1$X.2 <- NULL
+allrangetime1$X.3 <- NULL
+allrangetime1$X.4 <- NULL
+allrangetime1$TimeBreaks <- NA
+allrangetime1$TimeBreaks <- as.character(allrangetime1$TimeBreaks)
+# There are empty cells for allrangetime1$Hour - need to go back through photos and fix these entries!
+library(lubridate)
+allrangetime1$timeofday <- hm(allrangetime1$timeofday)
+allrangetime1$Hour <- NA
+allrangetime1$Hour <- hour(allrangetime1$timeofday)
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 1) & (allrangetime1$Hour <= 4)] <- "1to5"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 5) & (allrangetime1$Hour <= 8)] <- "5to9"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 9) & (allrangetime1$Hour <= 12)] <- "9to13"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 13) & (allrangetime1$Hour <= 16)] <- "13to17"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 17) & (allrangetime1$Hour <= 20)] <- "17to21"
+allrangetime1$TimeBreaks[(allrangetime1$Hour >= 21) | (allrangetime1$Hour <= 0)] <- "21to1"
+allrangetime1$TimeBreaks <- as.factor(allrangetime1$TimeBreaks)
+table(allrangetime1$TimeBreaks)
+# 13to17 17to21   1to5  21to1   5to9  9to13
+#   297    129     19     27    453    773
+slices <- c(19, 453, 773, 297, 129, 27)
+lbls <- c("1 to 5", "5 to 9", "9 to 13", "13 to 17", "17 to 21")
+pie(slices, labels = lbls, main = "Number of Visits by Time of Day")
+chisq.test(x = c(19, 453, 773, 297, 129, 27), p = c(4/24, 4/24, 4/24, 4/24, 4/24, 4/24))
+# X-squared = 1512.9, df = 5, p-value < 2.2e-16
+```
+This is where I am going to leave off my basic analyses of the visitation data for the moment. When I have time, I still want to do the following analyses.
+
+- how much time individual bighorn spend drinking water when they visit (and whether this differs by age, sex)
+- whether there is a significant difference in how often ewes with lambs come in vs. ewes without lambs (or ewe groups with lambs come in vs. ewe groups without lambs)
+- whether there is a significant difference in how often sheep in large groups come in vs. sheep in small groups come in
