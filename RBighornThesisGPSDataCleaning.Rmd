@@ -416,7 +416,7 @@ I then started to calculate my four measures of GPS movement: step length, turni
 
 ```{r}
 library(moveHMM)
-# 1 hr
+# 1 hr fix
 names(cln1hrfix)[names(cln1hrfix) == "y"] <- "Latitude"
 names(cln1hrfix)[names(cln1hrfix) == "x"] <- "Longitude"
 cln1hrfix1 <- cln1hrfix[with(cln1hrfix, order(ID, DateTimeLocalTestct)), ]

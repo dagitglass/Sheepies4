@@ -233,7 +233,7 @@ renodups <- distinct(nodups)
 
 Then, just to be sure, I cut the visitation data to the time periods when all cameras were running. This data should have already been cut, but I know that Ashley was not super meticulous in only going through the photos in the time period when all of the cameras in the range were running, so I feel like this is a good check.
 
-At this time, I also checked that the GO_WaterSource and GO_RangeCode made sense for each range. I changed two entries that were actually Nopah but mistakenly CMPR.
+At this time, I also checked that the GO_WaterSource and GO_RangeCode made sense for each range. I changed two entries that were actually Nopah but mistakenly CMPR. 
 
 ``` {r}
 
