@@ -677,9 +677,71 @@ summary.lm(steplengthid)
 TukeyHSD(steplengthid)
 # Out of 120, 48 combinations of two sheep were significantly different.
 
+#Whether step length is different by month
+# Because step length was different by mountain range, I am analyzing this by mountain range.
+steplengthallmtn1$Month <- as.factor(steplengthallmtn1$Month)
+marbsl <- steplengthallmtn1[steplengthallmtn1$MountainRange == "Marb", ]
+sbrssl <- steplengthallmtn1[steplengthallmtn1$MountainRange == "BrsS", ]
+cmprsl <- steplengthallmtn1[steplengthallmtn1$MountainRange == "CMPR", ]
+nopasl <- steplengthallmtn1[steplengthallmtn1$MountainRange == "Nopa", ]
+# Marbles
+boxplot(stplengthtopo ~ Month, data = marbsl, ylab = "Distance Traveled/Hr", main = "Marbles")
+slmarbmonth <- aov(stplengthtopo ~ Month, data = marbsl)
+summary.lm(slmarbmonth)
+# Multiple R-squared:  0.001935,	Adjusted R-squared:  0.001186 
+# F-statistic: 2.584 on 3 and 3999 DF,  p-value: 0.05157
+TukeyHSD(slmarbmonth)
+# Only June and August are significantly different (p = 0.0455908)
+# South Bristols
+boxplot(stplengthtopo ~ Month, data = sbrssl, ylab = "Distance Traveled/Hr", main = "South Bristols")
+slsbrsmonth <- aov(stplengthtopo ~ Month, data = sbrssl)
+summary.lm(slsbrsmonth)
+# Multiple R-squared:  0.01952,	Adjusted R-squared:  0.0192 
+# F-statistic: 61.94 on 2 and 6224 DF,  p-value: < 2.2e-16
+TukeyHSD(slsbrsmonth)
+#          diff       lwr        upr     p adj
+# 7-6  75.82240  59.63903 92.0057627 0.0000000
+# 8-6  54.51713  33.57619 75.4580655 0.0000000
+# 8-7 -21.30527 -41.93470 -0.6758308 0.0410484
+# All months are significantly different from each other in the South Bristols.
+# Nopah
+boxplot(stplengthtopo ~ Month, data = nopasl, ylab = "Distance Traveled/Hr", main = "Nopah")
+slnopamonth <- aov(stplengthtopo ~ Month, data = nopasl)
+summary.lm(slnopamonth)
+# Multiple R-squared:  0.001923,	Adjusted R-squared:  0.0008235 
+# F-statistic: 1.749 on 2 and 1816 DF,  p-value: 0.1742
+TukeyHSD(slnopamonth)
+#          diff        lwr      upr     p adj
+# 7-6 14.793955  -7.513511 37.10142 0.2653926
+# 8-6 21.115762  -7.278934 49.51046 0.1890717
+# 8-7  6.321807 -17.660435 30.30405 0.8101085
+# No months are significantly different from each other in the Nopahs.
+# Castle Piute
+boxplot(stplengthtopo ~ Month, data = cmprsl, ylab = "Distance Traveled/Hr", main = "Castle Piute")
+slcmprmonth <- aov(stplengthtopo ~ Month, data = cmprsl)
+summary.lm(slcmprmonth)
+# Multiple R-squared:  0.006777,	Adjusted R-squared:  0.004597 
+# F-statistic: 3.108 on 2 and 911 DF,  p-value: 0.04516
+TukeyHSD(slcmprmonth)
+#          diff        lwr      upr     p adj
+# 7-6 34.067966  -7.128176 75.26411 0.1277739
+# 8-6 29.276394  -0.455967 59.00876 0.0547090
+# 8-7 -4.791572 -42.058157 32.47501 0.9510234
+# Only June was different from August.
 
 
 ```
+I then calculated the angle of movement relative to the closest water source.
+
+
+
+```{r}
+
+```
+
+
+
+
 JUNK This code is what I used before I went into the lab and did it on a computer that could handle the topoDistance function.
 ```{r}
 # Setting up the elevation raster
