@@ -20,6 +20,21 @@ Nopah: 1392'-5249' (424 m - 1599 m) --> 1011.5
 
 Marbles: 34.6298, -115.5856
 South Bristols: 34.5937, -115.6823
+CMPR: 35.2795, -115.0990
+Nopah: 36.0105, -116.1015
+
+Nopah:
+2019-06-07 - 2019-06-12
+2019-06-26 - 2019-07-07
+2019-07-17 - 2019-07-28
+2019-07-30 - 2019-08-06
+
+Castle Piutes:
+2019-05-24 - 2019-05-30
+2019-06-21 - 2019-06-26
+2019-07-12 - 2019-07-14
+2019-07-31 - 2019-08-03
+2019-08-06 - 2019-08-14
 
 
 
@@ -64,6 +79,24 @@ names(sbrsdatetempmax)[names(sbrsdatetempmax) == "sbrsdaymetcut.Date"] <- "Date"
 names(sbrsdatetempmax)[names(sbrsdatetempmax) == "sbrsdaymetcut.tmax..deg.c."] <- "Tmax"
 sbrsdatetempmaxna <- rbind(sbrsdatetempmax, sbrswthrna)
 plot(Tmax ~ Date, data = sbrsdatetempmaxna, type = "b", xlab = "Date", ylab = "Maximum Daily Temperature (°C)", main = "South Bristols Maximum Daily Temperature")
+# SBrs min temp SHOULD DO
+
+
+# CMPR
+cmprdaymet <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/CMPR11193_lat_35.2795_lon_-115.099.csv", header = TRUE, sep = ",")
+# Rained 24 mm on 8/8
+cmprdaymet$Date <- as.character(cmprdaymet$Date)
+cmprdaymet$Date <- as.Date(cmprdaymet$Date)
+cmprdaymetcut <- cmprdaymet[(cmprdaymet$Date >= as.Date("2019-05-24") & cmprdaymet$Date <= as.Date("2019-05-30")) | (cmprdaymet$Date >= as.Date("2019-06-21") & cmprdaymet$Date <= as.Date("2019-06-26")) | (cmprdaymet$Date >= as.Date("2019-07-12") & cmprdaymet$Date <= as.Date("2019-07-14")) | (cmprdaymet$Date >= as.Date("2019-07-31") & cmprdaymet$Date <= as.Date("2019-08-03")) | (cmprdaymet$Date >= as.Date("2019-08-06") & cmprdaymet$Date <= as.Date("2019-08-14")), ]
+
+# Nopah
+nopadaymet <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Nopah11372_lat_36.0105_lon_-116.1015.csv", header = TRUE, sep = ",")
+# 7/25 42 mm precipitation
+nopadaymet$Date <- as.character(nopadaymet$Date)
+nopadaymet$Date <- as.Date(nopadaymet$Date)
+nopadaymetcut <- nopadaymet[(nopadaymet$Date >= as.Date("2019-06-07") & nopadaymet$Date <= as.Date("2019-06-12")) | (nopadaymet$Date >= as.Date("2019-06-26") & nopadaymet$Date <= as.Date("2019-07-07")) | (nopadaymet$Date >= as.Date("2019-07-17") & nopadaymet$Date <= as.Date("2019-07-28")) | (nopadaymet$Date >= as.Date("2019-07-30") & nopadaymet$Date <= as.Date("2019-08-06")), ]
+
+
 
 ```
 
@@ -89,12 +122,12 @@ TukeyHSD(marbmaxtempmonth)
 
 ```
 
-
+I tested for a causal relationship between the environmental variables and the rate of bighorn visitation by day. First, in excel, I compiled all of the cut daymet data for the different mountain ranges, and also added the NA data for the days that were not covered by cameras for plotting purposes.
 
 
 
 ```{r}
-
+allrangedaymetna <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/AllRangesDaymetNA.csv", header = TRUE, sep = ",")
 
 ```
 

@@ -1220,6 +1220,8 @@ qqline(allrangetime1$VisitDuration)
 hist(allrangetime1$VisitDuration)
 # NEED TO FIGURE THAT OUT BEFORE RUNNING THE REST OF IT..
 
+# CHECK IT OUT BY MONTH
+
 
 ## whether there is a significant difference in how often ewes with lambs come in vs. ewes without lambs (or ewe groups with lambs come in vs. ewe groups without lambs)
 
