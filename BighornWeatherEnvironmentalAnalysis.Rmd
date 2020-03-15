@@ -19,6 +19,8 @@ Castle Piute: 4000'-5185' (1219 m - 1580 m) --> 1399.5
 Nopah: 1392'-5249' (424 m - 1599 m) --> 1011.5
 
 Marbles: 34.6298, -115.5856
+South Bristols: 34.5937, -115.6823
+
 
 
 ```{r}
@@ -33,25 +35,66 @@ marbdaymetcut <- marbdaymet[(marbdaymet$Date >= as.Date("2019-05-18") & marbdaym
 marbwthrna <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/MarbNAweatherenvironmentalvariables.csv", sep = ",", header = TRUE)
 marbwthrna$Date <- as.Date(marbwthrna$Date)
 # Plotting max temperature
-marbdatetempmax <- data.frame(marbdaymetcut$Date, marbdaymetcut$tmax..deg.c.)
+marbdatetempmax <- data.frame(marbdaymetcut$MountainRange, marbdaymetcut$Date, marbdaymetcut$tmax..deg.c.)
+names(marbdatetempmax)[names(marbdatetempmax) == "marbdaymetcut.MountainRange"] <- "MountainRange"
 names(marbdatetempmax)[names(marbdatetempmax) == "marbdaymetcut.Date"] <- "Date"
 names(marbdatetempmax)[names(marbdatetempmax) == "marbdaymetcut.tmax..deg.c."] <- "Tmax"
 names(marbwthrna)[names(marbwthrna) == "Nas"] <- "Tmax"
 marbdatetempmaxna <- rbind(marbdatetempmax, marbwthrna)
-plot(marbdatetempmaxna$Tmax ~ marbdatetempmaxna$Date, type = "b", xlab = "Date", ylab = "Maximum Daily Temperature (°C)", main = "Marbles Maximum Daily Temperature")
+# plot(marbdatetempmaxna$Tmax ~ marbdatetempmaxna$Date, type = "b", xlab = "Date", ylab = "Maximum Daily Temperature (°C)", main = "Marbles Maximum Daily Temperature")
 # It is worth noting that on this plot, there are lines connecting over NA dates.
 # Plotting min temperature
+marbdatetempmin <- data.frame(marbdaymetcut$Date, marbdaymetcut$tmin..deg.c.)
+names(marbdatetempmin)[names(marbdatetempmin) == "marbdaymetcut.Date"] <- "Date"
+names(marbdatetempmin)[names(marbdatetempmin) == "marbdaymetcut.tmin..deg.c."] <- "Tmin"
+names(marbwthrna)[names(marbwthrna) == "Tmax"] <- "Tmin"
+marbdatetempminna <- rbind(marbdatetempmin, marbwthrna)
+plot(marbdatetempminna$Tmin ~ marbdatetempminna$Date, type = "b", xlab = "Date", ylab = "Minimum Daily Temperature (°C)", main = "Marbles Minimum Daily Temperature")
 
+# South Bristols
+sbrsdaymet <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/SBrsDaymet11193_lat_34.5937_lon_-115.6823.csv", sep = ",", header = TRUE)
+# It rained 2 mm in the South Bristols on 7/25. 
+sbrsdaymet$Date <- as.character(sbrsdaymet$Date)
+sbrsdaymet$Date <- as.Date(sbrsdaymet$Date)
+sbrsdaymetcut <- sbrsdaymet[(sbrsdaymet$Date >= as.Date("2019-06-05") & sbrsdaymet$Date <= as.Date("2019-06-15")) | (sbrsdaymet$Date >= as.Date("2019-06-19") & sbrsdaymet$Date <= as.Date("2019-07-28")) | (sbrsdaymet$Date >= as.Date("2019-08-02") & sbrsdaymet$Date <= as.Date("2019-08-11")), ]
+sbrswthrna <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/BrsSNAweatherenvironmentalvariables.csv", sep = ",", header = TRUE)
+sbrswthrna$Date <- as.Date(sbrswthrna$Date)
+sbrsdatetempmax <- data.frame(sbrsdaymetcut$Date, sbrsdaymetcut$tmax..deg.c.)
+names(sbrsdatetempmax)[names(sbrsdatetempmax) == "sbrsdaymetcut.Date"] <- "Date"
+names(sbrsdatetempmax)[names(sbrsdatetempmax) == "sbrsdaymetcut.tmax..deg.c."] <- "Tmax"
+sbrsdatetempmaxna <- rbind(sbrsdatetempmax, sbrswthrna)
+plot(Tmax ~ Date, data = sbrsdatetempmaxna, type = "b", xlab = "Date", ylab = "Maximum Daily Temperature (°C)", main = "South Bristols Maximum Daily Temperature")
+
+```
+
+I then saw if temperature was different between months for the different mountain ranges.
+
+```{r}
+# Marbles max temperature
+marbdatetempmaxna$Month <- as.numeric(format(marbdatetempmaxna$Date, "%m"))
+marbdatetempmaxna$Month <- as.factor(marbdatetempmaxna$Month)
+marbmaxtempmonth <- aov(Tmax ~ Month, data = marbdatetempmaxna)
+summary.lm(marbmaxtempmonth)
+# Multiple R-squared:  0.9489,	Adjusted R-squared:  0.9444 
+# F-statistic: 210.4 on 3 and 34 DF,  p-value: < 2.2e-16
+TukeyHSD(marbmaxtempmonth)
+#           diff        lwr       upr     p adj
+# 6-5 14.4142857 12.4761944 16.352377 0.0000000
+# 7-5 17.8642857 15.7777156 19.950856 0.0000000
+# 8-5 17.1309524 14.7753360 19.486569 0.0000000
+# 7-6  3.4500000  1.7214501  5.178550 0.0000307
+# 8-6  2.7166667  0.6714189  4.761914 0.0054639
+# 8-7 -0.7333333 -2.9197952  1.453129 0.8018217
+# 
+
+```
+
+
+
+
+
+```{r}
 
 
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
