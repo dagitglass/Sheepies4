@@ -128,6 +128,27 @@ I tested for a causal relationship between the environmental variables and the r
 
 ```{r}
 allrangedaymetna <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/AllRangesDaymetNA.csv", header = TRUE, sep = ",")
+allrangedaymetna$NDVI <- NA
+allrangedaymetna[1, 13] <- 0.106075
+allrangedaymetna[2, 13] <- 0.098809
+allrangedaymetna[3, 13] <- 0.110244
+allrangedaymetna[4, 13] <- 0.118357
+allrangedaymetna[5, 13] <- 0.028228
+allrangedaymetna[6, 13] <- 0.026557
+allrangedaymetna[7, 13] <- 0.104746
+allrangedaymetna[8, 13] <- 0.108609
+allrangedaymetna[9, 13] <- 0.115012
+allrangedaymetna[10, 13] <- 0.105015
+allrangedaymetna[11, 13] <- 0.120782
+allrangedaymetna[12, 13] <- 0.102703
+allrangedaymetna[13, 13] <- 0.081198
+allrangedaymetna[14, 13] <- 0.106395
+allrangedaymetna[15, 13] <- 0.109952
+allrangedaymetna[16, 13] <- 0.106986
+allrangedaymetna[17, 13] <- 0.105554
+allrangedaymetna[18, 13] <- 0.112115
+allrangedaymetna[19, 13] <- 0.11176
+allrangedaymetna[20, 13] <- 0.10329
 
 ```
 
