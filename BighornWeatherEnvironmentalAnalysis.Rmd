@@ -149,6 +149,22 @@ allrangedaymetna[17, 13] <- 0.105554
 allrangedaymetna[18, 13] <- 0.112115
 allrangedaymetna[19, 13] <- 0.11176
 allrangedaymetna[20, 13] <- 0.10329
+allrangedaymetna[21, 13] <- 0.108741
+allrangedaymetna[22, 13] <- 0.080393
+allrangedaymetna[23, 13] <- 0.100699
+```
+
+Another attempt at NDVI
+
+```{r}
+# A = NIR = 2
+library("LSRS")
+library(raster)
+marb712b1 <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marb712b1_MOD09GQ.006_sur_refl_b01_1_doy2019193_aid0001.tif")
+marb712b2 <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marb712b2_MOD09GQ.006_sur_refl_b02_1_doy2019193_aid0001.tif")
+ndvimarb712 <- NDVI(a = marb712b2, b = marb712b1)
+cellStats(x = ndvimarb712, stat = 'mean', na.rm = TRUE)
+
 
 ```
 
