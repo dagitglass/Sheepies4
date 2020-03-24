@@ -502,7 +502,7 @@ I then made figures of the mean number of visits per day by collared sheep. The 
 # MARBLES
 
 # I deleted the start and end days that weren't fully covered.
-Marbcutobsrd <- Marbcutobs[(Marbcutobs$GO_Date != "2019-06-12") & (Marbcutobs$GO_Date != "2019-06-18") & (Marbcutobs$GO_Date != "2019-06-30") & (Marbcutobs$GO_Date != "2019-07-10") & (Marbcutobs$GO_Date != "2019-07-17") & (Marbcutobs$GO_Date != "2019-07-25") & (Marbcutobs$GO_Date != "2019-08-04") & (Marbcutobs$GO_Date != "2019-08-06") & (Marbcutobs$GO_Date != "2019-08-10"), ]
+Marbcutobsrd <- Marbcutobs[(Marbcutobs$GO_Date != as.Date("2019-06-12")) & (Marbcutobs$GO_Date != as.Date("2019-06-18")) & (Marbcutobs$GO_Date != as.Date("2019-06-30")) & (Marbcutobs$GO_Date != as.Date("2019-07-10")) & (Marbcutobs$GO_Date != as.Date("2019-07-17")) & (Marbcutobs$GO_Date != as.Date("2019-07-25")) & (Marbcutobs$GO_Date != as.Date("2019-08-04")) & (Marbcutobs$GO_Date != as.Date("2019-08-06")) & (Marbcutobs$GO_Date != as.Date("2019-08-10")), ]
 
 # In order to calculate the number of visits that each sheep had to water on a given day, I duplicated the rows with multiple visits in a single observation. If an observation had three visits in it, I duplicated the row 3x.
 
@@ -541,7 +541,7 @@ p <- ggplot(data = marbindrd11, aes(x = `rownames(marbindrd)`, y = visits)) + ge
 
 # SOUTH BRISTOLS
 
-BrsScutobsrd <- BrsScutobs[(BrsScutobs$GO_Date != "2019-06-04") & (BrsScutobs$GO_Date != "2019-06-16") & (BrsScutobs$GO_Date != "2019-06-18") & (BrsScutobs$GO_Date != "2019-07-29") & (BrsScutobs$GO_Date != "2019-08-01") & (BrsScutobs$GO_Date != "2019-08-12"), ]
+BrsScutobsrd <- BrsScutobs[(BrsScutobs$GO_Date != as.Date("2019-06-04")) & (BrsScutobs$GO_Date != as.Date("2019-06-16")) & (BrsScutobs$GO_Date != as.Date("2019-06-18")) & (BrsScutobs$GO_Date != as.Date("2019-07-29")) & (BrsScutobs$GO_Date != as.Date("2019-08-01")) & (BrsScutobs$GO_Date != as.Date("2019-08-12")), ]
 
 # In order to calculate the number of visits that each sheep had to water on a given day, I duplicated the rows with multiple visits in a single observation. If an observation had three visits in it, I duplicated the row 3x.
 
@@ -576,7 +576,7 @@ sbrsrd11plot <- ggplot(data = sbrsrd11, aes(x = Date, y = Meannumvisits)) + geom
 
 #NOPAH
 
-nopacutobsrd <- nopacutobs[(nopacutobs$GO_Date != "2019-06-06") & (nopacutobs$GO_Date != "2019-06-13") & (nopacutobs$GO_Date != "2019-06-25") & (nopacutobs$GO_Date != "2019-07-08") & (nopacutobs$GO_Date != "2019-07-16") & (nopacutobs$GO_Date != "2019-07-29") & (nopacutobs$GO_Date != "2019-08-07"), ]
+nopacutobsrd <- nopacutobs[(nopacutobs$GO_Date != as.Date("2019-06-06")) & (nopacutobs$GO_Date != as.Date("2019-06-13")) & (nopacutobs$GO_Date != as.Date("2019-06-25")) & (nopacutobs$GO_Date != as.Date("2019-07-08")) & (nopacutobs$GO_Date != as.Date("2019-07-16")) & (nopacutobs$GO_Date != as.Date("2019-07-29")) & (nopacutobs$GO_Date != as.Date("2019-08-07")), ]
 nopaallrd <- as.data.frame(table(nopacutobsrd$KI_Known_ID, nopacutobsrd$GO_Date))
 nopaallrd1 <- nopaallrd[(nopaallrd$Var1 == "BHS_1737") | (nopaallrd$Var1 == "BHS_1740") | (nopaallrd$Var1 == "BHS_1741") | (nopaallrd$Var1 == "BHS_1738") | (nopaallrd$Var1 == "BHS_1736") | (nopaallrd$Var1 == "BHS_1739"), ]
 nopaindrd <- as.data.frame(tapply(nopaallrd1$Freq, list(nopaallrd1$Var2), mean))
