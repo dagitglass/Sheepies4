@@ -421,8 +421,6 @@ nopaindsheepvisitperday2 <- rbind(nopaindsheepvisitperday1, nopadatena)
 library(ggplot2)
 plotnopasheepnum <- ggplot(data = nopaindsheepvisitperday2, aes(x = Date, y = NumIndSheep, fill = "supp")) + geom_bar(stat = "identity", color = "black") + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + ggtitle("Nopah") + xlab("Date") + ylab("Number of Individual Sheep") + theme(legend.position = "none") + ylim(0, 35) + geom_hline(yintercept = 6)
 
-# CASTLE-PIUTE - SOMETHING IS WRONG WITH CMPRINDSHEEPVISITPERDAY2 - MISSING 8/8 - 8/13???????
-
 cmprallsheepvisitsday <- as.data.frame(table(cmprcutobs$KI_Known_ID, cmprcutobs$GO_Date))
 # Also due to the lack of coverage in the Castle Piutes along the southern stream, I limited the analysis to bighorn that located in the mine area (1730, 1733, 1734, 1728 - which doesn't have a working GPS collar).
 cmprallsheepvisitsday1 <- cmprallsheepvisitsday[(cmprallsheepvisitsday$Var1 == "BHS_1730") | (cmprallsheepvisitsday$Var1 == "BHS_1733") | (cmprallsheepvisitsday$Var1 == "BHS_1734") | (cmprallsheepvisitsday$Var1 == "BHS_1728"), ]
