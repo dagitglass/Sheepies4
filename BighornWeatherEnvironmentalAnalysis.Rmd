@@ -41,31 +41,98 @@ meanpercentbighorn1 <- meanpercentbighorn[with(meanpercentbighorn, order(MtnRang
 # There were some duplicated rows for the Marbles but I could not for the life of me figure out why. So I deleted them.
 rownames(meanpercentbighorn1) <- seq(length=nrow(meanpercentbighorn1))
 meanpercentbighorn2 <- meanpercentbighorn1[-c(3, 5, 7, 8, 11, 12, 26, 28, 29, 31, 33, 36, 37, 46, 48, 51, 52, 58, 59, 62, 64), ]
-# CMPR Missing between 8/8-8/13
-# DF2 = DF1[-c(2),]
+names(allrangeenvvar)[names(allrangeenvvar) == "MountainRange"] <- "MtnRange"
+allenvvisit <- merge(x = meanpercentbighorn2, y = allrangeenvvar, all = TRUE)
+allenvvisit1 <- allenvvisit[with(allenvvisit, order(MtnRange, Date)), ]
+```
+First the distributions of the dependent variables.
 
-
-
-# meanpercentbighorn2 <- aggregate(
-#   meanpercentbighorn1[, c("NumIndSheep", "TotalNumSheep", "Percentvisited", "Meannumvisits", "sd")],
-#   meanpercentbighorn1[, c("Date", "Month", "MtnRange")],
-#   FUN = sum,
-#   na.rm = TRUE
-# )
+I checked to make sure that variables were more of less normally distributed.
 
 
 
 
 
-# There were some duplicated rows (probably because I am not using the merge function as efficiently as I could), so I got rid of them
-rownames(meanpercentbighorn1) <- seq(length=nrow(meanpercentbighorn1))
-meanpercentbighorn1[-c(2, 5, 7, 8, 10, 13, 26, 27, 29, 31, 33, 35, 38,  )]
-# DF2 = DF1[-c(2),]
+```{r}
+# Checking distribution of the dependent variables
+hist(allenvvisit1$Percentvisited)
+hist(allenvvisit1$Meannumvisits)
+
+# Checked for normal distribution
+qqnorm(allenvvisit1$dayl..s.)
+qqline(allenvvisit1$dayl..s.)
+hist(allenvvisit1$dayl..s.)
+# Day length is normally distributed.
+qqnorm(allenvvisit1$prcp..mm.day.)
+qqline(allenvvisit1$prcp..mm.day.)
+hist(allenvvisit1$prcp..mm.day.)
+# Normality is not super relevant when basically 100% of this is zero.
+qqnorm(allenvvisit1$srad..W.m.2.)
+qqline(allenvvisit1$srad..W.m.2.)
+hist(allenvvisit1$srad..W.m.2.)
+# Solar radiation is normally distributed.
+qqnorm(allenvvisit1$tmax..deg.c.)
+qqline(allenvvisit1$tmax..deg.c.)
+hist(allenvvisit1$tmax..deg.c.)
+# Max temp is normally distributed.
+qqnorm(allenvvisit1$tmin..deg.c.)
+qqline(allenvvisit1$tmin..deg.c.)
+hist(allenvvisit1$tmin..deg.c.)
+# Min temp is more or less normally distributed.
+qqnorm(allenvvisit1$vp..Pa.)
+qqline(allenvvisit1$vp..Pa.)
+hist(allenvvisit1$vp..Pa.)
+# Vapor pressure is normally distributed
+qqnorm(allenvvisit1$MeanNDVI)
+qqline(allenvvisit1$MeanNDVI)
+hist(allenvvisit1$MeanNDVI)
+# NDVI is normally distributed
+
+percentvisitedglmall <- glm(Percentvisited ~ (MtnRange + dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI), data = allenvvisit1, family = poisson)
+
+logpoparea <- glm(Population ~ log(Area), data = state, family )
+summary(logpoparea)
+```
+glm()
+
+
+
+
+```{r}
+marballen <- allenvvisit1[allenvvisit1$MtnRange == "Marb", ]
+sbrsallen <- allenvvisit1[allenvvisit1$MtnRange == "BrsS", ]
+nopaallen <- allenvvisit1[allenvvisit1$MtnRange == "Nopa", ]
+cmprallen <- allenvvisit1[allenvvisit1$MtnRange == "CMPR", ]
+
+# Max temperature
+library(ggplot2)
+tmaxplot <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = tmax..deg.c., color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = tmax..deg.c., color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = tmax..deg.c., color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = tmax..deg.c., color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = tmax..deg.c., color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = tmax..deg.c., color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = tmax..deg.c., color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = tmax..deg.c., color = "orange"))+
+  ylab('Maximum Daily Temperature (°C)')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Maximum Daily Temperature")
+print(tmaxplot)
 
 
 
 ```
 
+I then performed 2 mixed-effect general linear models to determine what environmental variables most explain the percent of individual sheep visiting water (on a given day, in a given mountain range) and the mean number of visits/day/collared bighorn.
+
+My independent variables were: mountain range, duration of the daylight period (dayl, in seconds per day), total daily precipitation (prcp, in mm/day), shortwave radiation(srad, Incident shortwave radiation flux density in watts per square meter, taken as an average over the daylight period of the day), maximum air temperature (tmax, daily maximum 2-meter air temperature in degrees Celsius), minimum air temperature (tmin, daily minimum 2-meter air temperature in degrees Celsius), water vapor pressure (vp, daily average partial pressure of water vapor in pascals), and normalized difference vegetation index (average of the NDVI index of 250 m raster cells in each mountain range).
+
+
+```{}
+
+
+```
 BEFORE INPUTTING COMPLETED EXCEL SPREADSHEET:
 
 ```{r}
