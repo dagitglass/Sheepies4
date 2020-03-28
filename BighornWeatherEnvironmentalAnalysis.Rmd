@@ -55,8 +55,14 @@ I checked to make sure that variables were more of less normally distributed.
 
 ```{r}
 # Checking distribution of the dependent variables
+qqnorm(allenvvisit1$Percentvisited)
+qqline(allenvvisit1$Percentvisited)
 hist(allenvvisit1$Percentvisited)
+# Looks linear enough to me, though the first quartile is wonky because of a lot of zeros. Is this good enough to be considered normal?
+qqnorm(allenvvisit1$Meannumvisits)
+qqline(allenvvisit1$Meannumvisits)
 hist(allenvvisit1$Meannumvisits)
+# Same thing on this one. IS THIS NORMAL ENOUGH?
 
 # Checked for normal distribution
 qqnorm(allenvvisit1$dayl..s.)
@@ -120,6 +126,54 @@ tmaxplot <- ggplot() +
   ggtitle("Maximum Daily Temperature")
 print(tmaxplot)
 
+# Minimum Temperature
+
+tminplot <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = tmin..deg.c., color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = tmin..deg.c., color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = tmin..deg.c., color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = tmin..deg.c., color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = tmin..deg.c., color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = tmin..deg.c., color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = tmin..deg.c., color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = tmin..deg.c., color = "orange"))+
+  ylab('Minimum Daily Temperature (°C)')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Minimum Daily Temperature")
+print(tminplot)
+
+# Mean NDVI
+
+ndviplot <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = MeanNDVI, color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = MeanNDVI, color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = MeanNDVI, color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = MeanNDVI, color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = MeanNDVI, color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = MeanNDVI, color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = MeanNDVI, color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = MeanNDVI, color = "orange"))+
+  ylab('Mean NDVI')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Mean NDVI")
+print(ndviplot)
+
+# Water Vapor Pressure
+vpplot <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = vp..Pa., color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = vp..Pa., color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = vp..Pa., color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = vp..Pa., color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = vp..Pa., color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = vp..Pa., color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = vp..Pa., color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = vp..Pa., color = "orange"))+
+  ylab('Daily Average Partial Pressure of Water Vapor (Pascals)')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Water Vapor Pressure")
+print(vpplot)
+
+
 
 
 ```
@@ -129,9 +183,23 @@ I then performed 2 mixed-effect general linear models to determine what environm
 My independent variables were: mountain range, duration of the daylight period (dayl, in seconds per day), total daily precipitation (prcp, in mm/day), shortwave radiation(srad, Incident shortwave radiation flux density in watts per square meter, taken as an average over the daylight period of the day), maximum air temperature (tmax, daily maximum 2-meter air temperature in degrees Celsius), minimum air temperature (tmin, daily minimum 2-meter air temperature in degrees Celsius), water vapor pressure (vp, daily average partial pressure of water vapor in pascals), and normalized difference vegetation index (average of the NDVI index of 250 m raster cells in each mountain range).
 
 
-```{}
+```{r}
+#Percentvisited
+# Linear Mixed Model
+library(lme4)
+library(car)
+Percentvisitedlmer <- lmer(Percentvisited ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MtnRange), data = allenvvisit1, REML = FALSE)
+# Warning - predictor variables are on very different scales - consider rescaling?
+summary(Percentvisitedlmer)
+# Variance of fixed effect = 0.01543 --> pretty close to zero so can use normal glm?
+plot(Percentvisitedlmer)
+# Plot indicates that there is something going on that my model is not accounting for?
+qqnorm(resid(Percentvisitedlmer))
+qqline(resid(Percentvisitedlmer))
+# qqnorm looks good
+Anova(Percentvisitedlmer)
 
-
+glm(Percentvisited ~ tmax..deg.c., data = allenvvisit1)
 ```
 BEFORE INPUTTING COMPLETED EXCEL SPREADSHEET:
 

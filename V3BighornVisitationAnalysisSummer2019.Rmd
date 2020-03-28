@@ -1199,6 +1199,7 @@ This is where I am going to leave off my basic analyses of the visitation data f
 ```{r}
 ## how much time individual bighorn spend drinking water when they visit (and whether this differs by age, sex)
 View(allrangetime1)
+library(hms)
 library(lubridate)
 allrangetime1$KI_DG_LastPhotoTime[allrangetime1$KI_DG_LastPhotoTime == ""] <- NA
 allrangetime1$KI_DG_FirstPhotoTime[allrangetime1$KI_DG_FirstPhotoTime == ""] <- NA
