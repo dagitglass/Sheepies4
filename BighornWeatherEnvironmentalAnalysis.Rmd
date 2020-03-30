@@ -58,6 +58,18 @@ I checked to make sure that variables were more of less normally distributed.
 qqnorm(allenvvisit1$Percentvisited)
 qqline(allenvvisit1$Percentvisited)
 hist(allenvvisit1$Percentvisited)
+
+
+require(car)
+require(MASS)
+allenvvisit1$Percentvisiteddist <- allenvvisit1$Percentvisited + 1
+qqp(allenvvisit1$Percentvisiteddist, "norm")
+qqp(allenvvisit1$Percentvisiteddist, "lnorm")
+# nbinom <- fitdistr(allenvvisit1$Percentvisiteddist, "Negative Binomial")
+# qqp(allenvvisit1$Percentvisited, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
+# poissonpv <- fitdistr(allenvvisit1$Percentvisited, "Poisson")
+# qqp(allenvvisit1$Percentvisited, poissonpv$estimate)
+
 # Looks linear enough to me, though the first quartile is wonky because of a lot of zeros. Is this good enough to be considered normal?
 qqnorm(allenvvisit1$Meannumvisits)
 qqline(allenvvisit1$Meannumvisits)
@@ -94,12 +106,10 @@ qqline(allenvvisit1$MeanNDVI)
 hist(allenvvisit1$MeanNDVI)
 # NDVI is normally distributed
 
-percentvisitedglmall <- glm(Percentvisited ~ (MtnRange + dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI), data = allenvvisit1, family = poisson)
+# percentvisitedglmall <- glm(Percentvisited ~ (MtnRange + dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI), data = allenvvisit1, family = poisson)
 
-logpoparea <- glm(Population ~ log(Area), data = state, family )
-summary(logpoparea)
 ```
-glm()
+Plotting the independent variables through time
 
 
 
@@ -173,9 +183,75 @@ vpplot <- ggplot() +
   ggtitle("Water Vapor Pressure")
 print(vpplot)
 
+# Day Length
+daylength <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = dayl..s., color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = dayl..s., color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = dayl..s., color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = dayl..s., color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = dayl..s., color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = dayl..s., color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = dayl..s., color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = dayl..s., color = "orange"))+
+  ylab('Day Length (seconds/day)')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Day Length")
+print(daylength)
+
+# Precipitation (mm/day)
+dayprecip <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = prcp..mm.day., color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = prcp..mm.day., color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = prcp..mm.day., color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = prcp..mm.day., color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = prcp..mm.day., color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = prcp..mm.day., color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = prcp..mm.day., color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = prcp..mm.day., color = "orange"))+
+  ylab('Precipitation (mm/day)')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Precipitation")
+print(dayprecip)
+
+# Shortwave Radiation
+swradiation <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = srad..W.m.2., color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = srad..W.m.2., color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = srad..W.m.2., color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = srad..W.m.2., color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = srad..W.m.2., color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = srad..W.m.2., color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = srad..W.m.2., color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = srad..W.m.2., color = "orange"))+
+  ylab('Shortwave Radiation (watts/m2)')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Incident Shortwave Radiation Flux Density")
+print(swradiation)
+
+#Percentvisited - already made other figure of this
+percentvisitedplotty <- ggplot() +
+  geom_line(data = marballen, aes(x = Date, y = Percentvisited, color = "red"))+
+  geom_point(data = marballen, aes(x = Date, y = Percentvisited, color = "red"))+
+  geom_line(data = sbrsallen, aes(x = Date, y = Percentvisited, color = "blue"))+
+  geom_point(data = sbrsallen, aes(x = Date, y = Percentvisited, color = "blue"))+
+  geom_line(data = nopaallen, aes(x = Date, y = Percentvisited, color = "green"))+
+  geom_point(data = nopaallen, aes(x = Date, y = Percentvisited, color = "green"))+
+  geom_line(data = cmprallen, aes(x = Date, y = Percentvisited, color = "orange"))+
+  geom_point(data = cmprallen, aes(x = Date, y = Percentvisited, color = "orange"))+
+  ylab('Percent of Collared Bighorn Visiting Water')+
+  scale_color_discrete(labels = c("Marbles", "South Bristols", "Nopah", "Castle Piute"))+
+  ggtitle("Percent of Collared Bighorn Visiting Water by Day")
+print(percentvisitedplotty)
 
 
 
+```
+
+
+
+```{r}
+# logpoparea <- glm(Population ~ log(Area), data = state, family )
+# summary(logpoparea)
 ```
 
 I then performed 2 mixed-effect general linear models to determine what environmental variables most explain the percent of individual sheep visiting water (on a given day, in a given mountain range) and the mean number of visits/day/collared bighorn.
@@ -188,7 +264,7 @@ My independent variables were: mountain range, duration of the daylight period (
 # Linear Mixed Model
 library(lme4)
 library(car)
-Percentvisitedlmer <- lmer(Percentvisited ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MtnRange), data = allenvvisit1, REML = FALSE)
+Percentvisitedlmer <- lmer(Percentvisited ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MtnRange) + (1|Date), data = allenvvisit1, REML = FALSE)
 # Warning - predictor variables are on very different scales - consider rescaling?
 summary(Percentvisitedlmer)
 # Variance of fixed effect = 0.01543 --> pretty close to zero so can use normal glm?
