@@ -55,25 +55,38 @@ I checked to make sure that variables were more of less normally distributed.
 
 ```{r}
 # Checking distribution of the dependent variables
-qqnorm(allenvvisit1$Percentvisited)
-qqline(allenvvisit1$Percentvisited)
-hist(allenvvisit1$Percentvisited)
+qqnorm(allenvvisit1$NumIndSheep)
+qqline(allenvvisit1$NumIndSheep)
+hist(allenvvisit1$NumIndSheep)
+shapiro.test(allenvvisit1$NumIndSheep)
+# p-value = 2.446e-09, the distribution is not normal
+
+# qqnorm(allenvvisit1$Percentvisited)
+# qqline(allenvvisit1$Percentvisited)
+# hist(allenvvisit1$Percentvisited)
+# shapiro.test(allenvvisited1$P)
 
 
-require(car)
-require(MASS)
-allenvvisit1$Percentvisiteddist <- allenvvisit1$Percentvisited + 1
-qqp(allenvvisit1$Percentvisiteddist, "norm")
-qqp(allenvvisit1$Percentvisiteddist, "lnorm")
+# require(car)
+# require(MASS)
+# allenvvisit1$Percentvisiteddist <- allenvvisit1$Percentvisited + 1
+# qqp(allenvvisit1$Percentvisiteddist, "norm")
+# qqp(allenvvisit1$Percentvisiteddist, "lnorm")
 # nbinom <- fitdistr(allenvvisit1$Percentvisiteddist, "Negative Binomial")
 # qqp(allenvvisit1$Percentvisited, "nbinom", size = nbinom$estimate[[1]], mu = nbinom$estimate[[2]])
 # poissonpv <- fitdistr(allenvvisit1$Percentvisited, "Poisson")
 # qqp(allenvvisit1$Percentvisited, poissonpv$estimate)
 
 # Looks linear enough to me, though the first quartile is wonky because of a lot of zeros. Is this good enough to be considered normal?
-qqnorm(allenvvisit1$Meannumvisits)
-qqline(allenvvisit1$Meannumvisits)
-hist(allenvvisit1$Meannumvisits)
+qqnorm(allenvvisit1$NumIndVisits)
+qqline(allenvvisit1$NumIndVisits)
+hist(allenvvisit1$NumIndVisits)
+shapiro.test(allenvvisit1$NumIndVisits)
+# p-value = 2.285e-09, not normal
+
+# qqnorm(allenvvisit1$Meannumvisits)
+# qqline(allenvvisit1$Meannumvisits)
+# hist(allenvvisit1$Meannumvisits)
 # Same thing on this one. IS THIS NORMAL ENOUGH? NO.
 
 # Checked for normal distribution
@@ -270,13 +283,23 @@ allenvvisit1$Date <- as.factor(allenvvisit1$Date)
 
 
 # 
-fm1 <- mixed_model(NumIndSheep ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI, random = ~ 1 | (MtnRange + Date + TotalNumSheep),  data = allenvvisit1, family = zi.poisson(), zi_fixed = ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI)
+fm1 <- mixed_model(NumIndSheep ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI, random = ~ (1 | MtnRange + Date + TotalNumSheep),  data = allenvvisit1, family = zi.poisson(), zi_fixed = ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI)
+
+# PSCL
+library(pscl)
+zeroinfl()
+
 
 
 # Linear Mixed Model
 library(lme4)
 library(car)
-Percentvisitedlmer <- lmer(Percentvisited ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MtnRange) + (1|Date), data = allenvvisit1, REML = FALSE)
+Percentvisitedlmer <- glmer(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MtnRange) + (1|Date), data = allenvvisit1, family = poisson(link = “log”))
+
+Percentvisitedlmer <- glmer(NumIndSheep ~ 1 + (1|MtnRange) + (1|Date), data = allenvvisit1, family = poisson)
+qqnorm(resid(Percentvisitedlmer))
+
+# REML = false
 # Warning - predictor variables are on very different scales - consider rescaling?
 summary(Percentvisitedlmer)
 # Variance of fixed effect = 0.01543 --> pretty close to zero so can use normal glm?
