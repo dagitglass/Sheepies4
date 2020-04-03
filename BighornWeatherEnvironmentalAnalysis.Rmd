@@ -74,7 +74,7 @@ qqp(allenvvisit1$Percentvisiteddist, "lnorm")
 qqnorm(allenvvisit1$Meannumvisits)
 qqline(allenvvisit1$Meannumvisits)
 hist(allenvvisit1$Meannumvisits)
-# Same thing on this one. IS THIS NORMAL ENOUGH?
+# Same thing on this one. IS THIS NORMAL ENOUGH? NO.
 
 # Checked for normal distribution
 qqnorm(allenvvisit1$dayl..s.)
@@ -260,7 +260,19 @@ My independent variables were: mountain range, duration of the daylight period (
 
 
 ```{r}
-#Percentvisited
+# Number of Visits to Water
+library(GLMMadaptive)
+allenvvisit1$NumIndVisits <- (allenvvisit1$Meannumvisits * allenvvisit1$TotalNumSheep)
+allenvvisit1$Date <- as.factor(allenvvisit1$Date)
+
+#Number of Individual Sheep that Visited Water
+
+
+
+# 
+fm1 <- mixed_model(NumIndSheep ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI, random = ~ 1 | (MtnRange + Date + TotalNumSheep),  data = allenvvisit1, family = zi.poisson(), zi_fixed = ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI)
+
+
 # Linear Mixed Model
 library(lme4)
 library(car)
