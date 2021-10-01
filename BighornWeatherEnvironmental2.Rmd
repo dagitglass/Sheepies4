@@ -1,0 +1,120 @@
+---
+title: "BighornWeatherEnvironmental2"
+author: "DanielleGlass"
+date: "6/20/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+ballrangeenvvar <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/AllRangesDaymetRevised61221.csv", sep = ",", header = TRUE)
+meanpercentbighorn <- merge(x = allindsheepvisitperday, y = allindrd11, all.x = TRUE)
+meanpercentbighorn1 <- meanpercentbighorn[with(meanpercentbighorn, order(MtnRange, Date)), ]
+# There were some duplicated rows for the Marbles but I could not for the life of me figure out why. So I deleted them.
+rownames(meanpercentbighorn1) <- seq(length=nrow(meanpercentbighorn1))
+meanpercentbighorn2 <- meanpercentbighorn1[-c(3, 5, 7, 8, 11, 12, 26, 28, 29, 31, 33, 36, 37, 46, 48, 51, 52, 58, 59, 62, 64), ]
+names(ballrangeenvvar)[names(ballrangeenvvar) == "MountainRange"] <- "MtnRange"
+ballrangeenvvar$Date <- as.character(ballrangeenvvar$Date)
+ballrangeenvvar$Date <- as.Date(ballrangeenvvar$Date, format = "%m/%d/%Y")
+ballrangeenvvar$Month <- as.factor(ballrangeenvvar$Month)
+ballenvvisit <- merge(x = meanpercentbighorn2, y = ballrangeenvvar, all = TRUE)
+ballenvvisit1 <- ballenvvisit[with(ballenvvisit, order(MtnRange, Date)), ]
+# Checking for correlation between variables
+# Without scaling
+library("Hmisc")
+benvvar <- ballenvvisit1[, c(12:14, 16:19)]
+btemp <- rcorr(as.matrix(benvvar), type = "pearson")
+ballenvvisit2 <- ballenvvisit1[complete.cases(ballenvvisit1), ]
+# PSCL - Zero inflated model
+library(pscl)
+
+# Model with tmax, NDVI, tmin, precip works
+twovar <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(twovar)
+hist(ballenvvisit2$NumIndSheep)
+
+# USED THIS ONE IN PAPER 71421
+twovar1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(twovar1)
+pR2(twovar1)
+
+hist(ballenvvisit2$NumIndSheep)
+
+# This one works, just tmax:
+bzeroinflpsclmodel1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. | tmax..deg.c. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1)
+
+#NDVI - works
+bzeroinflpsclmodel1ndvi <- zeroinfl(NumIndSheep ~ MeanNDVI | MeanNDVI + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1ndvi)
+
+#Tmin - works
+bzeroinflpsclmodel1mintemp <- zeroinfl(NumIndSheep ~ tmin..deg.c. | tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1mintemp)
+
+# Precipitation - works
+bzeroinflpsclmodel1precip <- zeroinfl(NumIndSheep ~ prcp..mm.day. | prcp..mm.day. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1precip)
+
+#Solar radiation - computationally singular
+bzeroinflpsclmodel1solar <- zeroinfl(NumIndSheep ~ srad..W.m.2. | srad..W.m.2. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1solar)
+
+# Day length - computationally singular
+bzeroinflpsclmodel1day <- zeroinfl(NumIndSheep ~ dayl..s. | dayl..s. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1day)
+
+# Vapor pressure - computationally singular
+bzeroinflpsclmodel1vp <- zeroinfl(NumIndSheep ~ vp..Pa. | vp..Pa. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(bzeroinflpsclmodel1vp)
+
+# Running the model with scaled variables to see which one has the biggest effect
+
+ballenvvisit3 <- ballenvvisit2
+ballenvvisit3$scaledayl <- scale(ballenvvisit3$dayl..s., center = TRUE, scale = TRUE)
+ballenvvisit3$scaletmax <- scale(ballenvvisit3$tmax..deg.c., center = TRUE, scale = TRUE)
+ballenvvisit3$scaletmin <- scale(ballenvvisit3$tmin..deg.c., center = TRUE, scale = TRUE)
+ballenvvisit3$scalendvi <- scale(ballenvvisit3$MeanNDVI, center = TRUE, scale = TRUE)
+ballenvvisit3$scaleprecip <- scale(ballenvvisit3$prcp..mm.day., center = TRUE, scale = TRUE)
+
+scaletwovar <- zeroinfl(NumIndSheep ~ scaletmax + scalendvi + scaletmin | scaletmax + scalendvi + scaletmin + MtnRange, data = ballenvvisit3, dist = "poisson", link = "logit")
+summary(scaletwovar)
+pR2(scaletwovar)
+
+# GLM
+bsheepglm <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. +  vp..Pa. + MeanNDVI, data = ballenvvisit2, family = "poisson")
+summary(bsheepglm)
+
+# Minus tmin
+bsheepglm2 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = ballenvvisit2, family = "poisson")
+summary(bsheepglm2)
+
+vuong(twovar, bsheepglm2)
+
+```{graphing visit vs. max temp}
+
+```
+library(plyr)
+ballenvvisit3 <- ballenvvisit2
+ballenvvisit3$MountainRange <- revalue(ballenvvisit3$MtnRange, c("Marb" = "Marbles", "BrsS" = "South Bristols", "Nopa" = "Nopah", "CMPR" = "Castle Piutes"))
+library(ggplot2)
+ggplot(ballenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range")
+
+ggplot(allenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain range")
+
+
+# Means
+mean(ballenvvisit2$Percentvisited[ballenvvisit2$tmax..deg.c. < 30])
+# 0.1284722 before 11%
+
+mean(ballenvvisit2$Percentvisited[((ballenvvisit2$tmax..deg.c. >= 30) & (ballenvvisit2$tmax..deg.c. < 35))])
+# 0.1686588 before 10% 0.1024371
+
+mean(ballenvvisit2$Percentvisited[((ballenvvisit2$tmax..deg.c. >= 35) & (ballenvvisit2$tmax..deg.c. < 40))])
+# 0.4041987 before 0.3841086
+
+mean(ballenvvisit2$Percentvisited[ballenvvisit2$tmax..deg.c. >= 40])
+# 0.4794547 before 0.5227055
+
