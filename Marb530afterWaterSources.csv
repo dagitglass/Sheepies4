@@ -1,0 +1,5 @@
+X,rownumlrgdatset,ID,step,angle,x,y,step.1,angle.1,DeviceName,DeviceID,DateTimeGMT,DateTimeLocal,Altitude,FixStatus,DOP,TempC,MainV,BackV,Date,TimeLocal,MountainRange,BHSID,Sex,DateTimeLocalTest,DateTimeLocalTestct,IndPoint,positangle,positangledegree,Month,stplengthtopo,lagtime,leadtime,WaterSource
+NA,NA,NA,NA,NA,-115.665,34.7211,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Marb,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,SI40
+NA,NA,NA,NA,NA,-115.6497,34.6806,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Marb,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Ther
+NA,NA,NA,NA,NA,-115.6614,34.6952,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Marb,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Vern
+NA,NA,NA,NA,NA,-115.6417,34.682,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Marb,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,DevS
