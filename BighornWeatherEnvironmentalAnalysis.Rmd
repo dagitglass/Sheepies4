@@ -118,9 +118,6 @@ qqnorm(allenvvisit1$MeanNDVI)
 qqline(allenvvisit1$MeanNDVI)
 hist(allenvvisit1$MeanNDVI)
 # NDVI is normally distributed
-
-# percentvisitedglmall <- glm(Percentvisited ~ (MtnRange + dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI), data = allenvvisit1, family = poisson)
-
 ```
 Plotting the independent variables through time
 
@@ -273,6 +270,31 @@ My independent variables were: mountain range, duration of the daylight period (
 
 
 ```{r}
+# Checking for correlation between variables
+# Without scaling
+library("Hmisc")
+envvar <- allenvvisit1[, c(11:13, 15:18)]
+temp <- rcorr(as.matrix(envvar), type = "pearson")
+# Day length correlated with solar radiation, tmin, vapor pressure.
+# Solar radiation correlated with day length, tmin, vapor pressure, Mean NDVI.
+# Tmax correlated with tmin, vapor pressure, Mean NDVI.
+# T min correlated with everything.
+# Vapor pressure correlated with everything.
+# Mean NDVI correlated with solar radiation, tmax, tmin, vapor pressure.
+# Self-reminder: Correlations between scaled variables are exactly the same.
+
+# Scaling independent variables - scaling is done by dividing the centered columns of x by their standard deviations. If put center as false, then would divide by root mean square
+# https://stackoverflow.com/questions/20256028/understanding-scale-in-r
+allenvvisit1$scaledayl <- scale(allenvvisit1$dayl..s., center = TRUE, scale = TRUE)
+allenvvisit1$scalesrad <- scale(allenvvisit1$srad..W.m.2., center = TRUE, scale = TRUE)
+allenvvisit1$scaletmax <- scale(allenvvisit1$tmax..deg.c., center = TRUE, scale = TRUE)
+allenvvisit1$scaletmin <- scale(allenvvisit1$tmin..deg.c., center = TRUE, scale = TRUE)
+allenvvisit1$scalevp <- scale(allenvvisit1$vp..Pa., center = TRUE, scale = TRUE)
+allenvvisit1$scalendvi <- scale(allenvvisit1$MeanNDVI, center = TRUE, scale = TRUE)
+
+
+
+
 # Number of Visits to Water
 library(GLMMadaptive)
 allenvvisit1$NumIndVisits <- (allenvvisit1$Meannumvisits * allenvvisit1$TotalNumSheep)
@@ -285,18 +307,133 @@ allenvvisit1$Date <- as.factor(allenvvisit1$Date)
 # 
 fm1 <- mixed_model(NumIndSheep ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI, random = ~ (1 | MtnRange + Date + TotalNumSheep),  data = allenvvisit1, family = zi.poisson(), zi_fixed = ~ dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI)
 
+sheepglmpercent <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
+summary(sheepglmpercent)
+
+sheepglm <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
+summary(sheepglm)
+nrow(allenvvisit2[allenvvisit2$MountainRange == "BrsS", ])
+allenvvisit2 <- allenvvisit1[complete.cases(allenvvisit1), ]
+
+# GLM minus tmin - THIS IS THE ONE USED IN THE PAPER
+sheepglm1 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
+summary(sheepglm1)
+anova(sheepglm, sheepglm1, test = "Chisq")
+# No significant difference between the two models
+# Everything significant in this model so using this one
+with(summary(sheepglm1), 1 - deviance/null.deviance)
+
+# attempt to see which variables most significant by standardizing variables
+library(QuantPsyc)
+lm.beta(sheepglm1)
+#  dayl..s. srad..W.m.2. tmax..deg.c.      vp..Pa.     MeanNDVI 
+# -0.01079419  -0.02948471   0.21325600  -0.10591613  -0.03699151 
+
 # PSCL
 library(pscl)
-zeroinfl()
+zeroinflpsclmodel <- zeroinfl(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI | MountainRange, data = allenvvisit2)
+summary(zeroinflpsclmodel)
 
+zeroinflpsclmodel <- zeroinfl(NumIndSheep ~ tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit2)
+summary(zeroinflpsclmodel)
+# If add in day length (one more environmental variable), doesn't work
+
+# This one works, just tmax:
+zeroinflpsclmodel1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. | tmax..deg.c. + MountainRange, data = allenvvisit2, dist = "poisson", link = "logit")
+summary(zeroinflpsclmodel1)
+
+plot(zeroinflpsclmodel1)
+plot(resid(zeroinflpsclmodel1))
+qqnorm(resid(zeroinflpsclmodel1))
+qqline(resid(zeroinflpsclmodel1))
+plot(allenvvisit2$NumIndSheep, resid(zeroinflpsclmodel1), xlab = "Number of Individual Sheep", ylab = "Residuals", main = "Residual Plot Max Temp")
+pR2(zeroinflpsclmodel1)
+# McFadden 0.2081
+plot(Percentvisited ~ tmax..deg.c., data = allenvvisit2)
+# plot(NumIndSheep ~ tmax..deg.c., data = allenvvisit2)
+# abline(zeroinflpsclmodel1)
+
+
+# NDVI
+zeroinflpsclmodel1ndvi <- zeroinfl(NumIndSheep ~ MeanNDVI | MeanNDVI + MountainRange, data = allenvvisit2, dist = "poisson", link = "logit")
+summary(zeroinflpsclmodel1ndvi)
+plot(allenvvisit2$NumIndSheep, resid(zeroinflpsclmodel1ndvi), xlab = "Number of Individual Sheep", ylab = "Residuals", main = "Residual Plot NDVI")
+pR2(zeroinflpsclmodel1ndvi)
+
+# solar radiation - computationally singular 
+zeroinflpsclmodel1solar <- zeroinfl(NumIndSheep ~ srad..W.m.2. | srad..W.m.2. + MountainRange, data = allenvvisit1, dist = "poisson", link = "logit")
+summary(zeroinflpsclmodel1solar)
+
+# Day Length
+zeroinflpsclmodel1day <- zeroinfl(NumIndSheep ~ dayl..s. | dayl..s. + MtnRange, data = allenvvisit1, dist = "poisson", link = "logit")
+
+# Minimum Daily temperature
+zeroinflpsclmodel1mintemp <- zeroinfl(NumIndSheep ~ tmin..deg.c. | tmin..deg.c. + MountainRange, data = allenvvisit2, dist = "poisson", link = "logit")
+summary(zeroinflpsclmodel1mintemp)
+plot(resid(zeroinflpsclmodel1mintemp))
+plot(allenvvisit2$NumIndSheep, resid(zeroinflpsclmodel1mintemp), xlab = "Number of Individual Sheep", ylab = "Residuals", main = "Residual Plot Min Temp")
+pR2(zeroinflpsclmodel1mintemp)
+
+# Vapor Pressure
+zeroinflpsclmodel1vp <- zeroinfl(NumIndSheep ~ vp..Pa. | vp..Pa. + MtnRange, data = allenvvisit1, dist = "poisson", link = "logit")
+
+# Precipitation
+zeroinflpsclmodel1precip <- zeroinfl(NumIndSheep ~ prcp..mm.day. | prcp..mm.day. + MtnRange, data = allenvvisit1, dist = "poisson", link = "logit")
+summary(zeroinflpsclmodel1precip)
+
+# glmmtmb
+
+# Even adding one extra variable doesn't work
+zeroinflpsclmodel2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + srad..W.m.2. | tmax..deg.c. + srad..W.m.2. + MtnRang data = allenvvisit1)
+
+zeroinflpsclmodel <- zeroinfl(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI | dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + MtnRange, data = allenvvisit1, dist = "poisson", link = "logit")
+summary(zeroinflpsclmodel)
+
+zeroinfpmodel <- zeroinfl(NumIndSheep ~ scaledayl + scalesrad + scaletmax + scalendvi | scaledayl + scalesrad + scaletmax + scalendvi + MtnRange + Date, data = allenvvisit1, dist = "poisson", link = "logit")
+
+zeroinfpmodel <- zeroinfl(NumIndSheep ~ scaledayl + scalesrad + scaletmax + scalendvi | scaledayl + scalesrad + scaletmax + scalendvi + MtnRange, data = allenvvisit1, dist = "poisson", link = "logit")
+
+zeroinfpmodel <- zeroinfl(NumIndSheep ~ scaletmax | scaletmax + MtnRange + Date, data = allenvvisit1, dist = "poisson", link = "logit")
+
+zeroinfpmodeltmin <- zeroinfl(NumIndSheep ~ scaletmin | scaletmin + MtnRange + Date, data = allenvvisit1, dist = "poisson", link = "logit")
+summary(zeroinfpmodeltmin)
+
+zeroinfpmodel <- zeroinfl(NumIndSheep ~ scaletmax | scaletmax + MtnRange, data = allenvvisit1, dist = "poisson", link = "logit")
+summary(zeroinfpmodel)
+# To calculate the dispersion statistic
+E2 <- resid(zeroinfpmodel, type = "pearson")
+# N = 304
+p <- length(coef(zeroinfpmodel))
+sum(E2^2) / (304 - p)
+# = 0.7409024 - underdispersion?
+zeroinfnbmodel <- zeroinfl(NumIndSheep ~ scaletmax | scaletmax + MtnRange, data = zeroinfpmodel$model, dist = "negbin", link = "logit")
+summary(zeroinfnbmodel)
+# Model 1: NumIndSheep ~ scaledayl + scalesrad + scaletmax + scalendvi | 
+#     scaledayl + scalesrad + scaletmax + scalendvi + MtnRange
+# Model 2: NumIndSheep ~ scaletmax | scaletmax + MtnRange
+#   #Df  LogLik Df  Chisq Pr(>Chisq)    
+# 1  13 -406.85                         
+# 2   8 -393.44 -5 26.811   6.21e-05 ***
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+E3 <- resid(zeroinfnbmodel, type = "pearson")
+# N = 304
+pnb <- length(coef(zeroinfnbmodel))
+sum(E3^2) / (304 - pnb)
+# N =  0.3336019 - super bad
+library("lmtest")
+zerolrt <- lrtest(zeroinfpmodel, zeroinfnbmodel)
+zerolrt
 
 
 # Linear Mixed Model
 library(lme4)
 library(car)
-Percentvisitedlmer <- glmer(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MtnRange) + (1|Date), data = allenvvisit1, family = poisson(link = “log”))
+Percentvisitedlmer <- glmer(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MountainRange), data = allenvvisit2, family = "poisson")
 
-Percentvisitedlmer <- glmer(NumIndSheep ~ 1 + (1|MtnRange) + (1|Date), data = allenvvisit1, family = poisson)
+
+# (link = “logit”)
+Percentvisitedlmer <- glmer(NumIndSheep ~ 1 + (1|MtnRange), data = allenvvisit1, family = poisson)
 qqnorm(resid(Percentvisitedlmer))
 
 # REML = false
@@ -310,9 +447,25 @@ qqline(resid(Percentvisitedlmer))
 # qqnorm looks good
 Anova(Percentvisitedlmer)
 
-glm(Percentvisited ~ tmax..deg.c., data = allenvvisit1)
+# percentvisitedglmall <- glm(Percentvisited ~ (MtnRange + dayl..s. + prcp..mm.day. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI), data = allenvvisit1, family = poisson)
+
+summary(glm(Percentvisited ~ tmax..deg.c., data = allenvvisit1))
+summary(glm(Percentvisited ~ MeanNDVI, data = allenvvisit1))
 ```
 BEFORE INPUTTING COMPLETED EXCEL SPREADSHEET:
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 #Marbles
@@ -456,6 +609,32 @@ marb712b2 <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepi
 ndvimarb712 <- NDVI(a = marb712b2, b = marb712b1)
 cellStats(x = ndvimarb712, stat = 'mean', na.rm = TRUE)
 
+# plotting temperature over the mtn ranges
 
+library(ggplot2)
+ggplot(allenvvisit1, aes(x = Date, y = tmax..deg.c.)) + geom_line(aes(color = MountainRange, linetype = MountainRange))
+```
+Regraphing the percent of bighorn that came in daily compared to the maximum daily temperature. Calculating the mean percents for the ranges of below 30, 30-35, 35-40, 40+.
+
+```{r}
+plot(allenvvisit2$Percentvisited ~ allenvvisit2$tmax..deg.c.)
+allenvvisit3 <- allenvvisit2
+library(plyr)
+allenvvisit3$MountainRange <- revalue(allenvvisit3$MountainRange, c("Marb" = "Marbles", "BrsS" = "South Bristols", "Nopa" = "Nopah", "CMPR" = "Castle Piutes"))
+allenvvisit3$MountainRange <- as.character(allenvvisit3$MountainRange)
+allenvvisit3$MountainRange[allenvvisit3$MountainRange == "Marb", ] <- "Marbles"
+library(ggplot2)
+ggplot(allenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain range")
+# ggtitle("Percent of Bighorn Visiting Water Daily by Temperature")
+
+# Means
+mean(allenvvisit2$Percentvisited[allenvvisit2$tmax..deg.c. < 30])
+# 0.1145833
+mean(allenvvisit2$Percentvisited[((allenvvisit2$tmax..deg.c. >= 30) & (allenvvisit2$tmax..deg.c. < 35))])
+# 0.1024371
+mean(allenvvisit2$Percentvisited[((allenvvisit2$tmax..deg.c. >= 35) & (allenvvisit2$tmax..deg.c. < 40))])
+# 0.3841086
+mean(allenvvisit2$Percentvisited[allenvvisit2$tmax..deg.c. >= 40])
+# 0.5227055
 ```
 
