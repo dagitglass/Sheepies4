@@ -58,14 +58,14 @@ Subsetting the data to when I had camera data for
 I next subset the data to the time periods that I had camera data for. Keeping with my visitation analyses, I cut the GPS data to only include days when the whole 24-hour had camera coverage, and camera coverage was complete.
 
 Marbles:
-2019-05-18 - 2019-05-24
-2019-06-05 - 2019-06-11
-2019-06-19 - 2019-06-22
-2019-06-26 - 2019-06-29
-2019-07-11 - 2019-07-13
-2019-07-18 - 2019-07-24
-2019-08-01 - 2019-08-03
-2019-08-07 - 2019-08-09
+2019-05-18 - 2019-05-24 = 7
+2019-06-05 - 2019-06-11 = 7
+2019-06-19 - 2019-06-22 = 4
+2019-06-26 - 2019-06-29 = 4
+2019-07-11 - 2019-07-13 = 3
+2019-07-18 - 2019-07-24 = 7
+2019-08-01 - 2019-08-03 = 3
+2019-08-07 - 2019-08-09 = 3
 
 South Bristols:
 2019-06-05 - 2019-06-15
@@ -420,6 +420,7 @@ library(moveHMM)
 names(cln1hrfix)[names(cln1hrfix) == "y"] <- "Latitude"
 names(cln1hrfix)[names(cln1hrfix) == "x"] <- "Longitude"
 cln1hrfix1 <- cln1hrfix[with(cln1hrfix, order(ID, DateTimeLocalTestct)), ]
+cln1hrfix1$TimeLocal <- format(cln1hrfix1$DateTimeLocalTestct, format = "%H:%M")
 pcln1hrfix <- prepData(cln1hrfix1, type = "LL", coordNames = c("Longitude", "Latitude"))
 # Upon examination, these turning angles are in radians. The min and max are pi, which makes sense because it is impossible to have a turning angle greater than 180 degrees since the angle that the animal turned should be assumed to be the smaller one (why would I turn 270 degrees when I can only turn 90?). Since for this metric, all I am looking at is the tortuosity of the track, I think I should make every radian angle positive. After all, I do not care about whether the sheep turned left or right.
 pcln1hrfix$positangle <- abs(pcln1hrfix$angle)
@@ -465,7 +466,7 @@ TukeyHSD(turnangleid)
 
 # If turning angle is different by month
 # Because there was no significant difference between mountain ranges, I did not divide up these results by mountain range.
-boxplot(positangledegree ~ Month, data = pcln1hrfix1)
+boxplot(positangledegree ~ Month, data = pcln1hrfix1, main = "Turn Angle by Month")
 pcln1hrfix1$Month <- as.factor(pcln1hrfix1$Month)
 turnanglemonth <- aov(positangledegree ~ Month, data = pcln1hrfix1)
 summary.lm(turnanglemonth)
@@ -636,6 +637,7 @@ I conducted the preliminary analyses related to step length. I read in the data 
 - step length different by mountain range - DONE
 - different by individual sheep - 
 - different by month
+- different by time of day
 
 ```{r}
 steplengthallmtn <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/steplengthallmtn3820.csv")
@@ -730,18 +732,1611 @@ TukeyHSD(slcmprmonth)
 # Only June was different from August.
 
 
+
+
 ```
-I then calculated the angle of movement relative to the closest water source.
+I then calculated the distance to water relative to the closest water source.
+
+
+```{r}
+#Nopah
+
+# Setting up the elevation raster
+library(raster)
+library(sp)
+library(rgdal)
+nopahelevation4 <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/output_srtmNopahElevation4520.tif")
+# Merging gps data and Nopah water sources data 
+steplengthallmtn1$WaterSource <- NA
+NopahWater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/NopahWaterSources.csv")
+nopaallmtn1 <- steplengthallmtn1[steplengthallmtn1$MountainRange == "Nopa",]
+nopawatergps <- rbind(NopahWater, nopaallmtn1)
+# View(nopawatergps)
+nopawatergps1 <- nopawatergps[-c(4, 5, 6, 7, 1827),]
+#Setting up the SpatialPointsObjects
+nopawatergps1$BHSID <- as.factor(nopawatergps1$BHSID)
+nopacoords <- as.data.frame(nopawatergps1[ ,c("x", "y")])
+noparestodata <- as.data.frame(nopawatergps1[ ,c(1:5, 8:34)])
+# crsnopa is already the coordinate system
+spdfnopa <- SpatialPointsDataFrame(coords = nopacoords, data = noparestodata, proj4string = crsnopa)
+library(topoDistance)
+nopatopodist <- topoDist(DEM = nopahelevation4, pts = spdfnopa, directions = 8, paths = FALSE, zweight = 1)
+# Extract just distances that are between the points and the water sources
+nopatopodist1  <- nopatopodist[, c(1:3)]
+# Changing to a dataframe
+nopatopodist1 <- as.data.frame(nopatopodist1)
+# Changing the column names to the water sources they correspond to
+names(nopatopodist1)[names(nopatopodist1) == "1"] <- "ElSi"
+names(nopatopodist1)[names(nopatopodist1) == "2"] <- "Nopa"
+names(nopatopodist1)[names(nopatopodist1) == "3"] <- "SNop"
+# Making column which names which water source the point is closest to
+nopatopodist1$WhichClose <- colnames(nopatopodist1)[apply(nopatopodist1, 1, which.min)]
+# Making column of the distance to the closest water source
+nopatopodist1$Closedist <- pmin(nopatopodist1$ElSi, nopatopodist1$Nopa, nopatopodist1$SNop)
+# Making the necessary changes to add the close dist and which close columns to the original Nopah dataframe
+nopaallmtn2 <- nopaallmtn1[-c(1820), ]
+nopatopodist2 <- nopatopodist1[-c(1, 2, 3), ]
+nopaallmtnwdistwater <- cbind(nopaallmtn2, nopatopodist2[, 4:5, drop = FALSE])
+# To calculate the angle of movement relative to water
+# nopaallmtnwdistwater$angletowater <- acos((((lag(nopaallmtnwdistwater$Closedist))^2) - ((nopaallmtnwdistwater$stplengthtopo)^2) - ((nopaallmtnwdistwater$Closedist)^2)) / (-2 * (nopaallmtnwdistwater$stplengthtopo) * (nopaallmtnwdistwater$Closedist)))
+# library(amt)
+# nopaallmtnwdistwater$atowdeg <- as_degree(nopaallmtnwdistwater$angletowater)
+# THIS IS WRONG - HELP!!!
+
+# Castle Piute
+elevationcmpr <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/castlepiuteelevation.tif")
+cmprwatersources <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/cmprwatersources.csv")
+cmprallmtn1 <- steplengthallmtn1[steplengthallmtn1$MountainRange == "CMPR",]
+cmprwatergps <- rbind(cmprwatersources, cmprallmtn1)
+View(cmprwatergps)
+cmprwatergps1 <- cmprwatergps[-c(917), ]
+# Setting up the Spatial Points Object
+cmprwatergps1$BHSID <- as.factor(cmprwatergps1$BHSID)
+cmprcoords <- as.data.frame(cmprwatergps1[ ,c("x", "y")])
+cmprrestodata <- as.data.frame(cmprwatergps1[ ,c(1:5, 8:34)])
+# crscmpr is already the coordinate system
+spdfcmprwater <- SpatialPointsDataFrame(coords = cmprcoords, data = cmprrestodata, proj4string = crscmpr)
+cmprtopodistwater <- topoDist(DEM = elevationcmpr, pts = spdfcmprwater, directions = 8, paths = FALSE, zweight = 1)
+# Extract just distances that are between the points and the water sources
+cmprtopodistwater1 <- cmprtopodistwater[, c(1:2)]
+# Changing to a dataframe
+cmprtopodistwater1 <- as.data.frame(cmprtopodistwater1)
+# Changing the column names to the water sources they correspond to
+names(cmprtopodistwater1)[names(cmprtopodistwater1) == "1"] <- "Vice"
+names(cmprtopodistwater1)[names(cmprtopodistwater1) == "2"] <- "KidS"
+# Making column which names which water source the point is closest to
+cmprtopodistwater1$WhichClose <- colnames(cmprtopodistwater1)[apply(cmprtopodistwater1, 1, which.min)]
+# Making column of the distance to the closest water source
+cmprtopodistwater1$Closedist <- pmin(cmprtopodistwater1$Vice, cmprtopodistwater1$KidS)
+# Making the necessary changes to add the close dist and which close columns to the original Nopah dataframe
+cmprallmtn2 <- cmprallmtn1[-c(915), ]
+cmprtopodistwater2 <- cmprtopodistwater1[-c(1, 2), ]
+cmprallmtnwdistwater <- cbind(cmprallmtn2, cmprtopodistwater2[, 3:4, drop = FALSE])
+# To calculate the angle of movement relative to water
+# cmprallmtnwdistwater$angletowater <- acos((((lag(cmprallmtnwdistwater$Closedist))^2) - ((cmprallmtnwdistwater$stplengthtopo)^2) - ((cmprallmtnwdistwater$Closedist)^2)) / (-2 * (cmprallmtnwdistwater$stplengthtopo) * (cmprallmtnwdistwater$Closedist)))
+# library(amt)
+# cmprallmtnwdistwater$atowdeg <- as_degree(cmprallmtnwdistwater$angletowater)
+# THIS IS STILL WRONG - FIX!!!
+
+# Marbles
+# steplengthallmtn1 <- read.csv("steplengthallmtn1.csv")
+marbanotherelevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marbelevation41920.tif")
+elevationmarbbrsS <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/MarbBrsSelevation.tif")
+Marbwater529andbefore <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marb529andBeforeWaterSources.csv")
+Marbwater530andafter <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marb530afterWaterSources.csv")
+marballmtn1 <- steplengthallmtn1[steplengthallmtn1$MountainRange == "Marb",]
+marballmtn2 <- marballmtn1[, -c(35)]
+# as.POSIXct
+marballmtn529before <- marballmtn2[marballmtn2$DateTimeLocalTestct <= as.Date("2019-05-29 23:59:59"), ]
+marballmtn529before1 <- marballmtn529before[, -c(35)]
+marballmtn530after <- marballmtn2[marballmtn2$DateTimeLocalTestct >= as.Date("2019-05-30 00:00:00"), ]
+# For 5/29 and before
+marbwatergpsbefore <- rbind(Marbwater529andbefore, marballmtn529before1)
+marbwatergpsbefore1 <- marbwatergpsbefore[-c(6:12, 494), ]
+marbwatergpsbefore1$BHSID <- as.factor(marbwatergpsbefore1$BHSID)
+marbbeforecoords <- as.data.frame(marbwatergpsbefore1[ ,c("x", "y")])
+marbbeforerestodata <- as.data.frame(marbwatergpsbefore1[ ,c(1:5, 8:34)])
+# crs marb is already the coordinate system
+# crsmarb <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+spdfmarbbefore <- SpatialPointsDataFrame(coords = marbbeforecoords, data = marbbeforerestodata, proj4string = crsmarb)
+library(topoDistance)
+# memory.limit(size = 8000)
+marbbeforetopodist <- topoDist(DEM = marbanotherelevation, pts = spdfmarbbefore, directions = 8, paths = FALSE, zweight = 1)
+marbbeforetopodist1 <- marbbeforetopodist[, c(1:5)]
+marbbeforetopodist1 <- as.data.frame(marbbeforetopodist1)
+names(marbbeforetopodist1)[names(marbbeforetopodist1) == "1"] <- "SMar"
+names(marbbeforetopodist1)[names(marbbeforetopodist1) == "2"] <- "SI40"
+names(marbbeforetopodist1)[names(marbbeforetopodist1) == "3"] <- "Ther"
+names(marbbeforetopodist1)[names(marbbeforetopodist1) == "4"] <- "Vern"
+names(marbbeforetopodist1)[names(marbbeforetopodist1) == "5"] <- "DevS"
+marbbeforetopodist1$WhichClose <- colnames(marbbeforetopodist1)[apply(marbbeforetopodist1, 1, which.min)]
+marbbeforetopodist1$Closedist <- pmin(marbbeforetopodist1$SMar, marbbeforetopodist1$SI40, marbbeforetopodist1$Ther, marbbeforetopodist1$Vern, marbbeforetopodist1$DevS)
+marbbeforetopodist2 <- marbbeforetopodist1[-c(1, 2, 3, 4, 5), ]
+# 5/30 and after
+marballmtn530after1 <- marballmtn530after[, -c(35)]
+marbwatergpsafter <- rbind(Marbwater530andafter, marballmtn530after1)
+marbwatergpsafter1 <- marbwatergpsafter[-c(3527), ]
+marbwatergpsafter1$BHSID <- as.factor(marbwatergpsafter1$BHSID)
+marbaftercoords <- as.data.frame(marbwatergpsafter1[ ,c("x", "y")])
+marbafterrestofdata <- as.data.frame(marbwatergpsafter1[ c(1:5, 8:34)])
+#crsmarb already the coordinate system
+spdfmarbafter <- SpatialPointsDataFrame(coords = marbaftercoords, data = marbafterrestofdata, proj4string = crsmarb)
+library(topoDistance)
+marbaftertopodist <- topoDist(DEM = marbanotherelevation, pts = spdfmarbafter, directions = 8, paths = FALSE, zweight = 1)
+marbaftertopodist1 <- marbaftertopodist[, c(1:4)]
+marbaftertopodist1 <- as.data.frame(marbaftertopodist1)
+names(marbaftertopodist1)[names(marbaftertopodist1) == "1"] <- "SI40"
+names(marbaftertopodist1)[names(marbaftertopodist1) == "2"] <- "Ther"
+names(marbaftertopodist1)[names(marbaftertopodist1) == "3"] <- "Vern"
+names(marbaftertopodist1)[names(marbaftertopodist1) == "4"] <- "DevS"
+marbaftertopodist1$WhichClose <- colnames(marbaftertopodist1)[apply(marbaftertopodist1, 1, which.min)]
+marbaftertopodist1$Closedist <- pmin(marbaftertopodist1$SI40, marbaftertopodist1$Ther, marbaftertopodist1$Vern, marbaftertopodist1$DevS)
+marbaftertopodist2 <- marbaftertopodist1[-c(1, 2, 3, 4), ]
+# Putting everything together INCORRECTLY
+# marballmtn3 <- marballmtn2[-c(4004), ]
+# marbaftertopodist3 <- cbind(SMar = NA, marbaftertopodist2)
+# marballtopodist <- rbind(marbbeforetopodist2, marbaftertopodist3)
+# marballmtndistwater <- cbind(marballmtn3, marballtopodist[, 6:7, drop = FALSE])
+# Putting everything together correctly (hopefully)
+# Adding before 5/29 to that data
+marballmtn529before2 <- marballmtn529before1[-c(482), ]
+marbbefore529distwater <- cbind(marballmtn529before2, marbbeforetopodist2[, 6:7, drop = FALSE])
+#Adding 5/30 and after to that data
+marballmtn530after2 <- marballmtn530after1[-c(3523), ]
+marbafter530distwater <- cbind(marballmtn530after2, marbaftertopodist2[, 5:6, drop = FALSE])
+# Combining the two time chunks
+marballmtndistwater <- rbind(marbbefore529distwater, marbafter530distwater)
+
+# South Bristols
+# sbrselevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/SBRSelevation42220.tif")
+sbrselevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/SBrselevationattempt4.tif")
+SBrs2water <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/BrsSonlytwowatersources.csv")
+SBrs3water <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/BrsSallthreewatersources.csv")
+sbrsallmtn1 <- steplengthallmtn1[steplengthallmtn1$MountainRange == "BrsS", ]
+sbrsallmtn2 <- sbrsallmtn1[-c(6228), -c(35, 36)]
+sbrsallmtn722andbefore <- sbrsallmtn2[sbrsallmtn2$DateTimeLocalTestct <= as.POSIXct("2019-07-22 23:59:59"), ]
+sbrsallmtn72324 <- sbrsallmtn2[((sbrsallmtn2$DateTimeLocalTestct >= as.POSIXct("2019-07-23 00:00:00")) & (sbrsallmtn2$DateTimeLocalTestct <= as.POSIXct("2019-07-24 23:59:59"))), ]
+sbrsallmtn725aafter <- sbrsallmtn2[sbrsallmtn2$DateTimeLocalTestct >= as.POSIXct("2019-07-25 00:00:00"), ]
+# For 7/22 and before
+sbrswatergps722abefore <- rbind(SBrs3water, sbrsallmtn722andbefore)
+sbrswatergps722abefore$BHSID <- as.factor(sbrswatergps722abefore$BHSID)
+sbrsbefore722coords <- as.data.frame(sbrswatergps722abefore[ ,c("x", "y")])
+sbrsbefore722restodata <- as.data.frame(sbrswatergps722abefore[ ,c(1:5, 8:34)])
+crssbrs <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+spdfsbrsbefore722 <- SpatialPointsDataFrame(coords = sbrsbefore722coords, data = sbrsbefore722restodata, proj4string = crssbrs)
+library(topoDistance)
+sbrsbefore722topodist <- topoDist(DEM = sbrselevation, pts = spdfsbrsbefore722, directions = 8, paths = FALSE, zweight = 1)
+sbrsbefore722topodist1 <- sbrsbefore722topodist[, c(1:3)]
+sbrsbefore722topodist1 <- as.data.frame(sbrsbefore722topodist1)
+names(sbrsbefore722topodist1)[names(sbrsbefore722topodist1) == "1"] <- "MilC"
+names(sbrsbefore722topodist1)[names(sbrsbefore722topodist1) == "2"] <- "Naan"
+names(sbrsbefore722topodist1)[names(sbrsbefore722topodist1) == "3"] <- "Talc"
+sbrsbefore722topodist1$WhichClose <- colnames(sbrsbefore722topodist1)[apply(sbrsbefore722topodist1, 1, which.min)]
+sbrsbefore722topodist1$Closedist <- pmin(sbrsbefore722topodist1$MilC, sbrsbefore722topodist1$Naan, sbrsbefore722topodist1$Talc)
+sbrsbefore722topodist2 <- sbrsbefore722topodist1[-c(1, 2, 3), ]
+# For 7/23 and 7/24
+sbrswatergps72324 <- rbind(SBrs2water, sbrsallmtn72324)
+sbrswatergps72324$BHSID <- as.factor(sbrswatergps72324$BHSID)
+sbrs72324coords <- as.data.frame(sbrswatergps72324[ ,c("x", "y")])
+sbrs72324restodata <- as.data.frame(sbrswatergps72324[ ,c(1:5, 8:34)])
+# crssbrs is the coordinate system
+spdfsbrs72324 <- SpatialPointsDataFrame(coords = sbrs72324coords, data = sbrs72324restodata, proj4string = crssbrs)
+library(topoDistance)
+sbrs72324topodist <- topoDist(DEM = sbrselevation, pts = spdfsbrs72324, directions = 8, paths = FALSE, zweight = 1)
+sbrs72324topodist1 <- sbrs72324topodist[, c(1:2)]
+sbrs72324topodist1 <- as.data.frame(sbrs72324topodist1)
+names(sbrs72324topodist1)[names(sbrs72324topodist1) == "1"] <- "MilC"
+names(sbrs72324topodist1)[names(sbrs72324topodist1) == "2"] <- "Naan"
+sbrs72324topodist1$WhichClose <- colnames(sbrs72324topodist1)[apply(sbrs72324topodist1, 1, which.min)]
+sbrs72324topodist1$Closedist <- pmin(sbrs72324topodist1$MilC, sbrs72324topodist1$Naan)
+sbrs72324topodist2 <- sbrs72324topodist1[-c(1,2), ]
+
+# topoPathMap(sbrselevation, pts = spdfsbrs72324, topoPaths = sbrs72324topodist, type = "hillshade",pathWidth = 4, cex = 2, bg = "blue")
+
+# 7/25 and after
+sbrswatergps725after <- rbind(SBrs3water, sbrsallmtn725aafter)
+sbrswatergps725after$BHSID <- as.factor(sbrswatergps725after$BHSID)
+sbrs725coords <- as.data.frame(sbrswatergps725after[ ,c("x", "y")])
+sbrs725restodata <- as.data.frame(sbrswatergps725after[ ,c(1:5, 8:34)])
+# crssbrs is already coordinate system
+spdfsbrs725 <- SpatialPointsDataFrame(coords = sbrs725coords, data = sbrs725restodata, proj4string = crssbrs)
+library(topoDistance)
+sbrs725topodist <- topoDist(DEM = sbrselevation, pts = spdfsbrs725, directions = 8, paths = FALSE, zweight = 1)
+sbrs725topodist1 <- sbrs725topodist[, c(1:3)]
+sbrs725topodist1 <- as.data.frame(sbrs725topodist1)
+names(sbrs725topodist1)[names(sbrs725topodist1) == "1"] <- "MilC"
+names(sbrs725topodist1)[names(sbrs725topodist1) == "2"] <- "Naan"
+names(sbrs725topodist1)[names(sbrs725topodist1) == "3"] <- "Talc"
+sbrs725topodist1$WhichClose <- colnames(sbrs725topodist1)[apply(sbrs725topodist1, 1, which.min)]
+sbrs725topodist1$Closedist <- pmin(sbrs725topodist1$MilC, sbrs725topodist1$Naan, sbrs725topodist1$Talc)
+sbrs725topodist2 <- sbrs725topodist1[-c(1, 2, 3), ]
+# Putting everything together INCORRECTLY
+# sbrsallmtn2
+# sbrsbefore722topodist2, sbrs72324topodist3, sbrs725topodist2
+# sbrs72324topodist2$Talc <- NA
+# sbrs72324topodist3 <- sbrs72324topodist2[, c("MilC", "Naan", "Talc", "WhichClose", "Closedist")]
+# sbrsalltopodist <- rbind(sbrsbefore722topodist2, sbrs72324topodist3, sbrs725topodist2)
+# sbrsallmtndistwater <- cbind(sbrsallmtn2, sbrsalltopodist[, 4:5, drop = FALSE])
+# Putting everything together correctly
+#Before 7/22
+sbrsbefore722distwater <- cbind(sbrsallmtn722andbefore, sbrsbefore722topodist2[, 4:5, drop = FALSE])
+# 7/23 and 7/24
+sbrs72324distwater <- cbind(sbrsallmtn72324, sbrs72324topodist2[, 3:4, drop = FALSE])
+# 7/25 and after
+sbrs725distwater <- cbind(sbrsallmtn725aafter, sbrs725topodist2[, 4:5, drop = FALSE])
+# Combining them all
+sbrsallmtndistwater <- rbind(sbrsbefore722distwater, sbrs72324distwater, sbrs725distwater)
+
+# Combining all four mountain ranges
+View(nopaallmtnwdistwater)
+View(cmprallmtnwdistwater)
+View(marballmtndistwater)
+sbrsallmtndistwater
+
+cmprallmtnwdistwater1 <- cmprallmtnwdistwater[, -c(35:36)]
+allmtndistwater <- rbind(marballmtndistwater, sbrsallmtndistwater, nopaallmtnwdistwater, cmprallmtnwdistwater1)
+
+View(allmtndistwater)
+par(mfrow = c(2,2))
+boxplot(Closedist ~ Month, data = allmtndistwater[allmtndistwater$MountainRange == "Marb", ], ylab = "Distance (m)", main = "Marbles (n =10)", ylim = c(0, 16000))
+boxplot(Closedist ~ Month, data = allmtndistwater[allmtndistwater$MountainRange == "BrsS", ], ylab = "Distance (m)", main = "South Bristols (n = 6)", ylim = c(0, 16000))
+boxplot(Closedist ~ Month, data = allmtndistwater[allmtndistwater$MountainRange == "Nopa", ], ylab = "Distance (m)", main = "Nopah (n = 4)", ylim = c(0, 16000))
+boxplot(Closedist ~ Month, data = allmtndistwater[allmtndistwater$MountainRange == "CMPR", ], ylab = "Distance (m)", main = "Castle Piute (n = 2)", ylim = c(0, 16000))
+title("Distance to the Nearest Water Source by Month", line = -1, outer = TRUE)
+dev.off()
+
+
+```
+To calculate the angle of movement relative to the nearest water source. I first read in the cleaned csv calculated from the previous chunk of code b/c of discrepancies with the time of day stuff.
+
+
+```{r}
+library(geosphere)
+stepturndistallmtn <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/stepturningdist42920.csv")
+AllWater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Summer2019WaterSources.csv")
+stepturndistallmtn1 <- merge(stepturndistallmtn, AllWater, by.x = "WhichClose", by.y = "WhichClose")
+p1 <- stepturndistallmtn1[, c(8,9)]
+p1 <- as.matrix(p1)
+p2 <- stepturndistallmtn1[, c(39, 38)]
+p2 <- as.matrix(p2)
+stepturndistallmtn1$birdflydisttowater <- distGeo(p1, p2)
+stepturndistallmtn2 <- stepturndistallmtn1[with(stepturndistallmtn1, order(MountainRange, BHSID, DateTimeLocalTestct)), ]
+
+# Double checking everything ok - Comparing between as the bird flies and topographic distance by mountain range - we good
+stepturndistallmtn2$difbirdtopo <- stepturndistallmtn2$Closedist - stepturndistallmtn2$birdflydisttowater
+boxplot(difbirdtopo ~ MountainRange, data = stepturndistallmtn2)
+
+# To calculate the angle of movement relative to water
+# To calculate the step length of movement as a bird flies in meters
+#stepturndistallmtn2$movestepbirdfly <- (stepturndistallmtn2$step * 1000)
+# library(dplyr)
+# library(moveHMM)
+# names(stepturndistallmtn2)[names(stepturndistallmtn2) == "x"] <- "Longitude"
+# names(stepturndistallmtn2)[names(stepturndistallmtn2) == "y"] <- "Latitude"
+# stepturndistallmtn2 <- prepData(stepturndistallmtn2, type = "LL", coordNames = c("Longitude", "Latitude"))
+stepturndistallmtn2$laglongitude <- lead(stepturndistallmtn2$x, n = 1)
+stepturndistallmtn2$laglatitude <- lead(stepturndistallmtn2$y, n = 1)
+ab1 <- stepturndistallmtn2[ ,c(8, 9)]
+ab1 <- as.matrix(ab1)
+ab2 <- stepturndistallmtn2[ ,c(42, 43)]
+ab2 <- as.matrix(ab2)
+stepturndistallmtn2$geostplgthpostclean <- distGeo(ab1, ab2)
+
+
+# p1 <- stepturndistallmtn1[, c(8,9)]
+# p1 <- as.matrix(p1)
+# p2 <- stepturndistallmtn1[, c(39, 38)]
+# p2 <- as.matrix(p2)
+# stepturndistallmtn1$birdflydisttowater <- distGeo(p1, p2)
+
+# library(moveHMM)
+# ptweminallrange <- prepData(tweminallrange, type = "LL", coordNames = c("Longitude", "Latitude"))
+
+shift <- function(x, n){
+  c(x[-(seq(n))], rep(NA, n))
+}
+stepturndistallmtn2$lagbirdflydisttowater <- shift(stepturndistallmtn2$birdflydisttowater, 1)
+stepturndistallmtn2$angletowater <- acos((((stepturndistallmtn2$lagbirdflydisttowater)^2) - ((stepturndistallmtn2$geostplgthpostclean)^2) - ((stepturndistallmtn2$birdflydisttowater)^2)) / (-2 * (stepturndistallmtn2$geostplgthpostclean) * (stepturndistallmtn2$birdflydisttowater)))
+# Deleting the rows whose results take in the locations of 2 sheep
+rownames(stepturndistallmtn2) <- 1:nrow(stepturndistallmtn2)
+stepturndistallmtn2[c(186, 1402, 2738, 3941, 5189, 6227, 6700, 7141, 7504, 7943, 8406, 8810, 9639, 10431, 11144, 11692, 12277), 46] <- NA
+library(amt)
+stepturndistallmtn2$angletowaterdegree <- as_degree(stepturndistallmtn2$angletowater)
+```
+To compare between movement immediately before coming into water and other movement 
+- also movement before coming into water throughout the summer
+
 
 
 
 ```{r}
+library(lubridate)
+allrangetime1$DateTimect <- as.character(allrangetime1$DateTimect)
+allrangetime1$DateTimect <- as.POSIXct(allrangetime1$DateTimect, tz = "America/Los_Angeles", format = "%Y-%m-%d %H:%M")
+stepturndistallmtn2$DateTimeLocalTestct <- as.character(stepturndistallmtn2$DateTimeLocalTestct)
+stepturndistallmtn2$DateTimeLocalTestct <- as.POSIXct(stepturndistallmtn2$DateTimeLocalTestct, tz = "America/Los_Angeles", format = "%Y-%m-%d %H:%M")
+stepturndistallmtn2$beforevisit <- FALSE
+for(row in 1:nrow(allrangetime1)){
+  sheep_id <- as.character(allrangetime1$KI_Known_ID[row])
+  drink_time <- allrangetime1$DateTimect[row]
+  sheep_idxs <- which(stepturndistallmtn2$ID == sheep_id)
+  drink_idx <- which((stepturndistallmtn2$DateTimeLocalTestct < as.Date(drink_time)) & (stepturndistallmtn2$DateTimeLocalTestct >= as.Date(drink_time - 3900)))
+rowsbeforedrink <- intersect(sheep_idxs, drink_idx)
+stepturndistallmtn2$beforevisit[rowsbeforedrink] <- TRUE
+  }
+
+#OLD CODE
+# allrangetime1$KI_Known_ID
+# steplengthallmtn1$ID
+# allrangetime1$DateTimect
+# steplengthallmtn1$DateTimeLocalTestct
+# row <- 1
+# sheep_id <- allrangetime1$KI_Known_ID[row]
+# allrantime1[1]
+# steplengthallmtn1$beforevisit <- FALSE
+# for(row in 1:nrow(allrangetime1)){
+#   sheep_id <- as.character(allrangetime1$KI_Known_ID[row])
+#   drink_time <- allrangetime1$DateTimect[row]
+#   sheep_idxs <- which(steplengthallmtn1$ID == sheep_id)
+#   drink_idx <- which((steplengthallmtn1$DateTimeLocalTestct < as.Date(drink_time)) & (steplengthallmtn1$DateTimeLocalTestct >= as.Date(drink_time - 5400)))
+# rowsbeforedrink <- intersect(sheep_idxs, drink_idx)
+# steplengthallmtn1$beforevisit[rowsbeforedrink] <- TRUE
+#  }
+
+# Without breaking it out by mtn range
+
 
 ```
 
 
 
 
+```{r}
+# Step length different by time of day
+# library(lubridate)
+
+# as.numeric(format(t.str, "%H"))
+
+# steplengthallmtn1$TimeLocal <- as.numeric(format(steplengthallmtn1$DateTimeLocalTestct, "%H"))
+
+# steplengthallmtn1$TimeLocal <- hm(steplengthallmtn1$TimeLocal)
+# steplengthallmtn1$Hour <- NA
+# steplengthallmtn1$Hour <- hour(steplengthallmtn1$TimeLocal)
+# plot(stplengthtopo ~ TimeLocal, data = steplengthallmtn1)
+
+boxplot(stplengthtopo ~ TimeLocal, data = steplengthallmtn1, main = "Topographic Step Length By Hour for All Mountain Ranges", ylab = "Topographic Step Length (m)", xlab = "Time of Day")
+
+```
+
+Seeing if movement patterns are different when coming into water
+
+
+
+```{r if movement different when coming into water}
+# Without breaking it out by mtn range
+
+# For angle of movement
+steplengthallmtn1$beforevisit <- as.factor(steplengthallmtn1$beforevisit)
+qqnorm(steplengthallmtn1$positangledegree)
+qqline(steplengthallmtn1$positangledegree)
+hist(steplengthallmtn1$positangledegree)
+hist(steplengthallmtn1$positangledegree[steplengthallmtn1$beforevisit == "TRUE"])
+hist(steplengthallmtn1$positangledegree[steplengthallmtn1$beforevisit == "FALSE"])
+# Have to use a Mann-Whitney U Test b/c nonparametric
+wilcox.test(steplengthallmtn1$positangledegree[steplengthallmtn1$beforevisit == "TRUE"], steplengthallmtn1$positangledegree[steplengthallmtn1$beforevisit == "FALSE"])
+# W = 1137974, p-value = 0.1779
+# No significant different between right before coming into water and other times, won't be able to tell if drank water based on angle of movement path
+# Not significantly different when break it out by range either
+
+
+# For step length
+qqnorm(steplengthallmtn1$stplengthtopo)
+qqline(steplengthallmtn1$stplengthtopo)
+hist(steplengthallmtn1$stplengthtopo)
+# Right skewed. Need to transform. Sqrt is still not perfect, but better.
+hist(sqrt(steplengthallmtn1$stplengthtopo))
+hist(sqrt(steplengthallmtn1$stplengthtopo))
+t.test(sqrt(stplengthtopo) ~ beforevisit, data = stepturndistallmtn2)
+# data:  sqrt(stplengthtopo) by beforevisit
+# t = -1.4805, df = 192.94, p-value = 0.1404
+# No significant difference- IS THIS THE RIGHT TEST? CONSIDERING EVERYTHING?
+# Not significantly different by range either
+
+# For distance to water
+qqnorm(stepturndistallmtn2$Closedist)
+qqline(stepturndistallmtn2$Closedist)
+qqnorm(sqrt(stepturndistallmtn2$Closedist))
+qqline(sqrt(stepturndistallmtn2$Closedist))
+hist(stepturndistallmtn2$Closedist)
+hist(sqrt(stepturndistallmtn2$Closedist))
+# Transforming distance to water to make it normal
+t.test((sqrt(Closedist)) ~ beforevisit, data = stepturndistallmtn2)
+# t = 24.98, df = 209.52, p-value < 2.2e-16
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  21.21811 24.85394
+# sample estimates:
+# mean in group FALSE  mean in group TRUE 
+#            45.63737            22.60135 
+t.test((sqrt(Closedist)) ~ beforevisit, data = allgpsmarb)
+t.test((sqrt(Closedist)) ~ beforevisit, data = allgpsbrs)
+t.test((sqrt(Closedist)) ~ beforevisit, data = allgpsnopa)
+t.test((sqrt(Closedist)) ~ beforevisit, data = allgpscmpr)
+
+# For angle of movement relative to water
+qqnorm(stepturndistallmtn2$angletowaterdegree)
+qqline(stepturndistallmtn2$angletowaterdegree)
+hist(stepturndistallmtn2$angletowaterdegree)
+# relatively evenly spread
+t.test(angletowaterdegree ~ beforevisit, data = stepturndistallmtn2)
+# t = 1.2777, df = 186.74, p-value = 0.2029
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#  -2.970941 13.894715
+# sample estimates:
+# mean in group FALSE  mean in group TRUE 
+#            87.51017            82.04828 
+
+
+# Do not include positangledegree (angle of movement) b/c not normally distributed
+movevisitglm <- glm(beforevisit ~ positangledegree + sqrt(stplengthtopo) + sqrt(Closedist) + angletowaterdegree, data = stepturndistallmtn2, family = "binomial")
+summary(movevisitglm)
+plot(movevisitglm)
+confint(movevisitglm)
+
+
+# glm removing least significant variable
+movevisitglmw3 <- glm(beforevisit ~ sqrt(stplengthtopo) + sqrt(Closedist), data = stepturndistallmtn2, family = "binomial")
+summary(movevisitglmw3)
+#                      Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)         -1.698907   0.183422  -9.262   <2e-16 ***
+# sqrt(stplengthtopo) -0.012580   0.009057  -1.389    0.165    
+# sqrt(Closedist)     -0.075234   0.005553 -13.549   <2e-16 ***
+#    Null deviance: 1973.5  on 12962  degrees of freedom
+# Residual deviance: 1716.7  on 12960  degrees of freedom
+# AIC: 1722.7
+
+
+# glm removing another variable - BASED ON AIC SCORES SHOULD USE THIS ONE????
+movevisitglmw2 <- glm(beforevisit ~ sqrt(Closedist), data = stepturndistallmtn2, family = "binomial")
+summary(movevisitglmw2)
+plot(movevisitglmw2)
+anova(movevisitglmw2, movevisitglmw3, test = "Chisq")
+with(summary(movevisitglmw2), 1 - deviance/null.deviance)
+#                  Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)     -1.859468   0.145276   -12.8   <2e-16 ***
+# sqrt(Closedist) -0.073679   0.005416   -13.6   <2e-16 ***
+#                    Null deviance: 1973.5  on 12962  degrees of freedom
+# Residual deviance: 1718.7  on 12961  degrees of freedom
+# AIC: 1722.7
+
+movevisitglmbunnny <- glm(beforevisit ~ positangledegree + stplengthtopo + Closedist + angletowaterdegree, data = stepturndistallmtn2, family = "binomial")
+summary(movevisitglmbunnny)
+#                      Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)        -2.2587415  0.2151446 -10.499   <2e-16 ***
+# positangledegree   -0.0010445  0.0013730  -0.761    0.447    
+# stplengthtopo      -0.0004467  0.0003426  -1.304    0.192    
+# Closedist          -0.0014207  0.0001332 -10.668   <2e-16 ***
+# angletowaterdegree -0.0021334  0.0013480  -1.583    0.114 
+
+movevisitglmbunnny1 <- glm(beforevisit ~ stplengthtopo + Closedist + angletowaterdegree, data = stepturndistallmtn2, family = "binomial")
+summary(movevisitglmbunnny1)
+# (Intercept)        -2.3554214  0.1747662 -13.478   <2e-16 ***
+# stplengthtopo      -0.0004162  0.0003374  -1.234    0.217    
+# Closedist          -0.0014195  0.0001331 -10.666   <2e-16 ***
+# angletowaterdegree -0.0020983  0.0013500  -1.554    0.120   
+
+movevisitglmbunnny2 <- glm(beforevisit ~ Closedist + angletowaterdegree, data = stepturndistallmtn3, family = "binomial")
+summary(movevisitglmbunnny2)
+#                      Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)        -2.4362696  0.1671173 -14.578   <2e-16 ***
+# Closedist          -0.0014213  0.0001352 -10.511   <2e-16 ***
+# angletowaterdegree -0.0018710  0.0013796  -1.356    0.175
+
+movevisitglmbunnny3 <- glm(beforevisit ~ Closedist, data = stepturndistallmtn3, family = "binomial")
+summary(movevisitglmbunnny3)
+with(summary(movevisitglmbunnny3), 1 - deviance/null.deviance)
+#               Estimate Std. Error z value Pr(>|z|)    
+# (Intercept) -2.5912475  0.1146888  -22.59   <2e-16 ***
+# Closedist   -0.0014125  0.0001301  -10.85   <2e-16 ***
+
+# anova(movevisitglmbunnny2, movevisitglmbunnny3)
+# doens't work/
+
+# Seeing if there is a correlation between turning angle and step length
+plot(steplengthallmtn1$stplengthtopo ~ steplengthallmtn1$positangledegree)
+# no correlation
+
+# Seeing if there is a correlation between angle of movement relative to water and distance to water
+plot(stepturndistallmtn2$Closedist ~ stepturndistallmtn2$angletowaterdegree)
+# no correlation
+
+library("Hmisc")
+movevar <- stepturndistallmtn2[ , c(31, 33, 37, 44)]
+movevarres <- rcorr(as.matrix(movevar), type = "pearson")
+
+
+## 9/3/2020
+library(lme4)
+library(car)
+# Percentvisitedlmer <- glmer(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + vp..Pa. + MeanNDVI + (1|MountainRange), data = allenvvisit2, family = "poisson")
+
+# Scaling independent variables - scaling is done by dividing the centered columns of x by their standard deviations. If put center as false, then would divide by root mean square
+# https://stackoverflow.com/questions/20256028/understanding-scale-in-r
+# allenvvisit1$scaledayl <- scale(allenvvisit1$dayl..s., center = TRUE, scale = TRUE)
+
+stepturndistallmtn2$Date <- as.factor(stepturndistallmtn2$Date)
+stepturndistallmtn2a <- stepturndistallmtn2
+stepturndistallmtn2a$scalepositangledegree <- scale(stepturndistallmtn2a$positangledegree, center = TRUE, scale = TRUE)
+stepturndistallmtn2a$scalestplengthtopo <- scale(stepturndistallmtn2a$stplengthtopo, center = TRUE, scale = TRUE)
+stepturndistallmtn2a$scaleClosedist <- scale(stepturndistallmtn2a$Closedist, center = TRUE, scale = TRUE)
+stepturndistallmtn2a$scaleangletowaterdegree <- scale(stepturndistallmtn2a$angletowaterdegree, center = TRUE, scale = TRUE)
+
+moveviz <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + scaleangletowaterdegree + (1|Date) + (1|BHSID), data = stepturndistallmtn2a, family = binomial(link = "logit"))
+summary(moveviz)
+
+# Unsuccessful attempts to calculate R squared for logistic mixed effect models
+install.packages("piecewiseSEM")
+library(piecewiseSEM)
+rsquared(moveviz, method = "delta")
+library(MuMIn)
+r.squaredGLMM(moveviz)
+library(pscl)
+pR2(moveviz)
+r2beta(moveviz, method = 'kr', partial = T)
+
+plot(moveviz)
+plot(resid(moveviz))
+library(car)
+# boxTidwell(beforevisit ~ scaleClosedist, data = stepturndistallmtn2a)
+probabilities <- predict(moveviz, type = "response")
+predicted.classes <- ifelse(probabilities > 0.5, "pos", "neg")
+head(predicted.classes)
+nrow(na.omit(happy))
+# if the predictions are linearly related to the variables
+# http://www.sthda.com/english/articles/36-classification-methods-essentials/148-logistic-regression-assumptions-and-diagnostics-in-r/
+library(dplyr)
+library(tidyverse)
+happy <- na.omit(select(stepturndistallmtn2a, c(scalepositangledegree, scalestplengthtopo, scaleClosedist, scaleangletowaterdegree)))
+head(happy)
+happy1 <- happy %>%
+  mutate(logit = log(probabilities/(1-probabilities))) %>%
+  gather(key = "predictors", value = "predictor.value", -logit)
+ggplot(happy1, aes(logit, predictor.value))+
+  geom_point(size = 0.5, alpha = 0.5) +
+  geom_smooth(method = "loess") + 
+  theme_bw() + 
+  facet_wrap(~predictors, scales = "free_y")
+
+# problem?
+#qqnorm(stepturndistallmtn2a$scaleClosedist)
+#qqline(stepturndistallmtn2a$scaleClosedist)
+
+# Deleting scalesteplengthtopo
+moveviz1 <- glmer(beforevisit ~ scalepositangledegree + scaleClosedist + scaleangletowaterdegree + (1|Date) + (1|BHSID), data = stepturndistallmtn2a, family = binomial(link = "logit"))
+summary(moveviz1)
+
+# Deleting scalepositangeldegree
+moveviz2 <- glmer(beforevisit ~ scaleClosedist + scaleangletowaterdegree + (1|Date) + (1|BHSID), data = stepturndistallmtn2a, family = binomial(link = "logit"))
+summary(moveviz2)
+
+# Deleting scaleangletowaterdegree
+moveviz3 <- glmer(beforevisit ~ scaleClosedist + (1|Date) + (1|BHSID), data = stepturndistallmtn2a, family = binomial(link = "logit"))
+summary(moveviz3)
+
+
+
+# Checking linearity in each variable
+# library(ggplot2)
+# ggplot(data.frame(x1=stepturndistallmtn2a$scalepositangledegree,pearson=residuals(moveviz,type="pearson")),
+#      aes(x=x1,y=pearson)) +
+#     geom_point() +
+#     theme_bw()
+```
+
+
+- difference in 4 var between mountain ranges
+- difference in 4 var by month within each mountain range
+
+```{r}
+# Difference in 4 var between mountain ranges
+
+# For angle of movement
+# not parametric
+boxplot(positangledegree ~ MountainRange, data = stepturndistallmtn2)
+# Lol. clearly no difference
+kruskal.test(positangledegree ~ MountainRange, data = stepturndistallmtn2)
+# Kruskal-Wallis chi-squared = 4.4321, df = 3, p-value = 0.2184
+# No significant difference between ranges
+
+# Step length
+boxplot(stplengthtopo ~ MountainRange, data = stepturndistallmtn2)
+stplengthtopomtnrange <- aov(sqrt(stplengthtopo) ~ MountainRange, data = stepturndistallmtn2)
+summary.lm(stplengthtopomtnrange)
+# Residual standard error: 7.89 on 12959 degrees of freedom
+# Multiple R-squared:  0.0009177,	Adjusted R-squared:  0.0006864 
+# F-statistic: 3.968 on 3 and 12959 DF,  p-value: 0.00774
+TukeyHSD(stplengthtopomtnrange)
+#                  diff        lwr          upr     p adj
+# CMPR-BrsS -0.63699275 -1.3550349  0.081049361 0.1028872
+# Marb-BrsS  0.09208716 -0.3185786  0.502752943 0.9392440
+# Nopa-BrsS -0.48560913 -1.0258870  0.054668717 0.0959087
+# Marb-CMPR  0.72907991 -0.0140541  1.472213923 0.0568052
+# Nopa-CMPR  0.15138362 -0.6705056  0.973272863 0.9649692
+# Nopa-Marb -0.57769629 -1.1509012 -0.004491403 0.0473881
+# only 1 combo significantly differently, and only just that
+
+# Distance from water
+boxplot(Closedist ~ MountainRange, data = stepturndistallmtn2)
+disttowatmtnrange <- aov(sqrt(Closedist) ~ MountainRange, data = stepturndistallmtn2)
+summary.lm(disttowatmtnrange)
+# Residual standard error: 23.32 on 12959 degrees of freedom
+# Multiple R-squared:  0.05368,	Adjusted R-squared:  0.05346 
+# F-statistic: 245.1 on 3 and 12959 DF,  p-value: < 2.2e-16
+TukeyHSD(disttowatmtnrange)
+#                 diff         lwr        upr     p adj
+# CMPR-BrsS -15.735613 -17.8582929 -13.612933 0.0000000
+# Marb-BrsS  -9.270328 -10.4843405  -8.056315 0.0000000
+# Nopa-BrsS   1.949569   0.3523961   3.546741 0.0092945
+# Marb-CMPR   6.465285   4.2684278   8.662142 0.0000000
+# Nopa-CMPR  17.685181  15.2555076  20.114855 0.0000000
+# Nopa-Marb  11.219896   9.5253849  12.914408 0.0000000
+# This may not mean much b/c differential abundance of water sources in mtn ranges, and differential sex ratio of collared bighorn in each mtn range.
+
+# Angle of Movement relative to water
+boxplot(angletowaterdegree ~ MountainRange, data = stepturndistallmtn2)
+angletowatmtnrange <- aov(angletowaterdegree ~ MountainRange, data = stepturndistallmtn2)
+summary.lm(angletowatmtnrange)
+# Multiple R-squared:  0.0005197,	Adjusted R-squared:  0.0002867 
+# F-statistic: 2.231 on 3 and 12872 DF,  p-value: 0.08243
+# Not significantly different between ranges
+
+# Difference in 4 var by month by Mountain range
+stepturndistallmtn2$Month <- as.factor(stepturndistallmtn2$Month)
+allgpsmarb <- stepturndistallmtn2[stepturndistallmtn2$MountainRange == "Marb", ]
+allgpsbrs <- stepturndistallmtn2[stepturndistallmtn2$MountainRange == "BrsS", ]
+allgpsnopa <- stepturndistallmtn2[stepturndistallmtn2$MountainRange == "Nopa", ]
+allgpscmpr <- stepturndistallmtn2[stepturndistallmtn2$MountainRange == "CMPR", ]
+
+
+
+#Angle of movement
+# All mtn ranges combined
+boxplot(positangledegree ~ Month, data = stepturndistallmtn2)
+kruskal.test(positangledegree ~ Month, data = stepturndistallmtn2)
+# Kruskal-Wallis chi-squared = 11.781, df = 3, p-value = 0.008173
+library(dunn.test)
+attach(stepturndistallmtn2)
+dunn.test(x = positangledegree, g = Month)
+# June different from July and August is the significant difference
+# Marbles
+boxplot(positangledegree ~ Month, data = allgpsmarb)
+kruskal.test(positangledegree ~ Month, data = allgpsmarb)
+# Kruskal-Wallis chi-squared = 5.9113, df = 3, p-value = 0.116
+#South Bristols
+boxplot(positangledegree ~ Month, data = allgpsbrs)
+kruskal.test(positangledegree ~ Month, data = allgpsbrs)
+# Kruskal-Wallis chi-squared = 8.4805, df = 2, p-value = 0.0144
+attach(allgpsbrs)
+dunn.test(x = positangledegree, g = Month)
+# June is different from July and August
+# Nopah
+boxplot(positangledegree ~ Month, data = allgpsnopa)
+kruskal.test(positangledegree ~ Month, data = allgpsnopa)
+# Kruskal-Wallis chi-squared = 1.1648, df = 2, p-value = 0.5586
+# Castle Piute
+boxplot(positangledegree ~ Month, data = allgpscmpr)
+kruskal.test(positangledegree ~ Month, data = allgpscmpr)
+# Kruskal-Wallis chi-squared = 4.6685, df = 2, p-value = 0.09688
+
+# Step length
+# All mtn ranges combined
+boxplot(stplengthtopo ~ Month, data = stepturndistallmtn2)
+stplgthallmonth <- aov(sqrt(stplengthtopo) ~ Month, data = stepturndistallmtn2)
+summary.lm(stplgthallmonth)
+# Multiple R-squared:  0.005763,	Adjusted R-squared:  0.005533 
+# F-statistic: 25.04 on 3 and 12959 DF,  p-value: 3.792e-16
+TukeyHSD(stplgthallmonth)
+#           diff        lwr         upr     p adj
+# 6-5 -0.5153772 -1.4841785  0.45342414 0.5202827
+# 7-5  0.8571682 -0.1064198  1.82075620 0.1014020
+# 8-5  0.2780684 -0.7246131  1.28075000 0.8921650
+# 7-6  1.3725454  0.9642265  1.78086429 0.0000000
+# 8-6  0.7934456  0.2998944  1.28699687 0.0002131
+# 8-7 -0.5790998 -1.0623374 -0.09586217 0.0111912
+# Marbles
+boxplot(stplengthtopo ~ Month, data = allgpsmarb)
+stplgthmarbmonth <- aov(sqrt(stplengthtopo) ~ Month, data = allgpsmarb)
+summary.lm(stplgthmarbmonth)
+TukeyHSD(stplgthmarbmonth)
+# Multiple R-squared:  0.001031,	Adjusted R-squared:  0.000282 
+# F-statistic: 1.376 on 3 and 3999 DF,  p-value: 0.248
+# No difference in Marbles
+# South Bristols
+boxplot(stplengthtopo ~ Month, data = allgpsbrs)
+stplgthbrsmonth <- aov(sqrt(stplengthtopo) ~ Month, data = allgpsbrs)
+summary.lm(stplgthbrsmonth)
+# Multiple R-squared:  0.01942,	Adjusted R-squared:  0.01911 
+# F-statistic: 61.64 on 2 and 6224 DF,  p-value: < 2.2e-16
+TukeyHSD(stplgthbrsmonth)
+#           diff       lwr        upr     p adj
+# 7-6  2.5098551  1.974566  3.0451440 0.0000000
+# 8-6  1.7402494  1.047597  2.4329020 0.0000000
+# 8-7 -0.7696057 -1.451955 -0.0872564 0.0223661
+# Nopah
+boxplot(stplengthtopo ~ Month, data = allgpsnopa)
+stplgthnopamonth <- aov(sqrt(stplengthtopo) ~ Month, data = allgpsnopa)
+summary.lm(stplgthnopamonth)
+# Multiple R-squared:  0.001826,	Adjusted R-squared:  0.0007269 
+# F-statistic: 1.661 on 2 and 1816 DF,  p-value: 0.1902
+# Not significantly different in Nopa
+TukeyHSD(stplgthnopamonth)
+# Castle Piute
+boxplot(stplengthtopo ~ Month, data = allgpscmpr)
+steplgthcmprmonth <- aov(sqrt(stplengthtopo) ~ Month, data = allgpscmpr)
+summary.lm(steplgthcmprmonth)
+TukeyHSD(steplgthcmprmonth)
+# Multiple R-squared:  0.00625,	Adjusted R-squared:  0.004069 
+# F-statistic: 2.865 on 2 and 911 DF,  p-value: 0.0575
+
+# Distance to water
+# All mtn ranges combined
+boxplot(Closedist ~ Month, data = stepturndistallmtn2)
+closedistall <- aov(sqrt(Closedist) ~ Month, data = stepturndistallmtn2)
+summary.lm(closedistall)
+# Multiple R-squared:  0.04764,	Adjusted R-squared:  0.04742 
+# F-statistic: 216.1 on 3 and 12959 DF,  p-value: < 2.2e-16
+TukeyHSD(closedistall)
+#           diff        lwr        upr     p adj
+# 6-5   5.038178   2.158072   7.918284 0.0000416
+# 7-5   1.839334  -1.025273   4.703942 0.3507222
+# 8-5  -9.248811 -12.229638  -6.267984 0.0000000
+# 7-6  -3.198844  -4.412716  -1.984971 0.0000000
+# 8-6 -14.286989 -15.754245 -12.819733 0.0000000
+# 8-7 -11.088146 -12.524741  -9.651550 0.0000000
+# Marbles
+boxplot(Closedist ~ Month, data = allgpsmarb)
+closedistmarb <- aov(sqrt(Closedist) ~ Month, data = allgpsmarb)
+summary.lm(closedistmarb)
+# Multiple R-squared:  0.02188,	Adjusted R-squared:  0.02114 
+# F-statistic: 29.82 on 3 and 3999 DF,  p-value: < 2.2e-16
+TukeyHSD(closedistmarb)
+#           diff       lwr       upr     p adj
+# 6-5 -3.5871615 -5.800328 -1.373995 0.0001857
+# 7-5 -7.3590310 -9.618777 -5.099285 0.0000000
+# 8-5 -6.7107501 -9.241728 -4.179773 0.0000000
+# 7-6 -3.7718695 -5.364838 -2.178901 0.0000000
+# 8-6 -3.1235886 -5.082401 -1.164776 0.0002479
+# 8-7  0.6482809 -1.363010  2.659572 0.8410124
+# South Bristols
+boxplot(Closedist ~ Month, data = allgpsbrs)
+closedistbrs <- aov(sqrt(Closedist) ~ Month, data = allgpsbrs)
+summary.lm(closedistbrs)
+# Multiple R-squared:  0.04903,	Adjusted R-squared:  0.04872 
+# F-statistic: 160.4 on 2 and 6224 DF,  p-value: < 2.2e-16
+TukeyHSD(closedistbrs)
+#           diff        lwr        upr p adj
+# 7-6  -7.327503  -9.132527  -5.522479     0
+# 8-6 -17.665846 -20.001509 -15.330183     0
+# 8-7 -10.338343 -12.639262  -8.037423     0
+# Nopah
+boxplot(Closedist ~ Month, data = allgpsnopa)
+closedistnopa <- aov(sqrt(Closedist) ~ Month, data = allgpsnopa)
+summary.lm(closedistnopa)
+# Multiple R-squared:  0.3058,	Adjusted R-squared:  0.305 
+# F-statistic:   400 on 2 and 1816 DF,  p-value: < 2.2e-16
+TukeyHSD(closedistnopa)
+#           diff        lwr        upr   p adj
+# 7-6  -5.371773  -7.973494  -2.770052 4.1e-06
+# 8-6 -36.113580 -39.425255 -32.801905 0.0e+00
+# 8-7 -30.741807 -33.538857 -27.944757 0.0e+00
+# Castle Piute
+boxplot(Closedist ~ Month, data = allgpscmpr)
+closedistcmpr <- aov(sqrt(Closedist) ~ Month, data = allgpscmpr)
+summary.lm(closedistcmpr)
+# Multiple R-squared:  0.04742,	Adjusted R-squared:  0.04533 
+# F-statistic: 22.67 on 2 and 911 DF,  p-value: 2.454e-10
+TukeyHSD(closedistcmpr)
+#          diff       lwr      upr     p adj
+# 7-6  3.679604  1.951014 5.408194 0.0000021
+# 8-6  3.388210  2.140640 4.635779 0.0000000
+# 8-7 -0.291394 -1.855100 1.272312 0.8999157
+
+par(mfrow = c(2,2))
+boxplot(sqrt(Closedist) ~ Month, data = allgpsmarb, ylab = "Distance to the Nearest Water Source (m)", main = "Marbles")
+boxplot(sqrt(Closedist) ~ Month, data = allgpsbrs,  ylab = "Distance to the Nearest Water Source (m)", main = "South Bristols")
+boxplot(sqrt(Closedist) ~ Month, data = allgpsnopa,  ylab = "Distance to the Nearest Water Source (m)", main = "Nopah")
+boxplot(sqrt(Closedist) ~ Month, data = allgpscmpr,  ylab = "Distance to the Nearest Water Source (m)", main = "Castle Piutes")
+dev.off()
+
+par(mfrow = c(2,2))
+boxplot(sqrt(Closedist) ~ Month, data = allgpsmarb, ylab = "Distance to the Nearest Water Source (m)", main = "Marbles")
+boxplot(sqrt(Closedist) ~ Month, data = allgpsbrs,  ylab = "Distance to the Nearest Water Source (m)", main = "South Bristols")
+boxplot(sqrt(Closedist) ~ Month, data = allgpsnopa,  ylab = "Distance to the Nearest Water Source (m)", main = "Nopah")
+boxplot(sqrt(Closedist) ~ Month, data = allgpscmpr,  ylab = "Distance to the Nearest Water Source (m)", main = "Castle Piutes")
+dev.off()
+
+# Angle of movement relative to water
+# All mtn ranges
+boxplot(angletowaterdegree ~ Month, data = stepturndistallmtn2)
+anglewaterall <- aov(angletowaterdegree ~ Month, data = stepturndistallmtn2)
+summary.lm(anglewaterall)
+# Multiple R-squared:  4.055e-05,	Adjusted R-squared:  -3.713e-05 
+# F-statistic: 0.522 on 1 and 12874 DF,  p-value: 0.47
+# Marbles
+boxplot(angletowaterdegree ~ Month, data = allgpsmarb)
+anglewatermarb <- aov(angletowaterdegree ~ Month, data = allgpsmarb)
+summary.lm(anglewatermarb)
+TukeyHSD(anglewatermarb)
+# Multiple R-squared:  0.0001637,	Adjusted R-squared:  -0.0006259 
+# F-statistic: 0.2073 on 3 and 3799 DF,  p-value: 0.8914
+# South Bristols
+boxplot(angletowaterdegree ~ Month, data = allgpsbrs)
+anglewaterbrs <- aov(angletowaterdegree ~ Month, data = allgpsbrs)
+summary.lm(anglewaterbrs)
+TukeyHSD(anglewaterbrs)
+#Nopah
+boxplot(angletowaterdegree ~ Month, data = allgpsnopa)
+anglewaternopa <- aov(angletowaterdegree ~ Month, data = allgpsnopa)
+summary.lm(anglewaternopa)
+TukeyHSD(anglewaternopa)
+# Castle Piute
+boxplot(angletowaterdegree ~ Month, data = allgpscmpr)
+anglewatercmpr <- aov(angletowaterdegree ~ Month, data = allgpscmpr)
+summary.lm(anglewatercmpr)
+TukeyHSD(anglewatercmpr)
+# No difference for any of these
+```
+
+See if there is any difference in 4 variable right before VTW  in May June SBrs/Marb vs VTW at other times- didn't work 
+
+```{r}
+allgpsmarbmay <- allgpsmarb[allgpsmarb$Month == "5", ]
+allgpsmarbjune <- allgpsmarb[allgpsmarb$Month == "6", ]
+allgpsbrsmay <- allgpsbrs[allgpsbrs$Month == "5", ]
+allgpsbrsjune <- allgpsbrs[allgpsbrs$Month == "6", ]
+
+# Angle of movement
+wilcox.test(allgpsbrsmay$positangledegree[allgpsbrsmay$beforevisit == "TRUE"], allgpsbrsmay$positangledegree[allgpsbrsmay$beforevisit == "FALSE"])
+# Not enough observations to test
+wilcox.test(allgpsbrsjune$positangledegree[allgpsbrsjune$beforevisit == "TRUE"], allgpsbrsjune$positangledegree[allgpsbrsjune$beforevisit == "FALSE"])
+# Not enough observations to test
+wilcox.test(allgpsmarbmay$positangledegree[allgpsmarbmay$beforevisit == "TRUE"], allgpsmarbmay$positangledegree[allgpsmarbmay$beforevisit == "FALSE"])
+# Not enough observations to test
+wilcox.test(allgpsmarbjune$positangledegree[allgpsmarbjune$beforevisit == "TRUE"], allgpsmarbjune$positangledegree[allgpsmarbjune$beforevisit == "FALSE"])
+# Can't test
+```
+
+Average distance away from water within 1.5 hrs of coming into water
+
+
+```{r}
+boxplot(stepturndistallmtn2$Closedist[stepturndistallmtn2$beforevisit == "TRUE"])
+# mean = 662.258 m
+# range = 0 - 2640.599
+#  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#    0.0   213.7   443.6   662.3  1066.9  2640.6 
+
+# To make another column that covers 1.5 before and 1.5 after(essentially accounting for all the time they VTW)
+library(lubridate)
+stepturndistallmtn2$beforeaftervisit <- FALSE
+for(row in 1:nrow(allrangetime1)){
+  sheep_id1 <- as.character(allrangetime1$KI_Known_ID[row])
+  drink_time1 <- allrangetime1$DateTimect[row]
+  sheep_idxs1 <- which(stepturndistallmtn2$ID == sheep_id1)
+  drink_idx1 <- which((stepturndistallmtn2$DateTimeLocalTestct <= as.Date(drink_time1 + 5400)) & (stepturndistallmtn2$DateTimeLocalTestct >= as.Date(drink_time1 - 5400)))
+rowsbeforedrink1 <- intersect(sheep_idxs1, drink_idx1)
+stepturndistallmtn2$beforeaftervisit[rowsbeforedrink1] <- TRUE
+}
+# now 697 true cases
+summary(stepturndistallmtn2$Closedist[stepturndistallmtn2$beforeaftervisit == "TRUE"])
+#    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#    0.0   293.2   753.7   945.5  1284.1  6942.8
+
+nrow(stepturndistallmtn2[(stepturndistallmtn2$Closedist < 1284.1) & (stepturndistallmtn2$beforeaftervisit == "FALSE"), ])
+#4740
+nrow(stepturndistallmtn2[(stepturndistallmtn2$Closedist < 945.5) & (stepturndistallmtn2$beforeaftervisit == "FALSE"), ])
+#3205
+nrow(stepturndistallmtn2[(stepturndistallmtn2$Closedist < 753.7) & (stepturndistallmtn2$beforeaftervisit == "FALSE"), ])
+# 2359
+nrow(stepturndistallmtn2[(stepturndistallmtn2$Closedist < 293.2) & (stepturndistallmtn2$beforeaftervisit == "FALSE"), ])
+#871
+nrow(stepturndistallmtn2[(stepturndistallmtn2$Closedist < 293.2) & (stepturndistallmtn2$beforeaftervisit == "TRUE"), ])
+# 175
+# Most of the time, still not drinking water if at the distance from the water source
+```
+
+Linking Environmental Conditions and Bighorn Movement
+average movement for an hour for the mtn range for a given bighorn  - can do because - currently wrong 
+
+
+```{r}
+## THIS IS ALL INCORRECT!!!!
+
+# str(stepturndistallmtn2$Date) = Factor
+# allenvvisit1$Date = factor
+stepturndistallmtn2$Date <- as.character(stepturndistallmtn2$Date)
+stepturndistallmtn2$Date <- as.Date(stepturndistallmtn2$Date, format = "%m/%d/%Y")
+allenvvisit1$Date <- as.character(allenvvisit1$Date)
+allenvvisit1$Date <- as.Date(allenvvisit1$Date)
+names(allenvvisit1)[names(allenvvisit1) == "MtnRange"] <- "MountainRange"
+
+# names(cmprindsheepvisitperday)[names(cmprindsheepvisitperday) == "rownames(cmprindsheepvisitperday)"] <- "Date"
+levels(stepturndistallmtn2$MountainRange)
+levels(allenvvisit1$MountainRange)
+# Adding environmental variables to stepturndistallmtn2 movement variable dataframe
+library(dplyr)
+combined <- sort(union(levels(stepturndistallmtn2$MountainRange), levels(allenvvisit1$MountainRange)))
+stepturndistallmtn3 <- left_join(mutate(stepturndistallmtn2, MountainRange = factor(MountainRange, levels = combined)), mutate(allenvvisit1[, c("Date", "MountainRange", "dayl..s.", "prcp..mm.day.", "srad..W.m.2.", "tmax..deg.c.", "tmin..deg.c.", "vp..Pa.", "MeanNDVI")], MountainRange = factor(MountainRange, levels = combined)))
+
+
+# stepturndistallmtn3$Closedist
+# stepturndistallmtn3$tmax..deg.c.
+plot(Closedist ~ tmax..deg.c., data = stepturndistallmtn3)
+hist(stepturndistallmtn3$Closedist)
+hist(stepturndistallmtn3$tmax..deg.c.)
+disttemp <- glm(Closedist ~ tmax..deg.c., data = stepturndistallmtn3, na.action = na.exclude)
+with(summary(disttemp), 1 - deviance/null.deviance)
+summary(disttemp)
+plot(resid(disttemp))
+library(rsq)
+rsq(disttemp, adj = FALSE)
+
+letsee <- data.frame(stepturndistallmtn3$tmax..deg.c., resid(disttemp))
+plot(stepturndistallmtn3$tmax..deg.c., resid(disttemp))
+
+distenv <- glm(Closedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = stepturndistallmtn3, na.action = na.exclude)
+summary(distenv)
+#                Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)  -3.071e+04  1.378e+03 -22.283  < 2e-16 ***
+# dayl..s.      6.571e-01  2.631e-02  24.977  < 2e-16 ***
+# srad..W.m.2. -3.036e+00  1.724e+00  -1.761 0.078322 .  
+# tmin..deg.c. -1.120e+02  4.506e+01  -2.485 0.012951 *  
+# tmax..deg.c.  1.049e+02  3.128e+01   3.354 0.000798 ***
+# vp..Pa.       3.398e-01  4.606e-01   0.738 0.460663    
+# MeanNDVI     -2.480e+03  9.777e+02  -2.537 0.011202 * 
+
+# Minus vapor pressure
+distenv1 <- glm(Closedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI, data = stepturndistallmtn3, na.action = na.exclude)
+summary(distenv1)
+#                Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)  -3.048e+04  1.343e+03 -22.688  < 2e-16 ***
+# dayl..s.      6.532e-01  2.577e-02  25.351  < 2e-16 ***
+# srad..W.m.2. -3.273e+00  1.694e+00  -1.932  0.05344 .  
+# tmin..deg.c. -9.251e+01  3.651e+01  -2.534  0.01130 *  
+# tmax..deg.c.  1.052e+02  3.128e+01   3.364  0.00077 ***
+# MeanNDVI     -2.477e+03  9.777e+02  -2.533  0.01131 * 
+
+# Minus solar radiation
+distenv2 <- glm(Closedist ~ dayl..s. + tmin..deg.c. + tmax..deg.c. + MeanNDVI, data = stepturndistallmtn3, na.action = na.exclude)
+summary(distenv2)
+#                Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)  -3.094e+04  1.323e+03 -23.391  < 2e-16 ***
+# dayl..s.      6.470e-01  2.557e-02  25.303  < 2e-16 ***
+# tmin..deg.c. -2.788e+01  1.461e+01  -1.908   0.0565 .  
+# tmax..deg.c.  4.927e+01  1.180e+01   4.175 2.99e-05 ***
+# MeanNDVI     -3.726e+03  7.334e+02  -5.080 3.82e-07 ***
+
+# Minus tmin
+distenv3 <- glm(Closedist ~ dayl..s. + tmax..deg.c. + MeanNDVI, data = stepturndistallmtn3, na.action = na.exclude)
+summary(distenv3)
+#                Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)  -3.174e+04  1.254e+03 -25.310  < 2e-16 ***
+# dayl..s.      6.639e-01  2.399e-02  27.671  < 2e-16 ***
+# tmax..deg.c.  2.983e+01  5.953e+00   5.011 5.48e-07 ***
+# MeanNDVI     -3.280e+03  6.953e+02  -4.718 2.41e-06 ***
+rsq(distenv3, adj = FALSE)
+with(summary(distenv3), 1 - deviance/null.deviance)
+# 0.058
+
+plot(allenvvisit2$NumIndSheep, resid(zeroinflpsclmodel1), xlab = "Number of Individual Sheep", ylab = "Residuals", main = "Residual Plot Max Temp")
+
+# independent normally distributed
+qqnorm(stepturndistallmtn3$dayl..s.)
+qqline(stepturndistallmtn3$dayl..s.)
+hist(stepturndistallmtn3$dayl..s.)
+
+# merge(data frameA,data frameB,by="ID")
+
+
+```
+if ewe are with lambs makes a difference in terms of movement to water
+
+
+```{r}
+movbefvis <- stepturndistallmtn3[stepturndistallmtn3$beforevisit == TRUE, ]
+# Changing Sex to F and M
+library(plyr)
+library(lubridate)
+movbefvis$Sex <- revalue(movbefvis$Sex, c("E" = "F", "R" = "M"))
+ewemovbefvis <- movbefvis[movbefvis$Sex == "F", ]
+atleastoneewe$KI_Known_ID <- as.character(atleastoneewe$KI_Known_ID)
+atleastoneeweandlamb <- atleastoneewe[atleastoneewe$GO_NoLambs > 0, ]
+ewemovbefvis$visitedwithlamb <- FALSE
+# already subset to only rows before visit, so only need to figure out which one of these had a lamb during the visit
+for(row in 1:nrow(atleastoneeweandlamb)){
+  sheep_idzz <- as.character(ewemovbefvis$ID[row])
+  sheep_idzzx <- which(atleastoneeweandlamb$KI_Known_ID == sheep_idzz)
+  drink_timexx <- atleastoneeweandlamb$DateTimect[row]
+  drink_timexxz <- which((ewemovbefvis$DateTimeLocalTestct < as.Date(drink_timexx)) & (ewemovbefvis$DateTimeLocalTestct >= as.Date(drink_timexx - 5400)))
+rowswithlambs <- intersect(sheep_idzzx, drink_timexxz)
+ewemovbefvis$visitedwithlamb[rowswithlambs] <- TRUE
+}
+### They are all false - no cases of 1 hr movement before ewe coming in with lamb????? Weird. Therefore, no need to compare.
+```
+how much they move vs. how much they visit water to average for the day
+
+- THis is stupid. It is worse version of the linear regression looking at the perc
+```{r}
+listall <- split(stepturndistallmtn3, stepturndistallmtn3$ID)
+listallmean <- list(1, 2, 3)
+for(i in 1:length(listall)){
+listallmean[[i]] <- as.data.frame(tapply(X= listall[[i]]$stplengthtopo, INDEX = listall[[i]]$Date, FUN = mean, na.rm = TRUE))
+listallmean[[i]] <- cbind(rownames(listallmean[[i]]), data.frame(listallmean[[i]], row.names = NULL))
+names(listallmean[[i]])[names(listallmean[[i]]) == "tapply.X...listall..i...stplengthtopo..INDEX...listall..i...Date.."] <- "MeanTopoMoveHour"
+names(listallmean[[i]])[names(listallmean[[i]]) == "rownames(listallmean[[i]])"] <- "Date"
+listallmean[[i]]$BHSID <- NA
+listallmean[[i]]$BHSID <- as.factor(listallmean[[i]]$BHSID)
+}
+listallmean[[1]]$BHSID <- "BHS_1577"
+listallmean[[2]]$BHSID <- "BHS_1580"
+listallmean[[3]]$BHSID <- "BHS_1582"
+listallmean[[4]]$BHSID <- "BHS_1584"
+listallmean[[5]]$BHSID <- "BHS_1589"
+listallmean[[6]]$BHSID <- "BHS_1682"
+listallmean[[7]]$BHSID <- "BHS_1683"
+listallmean[[8]]$BHSID <- "BHS_1684"
+listallmean[[9]]$BHSID <- "BHS_1685"
+listallmean[[10]]$BHSID <- "BHS_1686"
+listallmean[[11]]$BHSID <- "BHS_1687"
+listallmean[[12]]$BHSID <- "BHS_1688"
+listallmean[[13]]$BHSID <- "BHS_1689"
+listallmean[[14]]$BHSID <- "BHS_1730"
+listallmean[[15]]$BHSID <- "BHS_1733"
+listallmean[[16]]$BHSID <- "BHS_1736"
+listallmean[[17]]$BHSID <- "BHS_1739"
+listallmean[[18]]$BHSID <- "BHS_1740"
+dailymeanstplength <- rbind(listallmean[[1]], listallmean[[2]], listallmean[[3]], listallmean[[4]], listallmean[[5]], listallmean[[6]], listallmean[[7]], listallmean[[8]], listallmean[[9]], listallmean[[10]], listallmean[[11]], listallmean[[12]], listallmean[[13]], listallmean[[14]], listallmean[[15]], listallmean[[16]], listallmean[[17]], listallmean[[18]])
+# Setting up the number of visits by a sheep in a day to combine
+marballsheepvisitsdaymove <- marballsheepvisitsday[(marballsheepvisitsday$Var1 == "BHS_1367") |  (marballsheepvisitsday$Var1 == "BHS_1365") | (marballsheepvisitsday$Var1 == "BHS_1361") |(marballsheepvisitsday$Var1 == "BHS_1362") | (marballsheepvisitsday$Var1 == "BHS_1357") | (marballsheepvisitsday$Var1 == "BHS_1416") | (marballsheepvisitsday$Var1 == "BHS_1421") | (marballsheepvisitsday$Var1 == "BHS_1581") | (marballsheepvisitsday$Var1 == "BHS_1577") | (marballsheepvisitsday$Var1 == "BHS_1574") | (marballsheepvisitsday$Var1 == "BHS_1576") | (marballsheepvisitsday$Var1 == "BHS_1583") | (marballsheepvisitsday$Var1 == "BHS_1584") | (marballsheepvisitsday$Var1 == "BHS_1585") | (marballsheepvisitsday$Var1 == "BHS_1587") | (marballsheepvisitsday$Var1 == "BHS_1582") | (marballsheepvisitsday$Var1 == "BHS_1575") | (marballsheepvisitsday$Var1 == "BHS_1592") | (marballsheepvisitsday$Var1 == "BHS_1594") | (marballsheepvisitsday$Var1 == "BHS_1420") | (marballsheepvisitsday$Var1 == "BHS_1493") | (marballsheepvisitsday$Var1 == "BHS_1494") | (marballsheepvisitsday$Var1 == "BHS_1590") | (marballsheepvisitsday$Var1 == "BHS_1591") | (marballsheepvisitsday$Var1 == "BHS_1682") | (marballsheepvisitsday$Var1 == "BHS_1683") | (marballsheepvisitsday$Var1 == "BHS_1684") | (marballsheepvisitsday$Var1 == "BHS_1366") | (marballsheepvisitsday$Var1 == "BHS_1497") | (marballsheepvisitsday$Var1 == "BHS_1588") | (marballsheepvisitsday$Var1 == "BHS_1595") | (marballsheepvisitsday$Var1 == "BHS_1589"), ]
+sbrssheepvisitsdaymove <- sbrssheepvisitsday[(sbrssheepvisitsday$Var1 == "BHS_1330") | (sbrssheepvisitsday$Var1 == "BHS_1337") | (sbrssheepvisitsday$Var1 == "BHS_1334") | (sbrssheepvisitsday$Var1 == "BHS_1329") | (sbrssheepvisitsday$Var1 == "BHS_1328") | (sbrssheepvisitsday$Var1 == "BHS_1333") | (sbrssheepvisitsday$Var1 == "BHS_1425") | (sbrssheepvisitsday$Var1 == "BHS_1426") | (sbrssheepvisitsday$Var1 == "BHS_1489") | (sbrssheepvisitsday$Var1 == "BHS_1491") | (sbrssheepvisitsday$Var1 == "BHS_1578") | (sbrssheepvisitsday$Var1 == "BHS_1579") | (sbrssheepvisitsday$Var1 == "BHS_1580") | (sbrssheepvisitsday$Var1 == "BHS_1596") | (sbrssheepvisitsday$Var1 == "BHS_1599") | (sbrssheepvisitsday$Var1 == "BHS_1687") | (sbrssheepvisitsday$Var1 == "BHS_1486") | (sbrssheepvisitsday$Var1 == "BHS_1490") | (sbrssheepvisitsday$Var1 == "BHS_1492") | (sbrssheepvisitsday$Var1 == "BHS_1428") | (sbrssheepvisitsday$Var1 == "BHS_1685") | (sbrssheepvisitsday$Var1 == "BHS_1686") | (sbrssheepvisitsday$Var1 == "BHS_1688") | (sbrssheepvisitsday$Var1 == "BHS_1689"),]
+nopaallsheepvisitsdaymove <- nopaallsheepvisitsday[(nopaallsheepvisitsday$Var1 == "BHS_1737") | (nopaallsheepvisitsday$Var1 == "BHS_1740") | (nopaallsheepvisitsday$Var1 == "BHS_1741") | (nopaallsheepvisitsday$Var1 == "BHS_1738") | (nopaallsheepvisitsday$Var1 == "BHS_1736") | (nopaallsheepvisitsday$Var1 == "BHS_1739"), ]
+cmprallsheepvisitsdaymove <- cmprallsheepvisitsday[(cmprallsheepvisitsday$Var1 == "BHS_1730") | (cmprallsheepvisitsday$Var1 == "BHS_1733") | (cmprallsheepvisitsday$Var1 == "BHS_1734") | (cmprallsheepvisitsday$Var1 == "BHS_1728"), ]
+alldaymove <- rbind(marballsheepvisitsdaymove, sbrssheepvisitsdaymove, nopaallsheepvisitsdaymove, cmprallsheepvisitsdaymove)
+names(alldaymove)[names(alldaymove) == "Var1"] <- "BHSID"
+names(alldaymove)[names(alldaymove) == "Var2"] <- "Date"
+names(alldaymove)[names(alldaymove) == "Freq"] <- "NumVTW"
+dailymeanstplength$BHSID <- as.factor(dailymeanstplength$BHSID)
+stplengthvisit <- merge(dailymeanstplength, alldaymove, by = c("Date", "BHSID"))
+stplengthvisit$Date <- as.Date(stplengthvisit$Date, format = "%Y-%m-%d")
+plot(NumVTW ~ MeanTopoMoveHour, data = stplengthvisit)
+
+
+```
+8/28/20 Seeing the percent of sheep days when a sheep was recorded within 500 m of a water source and the temperature is over 35 degrees celsius that it actually visited a water source
+
+
+
+
+```{r}
+stepturndistallmtn4 <- stepturndistallmtn3
+stepturndistallmtn4$IDDate <- paste(stepturndistallmtn4$BHSID, stepturndistallmtn4$Date, sep = "_")
+probdrpt <- as.data.frame(table(stepturndistallmtn4$IDDate))
+# Whether the sheep drank that day
+allrangetime1$GO_Date <- as.Date(allrangetime1$GO_Date)
+stepturndistallmtn4$dayofvisit <- FALSE
+for(row in 1:nrow(allrangetime1)){
+  sheep_id <- as.character(allrangetime1$KI_Known_ID[row])
+  drink_time <- allrangetime1$GO_Date[row]
+  ssheep_idxs <- which(stepturndistallmtn4$ID == sheep_id)
+  ddrink_idx <- which(stepturndistallmtn4$Date == drink_time)
+  rowswhendrink <- intersect(ssheep_idxs, ddrink_idx)
+  stepturndistallmtn4$dayofvisit[rowswhendrink] <- TRUE
+}
+probdrpt$Var1 <- as.character(probdrpt$Var1)
+probdrpt$visitthatday <- FALSE
+onlyvisitthatday <- stepturndistallmtn4[stepturndistallmtn4$dayofvisit == TRUE, ]
+for(row in 1:nrow(onlyvisitthatday)){
+  sheepday <- as.character(onlyvisitthatday$IDDate[row])
+  sheepday_idxs <- which(probdrpt$Var1 == sheepday)
+  probdrpt$visitthatday[sheepday_idxs] <- TRUE
+}
+# TRUE = sheep drank that day
+# FALSE = sheep didn't drink that day
+
+# Temperature over 35 degrees Celsius
+probdrpt$temp35 <- FALSE
+tempover <- stepturndistallmtn4[stepturndistallmtn4$tmax..deg.c. >= 35, ]
+for(row in 1:nrow(tempover)){
+  hiha <- as.character(tempover$IDDate[row])
+  hiha_idxs <- which(probdrpt$Var1 == hiha)
+  probdrpt$temp35[hiha_idxs] <- TRUE
+}
+# Distance
+  library(data.table)
+holla <- data.table(stepturndistallmtn4)
+attempt <- holla[ , .SD[which.min(Closedist)], by = IDDate]
+# Between 500m and 1000m 
+probdrpt$dist1000 <- FALSE
+dist1000 <- attempt[((attempt$Closedist < 1000) & (attempt$Closedist >= 500)), ]
+for(row in 1:nrow(dist1000)){
+  hoho <- as.character(dist1000$IDDate[row])
+  hoho_idxs <- which(probdrpt$Var1 == hoho)
+  probdrpt$dist1000[hoho_idxs] <- TRUE
+}
+# Distance <= 500 m
+probdrpt$dist500 <- FALSE
+dist500 <- attempt[attempt$Closedist < 500, ]
+for(row in 1:nrow(dist500)){
+  hehe <- as.character(dist500$IDDate[row])
+  hehe_idxs <- which(probdrpt$Var1 == hehe)
+  probdrpt$dist500[hehe_idxs] <- TRUE
+}
+
+
+
+table(probdrpt$dist1000)
+#FALSE  TRUE 
+#  658    86 
+table(probdrpt$dist500)
+#FALSE  TRUE 
+#  461   283 
+nrow(probdrpt[((probdrpt$temp35 == TRUE) & (probdrpt$dist1000 == TRUE)), ])
+# 49
+nrow(probdrpt[((probdrpt$temp35 == TRUE) & (probdrpt$dist1000 == TRUE) & (probdrpt$visitthatday == TRUE)), ])
+# 12
+# 12/49
+# 0.244898
+nrow(probdrpt[((probdrpt$temp35 == TRUE) & (probdrpt$dist500 == TRUE)), ])
+# 255
+nrow(probdrpt[((probdrpt$temp35 == TRUE) & (probdrpt$dist500 == TRUE) & (probdrpt$visitthatday == TRUE)), ])
+# 228
+# 228/255
+# 0.8941176
+
+
+
+
+
+ # stepturndistallmtn2$beforevisit <- FALSE
+# for(row in 1:nrow(allrangetime1)){
+#  sheep_id <- as.character(allrangetime1$KI_Known_ID[row])
+ # drink_time <- allrangetime1$DateTimect[row]
+#  sheep_idxs <- which(stepturndistallmtn2$ID == sheep_id)
+ # drink_idx <- which((stepturndistallmtn2$DateTimeLocalTestct < as.Date(drink_time)) & (stepturndistallmtn2$DateTimeLocalTestct >= as.Date(drink_time - 3900)))
+#rowsbeforedrink <- intersect(sheep_idxs, drink_idx)
+#stepturndistallmtn2$beforevisit[rowsbeforedrink] <- TRUE
+#  }
+
+# Whether the sheep drank that day
+# probdrpt$Var1 <- as.character(probdrpt$Var1)
+# probdrpt$visitthatday <- FALSE
+# for(row in 1:nrow(stepturndistallmtn4)){
+#  sheepday <- as.character(stepturndistallmtn4$IDDate[row])
+ # yesvisit <- stepturndistallmtn4$beforevisit[row]
+  #sheepday_idxs <- which(probdrpt$Var1 == sheepday)
+#  yesvisit_idx <- which(yesvisit == TRUE)
+#  rowsIDDatevisit <- intersect(sheepday_idxs, yesvisit_idx)
+#  probdrpt$visitthatday[rowsIDDatevisit] <- TRUE
+#}
+
+
+```
+Recalculating the turning angle relative to water 10/22/2020
+
+**** In this section, I need to calculate lag and subset for only the ones that are between 50-70 mins apart.
+```{r Recalculating turning angle relative to water}
+# Making it a different dataframe so don't mess up anything
+library(dplyr)
+library(amt)
+astepturndistallmtn2 <- stepturndistallmtn2
+# astepturndistallmtn2$birdflydisttowater
+astepturndistallmtn2$laggeostplfthpostclean <- lag(astepturndistallmtn2$geostplgthpostclean)
+astepturndistallmtn2$laggeostplfthpostclean[astepturndistallmtn2$ID != lag(astepturndistallmtn2$ID)] <- NA
+astepturndistallmtn2$leadbirdflydisttowater <- lag(astepturndistallmtn2$birdflydisttowater)
+astepturndistallmtn2$leadbirdflydisttowater[(astepturndistallmtn2$ID != lag(astepturndistallmtn2$ID)) | (astepturndistallmtn2$WhichClose != lag(astepturndistallmtn2$WhichClose))] <- NA
+# Calculating turning angle relative to water
+astepturndistallmtn2$angle2water2 <- acos((((astepturndistallmtn2$leadbirdflydisttowater)^2) - ((astepturndistallmtn2$laggeostplfthpostclean)^2) - ((astepturndistallmtn2$birdflydisttowater)^2)) / (-2 * (astepturndistallmtn2$laggeostplfthpostclean) * (astepturndistallmtn2$birdflydisttowater)))
+astepturndistallmtn2$angle2water2degree <- as_degree(astepturndistallmtn2$angle2water2)
+# eliminating turning angles where it was not 1 step length away
+library(dplyr)
+astepturndistallmtn2$lagtime2 <- (astepturndistallmtn2$DateTimeLocalTestct - lag(astepturndistallmtn2$DateTimeLocalTestct))
+astepturndistallmtn2$angle2water2degree[((astepturndistallmtn2$lagtime2 < 50) | (astepturndistallmtn2$lagtime2 > 70))] <- NA
+
+
+# Seeing if there is a correlation between angle of movement relative to water and distance to water
+plot(astepturndistallmtn2$Closedist ~ astepturndistallmtn2$angle2water2degree)
+# No correlation
+
+# GLM Incorrect
+amovevisitglm <- glm(beforevisit ~ positangledegree + sqrt(stplengthtopo) + sqrt(Closedist) + angle2water2degree, data = astepturndistallmtn2, family = "binomial")
+summary(amovevisitglm)
+
+amovevisitglm1 <- glm(beforevisit ~ sqrt(stplengthtopo) + sqrt(Closedist) + angle2water2degree, data = astepturndistallmtn2, family = "binomial")
+summary(amovevisitglm1)
+
+amovevisitglm2 <- glm(beforevisit ~ sqrt(Closedist) + angle2water2degree, data = astepturndistallmtn2, family = "binomial")
+summary(amovevisitglm2)
+
+amovevisitglm3 <- glm(beforevisit ~ sqrt(Closedist), data = astepturndistallmtn2, family = "binomial")
+summary(amovevisitglm3)
+plot(amovevisitglm3)
+
+#Linear Mixed Model Correct
+library(lme4)
+library(car)
+astepturndistallmtn2a <- astepturndistallmtn2
+astepturndistallmtn2a$Date <- as.factor(astepturndistallmtn2a$Date)
+# Scaling independent variables - scaling is done by dividing the centered columns of x by their standard deviations. If put center as false, then would divide by root mean square
+# https://stackoverflow.com/questions/20256028/understanding-scale-in-r
+# allenvvisit1$scaledayl <- scale(allenvvisit1$dayl..s., center = TRUE, scale = TRUE)
+astepturndistallmtn2a$scalepositangledegree <- scale(astepturndistallmtn2a$positangledegree, center = TRUE, scale = TRUE)
+astepturndistallmtn2a$scalestplengthtopo <- scale(astepturndistallmtn2a$stplengthtopo, center = TRUE, scale = TRUE)
+astepturndistallmtn2a$scaleClosedist <- scale(astepturndistallmtn2a$Closedist, center = TRUE, scale = TRUE)
+astepturndistallmtn2a$scaleangle2water2degree <- scale(astepturndistallmtn2a$angle2water2degree, center = TRUE, scale = TRUE)
+amovevizscal <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + scaleangle2water2degree + (1|Date) + (1|ID), data = astepturndistallmtn2a, family = binomial(link = "logit"))
+summary(amovevizscal)
+# Just curious without scale, says need to rescale, also only Closedist significant
+quest <- glmer(beforevisit ~ positangledegree + stplengthtopo + Closedist + angle2water2degree + (1|Date) + (1|ID), data = astepturndistallmtn2a, family = binomial(link = "logit"))
+summary(quest)
+# Rescaled deleting scaleangle2water2degree
+amovevizscal1 <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + (1|Date) + (1|ID), data = astepturndistallmtn2a, family = binomial(link = "logit"))
+summary(amovevizscal1)
+# Rescaled deleting scalstplengthtopo
+amovevizscal2 <- glmer(beforevisit ~ scalepositangledegree + scaleClosedist + (1|Date) + (1|ID), data = astepturndistallmtn2a, family = binomial(link = "logit"))
+summary(amovevizscal2)
+# Rescaled deleting scalepositangledegree - THIS IS THE FINAL ONE YOU SHOULD USE FOR 1 HR FIX RATE!!!!! - 10/26/20
+amovevizscal3 <- glmer(beforevisit ~ scaleClosedist + (1|Date) + (1|ID), data = astepturndistallmtn2a, family = binomial(link = "logit"))
+summary(amovevizscal3)
+
+# Fixed 10/28/20 # Error in 1 hr- should do eliminate the greater than four hours or wrong time scales after calculate all 4 variables... So my recalculated turning angle relative to water is still messed up b/c it does not account for the fact that it might be greater than 1 hour (btwn 50-70 mins) for some geometric step lengths that I re-calculated
+```
+analyzing if movement is different before water with 20 minute fix rate
+
+Here are the sheep with 20 mins fix rate:
+Marb BHS_1577 Ewe start:6/18/2019 21:00 end: 7/23/2019 11:00
+- NROM BHS_1564 Ewe
+- BrsS BHS_1580 Ewe Start: 7/24/2019 4:00, end: 8/11/2019 8:00
+- Marb 1683 Ram Start: 7/23/2019 14:00, end: 8/9/2019 20:40
+- CMPR BHS_1730 Ewe Start: 7/30/2019 21:00, end: 8/14/19 20:40
+- Nopa BHS_1739 Ram Start: 7/23/2019 12:00, end: 8/6/2019 20:40
+
+
+```{r}
+# View(allidgpsdatacut3)
+# allidgpsdatacut3 already cut to time with camera coverage
+allidgpsdatacut4 <- allidgpsdatacut3[with(allidgpsdatacut3, order(KI_Known_ID, DateTimeLocalTestct)), ]
+twemin <- allidgpsdatacut4[(allidgpsdatacut4$KI_Known_ID == "BHS_1577") |  (allidgpsdatacut4$KI_Known_ID == "BHS_1580") | (allidgpsdatacut4$KI_Known_ID == "BHS_1683") | (allidgpsdatacut4$KI_Known_ID == "BHS_1730") | (allidgpsdatacut4$KI_Known_ID == "BHS_1739"), ]
+# Cutting to just the 20 minute time period
+bhs1577 <- twemin[twemin$KI_Known_ID == "BHS_1577", ]
+bhs1577cut <- bhs1577[(bhs1577$DateTimeLocalTestct >= as.POSIXct("2019-06-18 21:00") & bhs1577$DateTimeLocalTestct <= as.POSIXct("2019-07-23 11:00")), ]
+bhs1580 <- twemin[twemin$KI_Known_ID == "BHS_1580", ]
+bhs1580cut <- bhs1580[(bhs1580$DateTimeLocalTestct >= as.POSIXct("2019-07-24 04:00") & bhs1580$DateTimeLocalTestct <= as.POSIXct("2019-08-11 08:00")), ]
+bhs1683 <- twemin[twemin$KI_Known_ID == "BHS_1683", ]
+bhs1683cut <- bhs1683[(bhs1683$DateTimeLocalTestct >= as.POSIXct("2019-07-23 14:00") & bhs1683$DateTimeLocalTestct <= as.POSIXct("2019-08-09 20:40")), ]
+bhs1730 <- twemin[twemin$KI_Known_ID == "BHS_1730", ]
+bhs1730cut <- bhs1730[(bhs1730$DateTimeLocalTestct >= as.POSIXct("2019-07-30 21:00") & bhs1730$DateTimeLocalTestct <= as.POSIXct("2019-08-14 20:40")), ]
+bhs1739 <- twemin[twemin$KI_Known_ID == "BHS_1739", ]
+bhs1739cut <- bhs1739[(bhs1739$DateTimeLocalTestct >= as.POSIXct("2019-07-23 12:00") & bhs1739$DateTimeLocalTestct <= as.POSIXct("2019-08-06 20:40")), ]
+# Cleaning GPS Points
+
+#Elevation Cleaning
+# To keep with the 1 hour methodology, I cleaned it by mountain ranges.
+# Marbles
+tweminmarb <- rbind(bhs1577cut, bhs1683cut)
+nrow(tweminmarb)
+#1676 points
+tweminmarbalt <- tweminmarb[(tweminmarb$Altitude >= 181) & (tweminmarb$Altitude <= 1171), ]
+nrow(tweminmarbalt)
+# now 1638 points
+#South Bristols
+nrow(bhs1580cut)
+# 721 points
+bhs1580cutalt <- bhs1580cut[(bhs1580cut$Altitude >= 214) & (bhs1580cut$Altitude <= 997), ]
+nrow(bhs1580cutalt)
+# now 662 points
+# CMPR
+nrow(bhs1730cut)
+# 925 points
+bhs1730cutalt <- bhs1730cut[(bhs1730cut$Altitude >= 1219) & (bhs1730cut$Altitude <= 1580), ]
+nrow(bhs1730cutalt)
+# 914 points
+# Nopah
+nrow(bhs1739cut)
+#917 points
+bhs1739cutalt <- bhs1739cut[(bhs1739cut$Altitude >= 424) & (bhs1739cut$Altitude <= 1599), ]
+nrow(bhs1739cutalt)
+#861 points
+
+# DOP Cleaning
+# Marbles
+tweminmarbaltdop <- tweminmarbalt[tweminmarbalt$DOP <= 10, ]
+nrow(tweminmarbaltdop)
+#1634 points
+# South Bristols
+bhs1580cutaltdop <- bhs1580cutalt[bhs1580cutalt$DOP <= 10, ]
+nrow(bhs1580cutaltdop)
+# 658  points
+# CMPR
+bhs1730cutaltdop <- bhs1730cutalt[bhs1730cutalt$DOP <= 10, ]
+nrow(bhs1730cutaltdop)
+#906 points
+# Nopah
+bhs1739cutaltdop <- bhs1739cutalt[bhs1739cutalt$DOP <= 10, ]
+nrow(bhs1739cutaltdop)
+# 855 points
+
+# Topographic bias
+# Total number of points that there should be over the time duration with 20 minute fixes was calculated separately. See Water Manipulation Google Doc
+# Marbles
+# 1634 / 3736 = 43.74%
+# South Bristols
+# 658 / 1309 = 50.27%
+# CMPR
+# 906/ 1080 = 83.89%
+# Nopah
+# 855/1035 = 82.61%
+# unacceptable topographic bias in the Marbles and South Bristols at this fix rate
+
+tweminallrange <- rbind(tweminmarbaltdop, bhs1580cutaltdop, bhs1730cutaltdop, bhs1739cutaltdop)
+
+# Calculating turning angle
+library(moveHMM)
+ptweminallrange <- prepData(tweminallrange, type = "LL", coordNames = c("Longitude", "Latitude"))
+ptweminallrange$positangle <- abs(ptweminallrange$angle) 
+library(amt)
+library(dplyr)
+ptweminallrange$positangledegree <- as_degree(ptweminallrange$positangle)
+ptweminallrange$lagtime <- (shift(ptweminallrange$DateTimeLocalTestct, n = 1) - ptweminallrange$DateTimeLocalTestct)
+ptweminallrange$leadtime <- (ptweminallrange$DateTimeLocalTestct - (lag(ptweminallrange$DateTimeLocalTestct)))
+ptweminallrange$lagtime <- as.numeric(ptweminallrange$lagtime)
+ptweminallrange$leadtime <- as.numeric(ptweminallrange$leadtime)
+ptweminallrange1 <- cbind(rownames(ptweminallrange), data.frame(ptweminallrange, row.names = NULL))
+ptweminallrange2 <- ptweminallrange1[, 3:28]
+ptweminallrange2[1146, 25] <- NA
+ptweminallrange2[1147, 26] <- NA
+ptweminallrange2[1634, 25] <- NA
+ptweminallrange2[1635, 26] <- NA
+ptweminallrange2[2292, 25] <- NA
+ptweminallrange2[2293, 26] <- NA
+ptweminallrange2[3198, 25] <- NA
+ptweminallrange2[3199, 26] <- NA
+
+# Calculating topographic step length:
+# Nopah
+library(raster, sp, rgdal)
+bhs1739cutaltdopr <- ptweminallrange2[ptweminallrange2$MountainRange == "Nopa", ]
+bhs1739cutaltdopy <- bhs1739cutaltdopr[2:813, ]
+nopahelevationlol <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/output_srtmNopahElevation4520.tif")
+twecoords1739 <- as.data.frame(bhs1739cutaltdopy[ ,c("x", "y")])
+twerestodata1739 <- as.data.frame(bhs1739cutaltdopy[ ,c(1:2, 5:26)])
+twenopa1739spdf <- SpatialPointsDataFrame(coords = twecoords1739, data = twerestodata1739, proj4string = crsnopa)
+library(topoDistance)
+twetopodistnopa1739 <- topoDist(DEM = nopahelevationlol, pts = twenopa1739spdf, directions = 8, paths = FALSE, zweight = 1)
+twetopodistnopa17391 <- as.matrix(twetopodistnopa1739)
+twetopodistnopa17391sub <- twetopodistnopa17391[row(twetopodistnopa17391) == (col(twetopodistnopa17391) -1)]
+natwetopodistnopa17391sub <- c(NA, twetopodistnopa17391sub)
+bhs1739cutaltdopy1 <- cbind(bhs1739cutaltdopy, natwetopodistnopa17391sub)
+
+# CMPR
+elevationcmpr <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/castlepiuteelevation.tif")
+twecmpr1730 <- ptweminallrange2[ptweminallrange2$MountainRange == "CMPR", ]
+twecmpr17301 <- twecmpr1730[1:886, ]
+twecoords1730 <- as.data.frame(twecmpr17301[ ,c("x", "y")])
+restodatatwe1730 <- as.data.frame(twecmpr17301[ ,c(1:2, 5:26)])
+twecmprspdf <- SpatialPointsDataFrame(coords = twecoords1730, data = restodatatwe1730, proj4string = crscmpr)
+topodisttwecmpr <- topoDist(DEM = elevationcmpr, pts = twecmprspdf, directions = 8, paths = FALSE, zweight = 1)
+topodisttwecmpr1 <- as.matrix(topodisttwecmpr)
+topodisttwecmprsub <- topodisttwecmpr1[row(topodisttwecmpr1) == (col(topodisttwecmpr1) - 1)]
+natopodisttwecmpr1sub <- c(NA, topodisttwecmprsub)
+twecmpr17302 <- cbind(twecmpr17301, natopodisttwecmpr1sub)
+
+# Marbles
+marbanotherelevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marbelevation41920.tif")
+twemarb <- ptweminallrange2[ptweminallrange2$MountainRange == "Marb", ]
+twemarb1 <- twemarb[1:1595, ]
+twecoordsmarb <- as.data.frame(twemarb1[ ,c("x", "y")])
+restoddatatwemarb <- as.data.frame(twemarb1[ ,c(1:2, 5:26)])
+twemarbspdf <- SpatialPointsDataFrame(coords = twecoordsmarb, data = restoddatatwemarb, proj4string = crsmarb)
+topodisttwemarb <- topoDist(DEM = marbanotherelevation, pts = twemarbspdf, directions = 8, paths = FALSE, zweight = 1)
+topodisttwemarb1 <- as.matrix(topodisttwemarb)
+topodisttwemarbsub <- topodisttwemarb1[row(topodisttwemarb1) == (col(topodisttwemarb1) - 1)]
+natopodisttwemarbsub <- c(NA, topodisttwemarbsub)
+twemarb2 <- cbind(twemarb1, natopodisttwemarbsub)
+twemarb2[1146, 27] <- NA
+
+# South Bristols
+sbrselevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/SBrselevationattempt4.tif")
+twesbrs <- ptweminallrange2[ptweminallrange2$MountainRange == "BrsS", ]
+twecoordsbrs <- as.data.frame(twesbrs[ ,c("x", "y")])
+restodatatwesbrs <- as.data.frame(twesbrs[ ,c(1:2, 5:26)])
+crsbrs <- CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+twesbrspdf <- SpatialPointsDataFrame(coords = twecoordsbrs, data = restodatatwesbrs, proj4string = crsbrs)
+library(topoDistance)
+topodisttwesbrs <- topoDist(DEM = sbrselevation, pts = twesbrspdf, directions = 8, paths = FALSE, zweight = 1)
+topodisttwesbrs1 <- as.matrix(topodisttwesbrs)
+topodisttwesbrssub <- topodisttwesbrs1[row(topodisttwesbrs1) == (col(topodisttwesbrs1) - 1)]
+natopodisttwesbrssub <- c(NA, topodisttwesbrssub)
+twesbrs1 <- cbind(twesbrs, natopodisttwesbrssub)
+
+# Combining all 4 mtn ranges
+# names(rangeidhour)[names(rangeidhour) == "KI_Known_ID"] <- "ID"
+names(bhs1739cutaltdopy1)[names(bhs1739cutaltdopy1) == "natwetopodistnopa17391sub"] <- "stplengthtopo"
+names(twecmpr17302)[names(twecmpr17302) == "natopodisttwecmpr1sub"] <- "stplengthtopo"
+names(twemarb2)[names(twemarb2) == "natopodisttwemarbsub"] <- "stplengthtopo"
+names(twesbrs1)[names(twesbrs1) == "natopodisttwesbrssub"] <- "stplengthtopo"
+ptweminallrange3 <- rbind(bhs1739cutaltdopy1, twecmpr17302, twemarb2, twesbrs1)
+ptweminallrange4 <- ptweminallrange3[(((ptweminallrange3$lagtime >= 17 & ptweminallrange3$lagtime <= 23) | (is.na(ptweminallrange3$lagtime) == TRUE)) & ((ptweminallrange3$leadtime >= 17 & ptweminallrange3$leadtime <= 23) | (is.na(ptweminallrange3$leadtime) == TRUE))), ]
+
+# Calculating topographic distance to the nearest water source
+# Nopah
+library(raster)
+library(sp)
+library(rgdal)
+# nopah elevation = nopahelevationlol
+ptweminallrange4$WaterSource <- NA
+tweNopahWater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/tweNopahWater.csv")
+itwennopa <- ptweminallrange4[ptweminallrange4$MountainRange == "Nopa", ]
+twenopawatergps <- rbind(tweNopahWater, itwennopa)
+twenopawatergps$KI_Known_ID <- as.factor(twenopawatergps$KI_Known_ID)
+itwenopacoords <- as.data.frame(twenopawatergps[ ,c("x", "y")])
+itwenoparestodata <- as.data.frame(twenopawatergps[ ,c(1:2, 5:28)])
+# crsnopa = coordinate system
+itwespdfnopa <- SpatialPointsDataFrame(coords = itwenopacoords, data = itwenoparestodata, proj4string = crsnopa)
+library(topoDistance)
+itwenopatopodist <- topoDist(DEM = nopahelevationlol, pts = itwespdfnopa, directions = 8, paths = FALSE, zweight = 1)
+itwenopatopodist1 <- itwenopatopodist[, c(1:3)]
+itwenopatopodist1 <- as.data.frame(itwenopatopodist1)
+names(itwenopatopodist1)[names(itwenopatopodist1) == "1"] <- "ElSi"
+names(itwenopatopodist1)[names(itwenopatopodist1) == "2"] <- "Nopa"
+names(itwenopatopodist1)[names(itwenopatopodist1) == "3"] <- "SNop"
+itwenopatopodist1$WhichClose <- colnames(itwenopatopodist1)[apply(itwenopatopodist1, 1, which.min)]
+itwenopatopodist1$Closedist <- pmin(itwenopatopodist1$ElSi, itwenopatopodist1$Nopa, itwenopatopodist1$SNop)
+itwenopatopodist2 <- itwenopatopodist1[-c(1, 2, 3), ]
+itwennopawat <- cbind(itwennopa, itwenopatopodist2[, 4:5, drop = FALSE])
+
+# Castle Piutes
+# elevationcmpr
+tweCMPRwater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/twecmprwatersources.csv")
+itwencmpr <- ptweminallrange4[ptweminallrange4$MountainRange == "CMPR", ]
+twecmprwatergps <- rbind(tweCMPRwater, itwencmpr)
+twecmprwatergps$KI_Known_ID <- as.factor(twecmprwatergps$KI_Known_ID)
+itwecmprcoords <- as.data.frame(twecmprwatergps[ ,c("x", "y")])
+itwecmprrestodata <- as.data.frame(twecmprwatergps[ ,c(1:2, 5:28)])
+# crscmpr
+itwecmprspdf <- SpatialPointsDataFrame(coords = itwecmprcoords, data = itwecmprrestodata, proj4string = crscmpr)
+itwecmprtopodist <- topoDist(DEM = elevationcmpr, pts = itwecmprspdf, directions = 8, paths = FALSE, zweight = 1)
+itwecmprtopodist1 <- itwecmprtopodist[, c(1:2)]
+itwecmprtopodist1 <- as.data.frame(itwecmprtopodist1)
+names(itwecmprtopodist1)[names(itwecmprtopodist1) == "1"] <- "Vice"
+names(itwecmprtopodist1)[names(itwecmprtopodist1) == "2"] <- "KidS"
+itwecmprtopodist1$WhichClose <- colnames(itwecmprtopodist1)[apply(itwecmprtopodist1, 1, which.min)]
+itwecmprtopodist1$Closedist <- pmin(itwecmprtopodist1$Vice, itwecmprtopodist1$KidS)
+itwecmprtopodist2 <- itwecmprtopodist1[-c(1, 2), ]
+itwecmprwat <- cbind(itwencmpr, itwecmprtopodist2[ , 3:4, drop = FALSE])
+
+# Marbles
+marbanotherelevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Marbelevation41920.tif")
+itwenmarb <- ptweminallrange4[ptweminallrange4$MountainRange == "Marb", ]
+# all of the observations are after 5/30
+twemarbwater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/twemarbwatersources.csv")
+twemarbwatergps <- rbind(twemarbwater, itwenmarb)
+twemarbwatergps$KI_Known_ID <- as.factor(twemarbwatergps$KI_Known_ID)
+itwemarbcoords <- as.data.frame(twemarbwatergps[ ,c("x", "y")])
+itwemarbrestodata <- as.data.frame(twemarbwatergps[ ,c(1:2, 5:28)])
+# crsmarb
+itwemarbspdf <- SpatialPointsDataFrame(coords = itwemarbcoords, data = itwemarbrestodata, proj4string = crsmarb)
+itwemarbtopodist <- topoDist(DEM = marbanotherelevation, pts = itwemarbspdf, directions = 8, paths = FALSE, zweight = 1)
+itwemarbtopodist1 <- itwemarbtopodist[, c(1:4)]
+itwemarbtopodist1 <- as.data.frame(itwemarbtopodist1)
+names(itwemarbtopodist1)[names(itwemarbtopodist1) == "1"] <- "SI40"
+names(itwemarbtopodist1)[names(itwemarbtopodist1) == "2"] <- "Ther"
+names(itwemarbtopodist1)[names(itwemarbtopodist1) == "3"] <- "Vern"
+names(itwemarbtopodist1)[names(itwemarbtopodist1) == "4"] <- "DevS"
+itwemarbtopodist1$WhichClose <- colnames(itwemarbtopodist1)[apply(itwemarbtopodist1, 1, which.min)]
+itwemarbtopodist1$Closedist <- pmin(itwemarbtopodist1$SI40, itwemarbtopodist1$Ther, itwemarbtopodist1$Vern, itwemarbtopodist1$DevS)
+itwemarbtopodist2 <- itwemarbtopodist1[-c(1, 2, 3, 4), ]
+itwemarbwat <- cbind(itwenmarb, itwemarbtopodist2[ , 5:6, drop = FALSE])
+
+# South Bristols
+sbrselevation <- raster("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/SBrselevationattempt4.tif")
+itwesbrs <- ptweminallrange4[ptweminallrange4$MountainRange == "BrsS", ]
+# Covers 7/24 and 7/25+after time periods
+itwesbrs724 <- itwesbrs[itwesbrs$DateTimeLocalTestct <= as.POSIXct("2019-07-24 23:59:59"), ]
+itwesbrsrest <- itwesbrs[itwesbrs$DateTimeLocalTestct >= as.POSIXct("2019-07-25 00:00:00"), ]
+twe724sbrswater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/twesbrs724watersources.csv")
+twerestsbrswater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/twesbrs725afterwatersources.csv")
+#7/24
+twesbrswatergps724 <- rbind(twe724sbrswater, itwesbrs724)
+twesbrswatergps724$KI_Known_ID <- as.factor(twesbrswatergps724$KI_Known_ID)
+itwesbrscoords724 <- as.data.frame(twesbrswatergps724[ ,c("x", "y")])
+itwesbrsrestodata724 <- as.data.frame(twesbrswatergps724[ ,c(1:2, 5:28)])
+# crssbrs
+itwesbrspdf724 <- SpatialPointsDataFrame(coords = itwesbrscoords724, data = itwesbrsrestodata724, proj4string = crssbrs)
+itwesbrstopodist724 <- topoDist(DEM = sbrselevation, pts = itwesbrspdf724, directions = 8, paths = FALSE, zweight = 1)
+itwesbrstopodist7241 <- itwesbrstopodist724[, c(1:2)]
+itwesbrstopodist7241 <- as.data.frame(itwesbrstopodist7241)
+names(itwesbrstopodist7241)[names(itwesbrstopodist7241) == "1"] <- "MilC"
+names(itwesbrstopodist7241)[names(itwesbrstopodist7241) == "2"] <- "Naan"
+itwesbrstopodist7241$WhichClose <- colnames(itwesbrstopodist7241)[apply(itwesbrstopodist7241, 1, which.min)]
+itwesbrstopodist7241$Closedist <- pmin(itwesbrstopodist7241$MilC, itwesbrstopodist7241$Naan)
+itwesbrstopodist7242 <- itwesbrstopodist7241[-c(1, 2), ]
+itwesbrs724wat <- cbind(itwesbrs724, itwesbrstopodist7242[, 3:4, drop = FALSE])
+#7/25 and later
+twesbrswatergpsrest <- rbind(twerestsbrswater, itwesbrsrest)
+twesbrswatergpsrest$KI_Known_ID <- as.factor(twesbrswatergpsrest$KI_Known_ID)
+itwesbrscoordsrest <- as.data.frame(twesbrswatergpsrest[ ,c("x", "y")])
+itwesbrsrestodatarest <- as.data.frame(twesbrswatergpsrest[ ,c(1:2, 5:28)])
+# crssbrs
+itwesbrspdfrest <- SpatialPointsDataFrame(coords = itwesbrscoordsrest, data = itwesbrsrestodatarest, proj4string = crssbrs)
+itwesbrstopodistrest <- topoDist(DEM = sbrselevation, pts = itwesbrspdfrest, directions = 8, paths = FALSE, zweight = 1)
+itwesbrstopodistrest1 <- itwesbrstopodistrest[, c(1:3)]
+itwesbrstopodistrest1 <- as.data.frame(itwesbrstopodistrest1)
+names(itwesbrstopodistrest1)[names(itwesbrstopodistrest1) == "1"] <- "MilC"
+names(itwesbrstopodistrest1)[names(itwesbrstopodistrest1) == "2"] <- "Naan"
+names(itwesbrstopodistrest1)[names(itwesbrstopodistrest1) == "3"] <- "Talc"
+itwesbrstopodistrest1$WhichClose <- colnames(itwesbrstopodistrest1)[apply(itwesbrstopodistrest1, 1, which.min)]
+itwesbrstopodistrest1$Closedist <- pmin(itwesbrstopodistrest1$MilC, itwesbrstopodistrest1$Naan, itwesbrstopodistrest1$Talc)
+itwesbrstopodistrest2 <- itwesbrstopodistrest1[-c(1, 2, 3), ]
+itwesbrswatrest <- cbind(itwesbrsrest, itwesbrstopodistrest2[, 4:5, drop = FALSE])
+itwesbrswat <- rbind(itwesbrs724wat, itwesbrswatrest)
+# Combining all four mtn ranges
+tweallmtndistwater <- rbind(itwennopawat, itwecmprwat, itwemarbwat, itwesbrswat)
+
+# Calculating angle of movement relative to water
+library(geosphere)
+AllWater <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/Summer2019WaterSources.csv")
+tweallmtndistwater1 <- merge(tweallmtndistwater, AllWater, by.x = "WhichClose", by.y = "WhichClose")
+pA <- tweallmtndistwater1[, c(4, 5)]
+pA <- as.matrix(pA)
+pB <- tweallmtndistwater1[, c(32, 31)]
+pB <- as.matrix(pB)
+tweallmtndistwater1$birdflydisttowater <- distGeo(pA, pB)
+tweallmtndistwater2 <- tweallmtndistwater1[with(tweallmtndistwater1, order(MountainRange, KI_Known_ID, DateTimeLocalTestct)), ]
+library(dplyr)
+tweallmtndistwater2$laglongitude <- lead(tweallmtndistwater2$x, n = 1)
+tweallmtndistwater2$laglatitude <- lead(tweallmtndistwater2$y, n = 1)
+apA <- tweallmtndistwater2[ ,c(4, 5)]
+apA <- as.matrix(apA)
+apB <- tweallmtndistwater2[ ,c(34, 35)]
+apB <- as.matrix(apB)
+tweallmtndistwater2$geostplgthpostclean <- distGeo(apA, apB)
+shift <- function(x, n){
+  c(x[-(seq(n))], rep(NA, n))
+}
+tweallmtndistwater2$lagbirdflydisttowater <- shift(tweallmtndistwater2$birdflydisttowater, 1)
+tweallmtndistwater2$angletowater <- acos((((tweallmtndistwater2$lagbirdflydisttowater)^2) - ((tweallmtndistwater2$geostplgthpostclean)^2) - ((tweallmtndistwater2$birdflydisttowater)^2)) / (-2 * (tweallmtndistwater2$geostplgthpostclean) * (tweallmtndistwater2$birdflydisttowater)))
+rownames(tweallmtndistwater2) <- 1:nrow(tweallmtndistwater2)
+tweallmtndistwater2[c(572, 1422, 2526, 2943), 38] <- NA
+library(amt)
+library(dplyr)
+tweallmtndistwater2$angletowaterdegree <- as_degree(tweallmtndistwater2$angletowater)
+
+# To calculate whether an entry was right before water
+library(lubridate)
+tweallmtndistwater2$beforevisit <- FALSE
+
+for(row in 1:nrow(allrangetime1)){
+  sheep_id <- as.character(allrangetime1$KI_Known_ID[row])
+  drink_time <- allrangetime1$DateTimect[row]
+  sheep_idxs <- which(tweallmtndistwater2$ID == sheep_id)
+  drink_idx <- which((tweallmtndistwater2$DateTimeLocalTestct < as.Date(drink_time)) & (tweallmtndistwater2$DateTimeLocalTestct >= as.Date(drink_time - 3900)))
+  }
+# Everything is false. Cannot complete analysis. Whelp.
+
+
+
+stepturndistallmtn2$beforevisit <- FALSE
+for(row in 1:nrow(allrangetime1)){
+  sheep_id <- as.character(allrangetime1$KI_Known_ID[row])
+  drink_time <- allrangetime1$DateTimect[row]
+  sheep_idxs <- which(stepturndistallmtn2$ID == sheep_id)
+  drink_idx <- which((stepturndistallmtn2$DateTimeLocalTestct < as.Date(drink_time)) & (stepturndistallmtn2$DateTimeLocalTestct >= as.Date(drink_time - 3900)))
+rowsbeforedrink <- intersect(sheep_idxs, drink_idx)
+stepturndistallmtn2$beforevisit[rowsbeforedrink] <- TRUE
+  }
+
+```
 JUNK This code is what I used before I went into the lab and did it on a computer that could handle the topoDistance function.
 ```{r}
 # Setting up the elevation raster
@@ -796,7 +2391,7 @@ onehrnopah2 <- cbind(onehrnopah, natopodistnopa1sub)
 write.csv(onehrnopah2, "C:/Users/Danielle Glass/Documents/RWorkingDirectory2/Sheepies3/pcln1hrfix3820.csv")
   #onehrnopah$topodistnopahstplength <- topodistnopa1sub
 
-
+# hi
 #View(onehrnopah2)
 
 
