@@ -1,0 +1,4 @@
+step,angle,x,y,DeviceName,DeviceID,DateTimeGMT,DateTimeLocal,Altitude,FixStatus,DOP,TempC,MainV,BackV,Date,TimeLocal,MountainRange,BHSID,Sex,KI_Known_ID,DateTimeLocalTest,DateTimeLocalTestct,positangle,positangledegree,lagtime,leadtime,stplengthtopo,WaterSource
+NA,NA,-115.7862,34.6536,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,BrsS,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,MilC
+NA,NA,-115.6656054,34.58722064,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,BrsS,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Naan
+NA,NA,-115.6605,34.5831,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,BrsS,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,Talc
