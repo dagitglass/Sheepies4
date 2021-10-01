@@ -531,6 +531,9 @@ marbindrd11 <- rbind(marbindrd, marbna2)
 marbindrd11$visits <- as.numeric(marbindrd11$visits)
 marbindrd11$sd <- as.numeric(marbindrd11$sd)
 marbindrd11$`rownames(marbindrd)` <- as.Date(marbindrd11$`rownames(marbindrd)` , "%Y-%m-%d")
+
+partymarbmeannumvismonth <- boxplot(Meannumvisits ~ Month, data = marbindrd11, main = "Marbles (31*)", ylab = "VTW/Bighorn")
+
 library(ggplot2)
 p <- ggplot(data = marbindrd11, aes(x = `rownames(marbindrd)`, y = visits)) + geom_point() + geom_errorbar(aes(ymin = visits - sd, ymax = visits + sd), width = .2) + labs(title = "Marbles (n = 32*)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
 # print(p)
@@ -568,6 +571,9 @@ sbrsrd11 <- rbind(sbrsindrd, sbrsna2)
 sbrsrd11$Meannumvisits <- as.numeric(sbrsrd11$Meannumvisits)
 sbrsrd11$sd <- as.numeric(sbrsrd11$sd)
 sbrsrd11$Date <- as.Date(sbrsrd11$Date, "%Y-%m-%d")
+
+partysbrsmeannumvismonth <- boxplot(Meannumvisits ~ Month, data = sbrsrd11, main = "South Bristols (n = 24)", ylab = "VTW/Bighorn")
+
 library(ggplot2)
 sbrsrd11plot <- ggplot(data = sbrsrd11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = .2) + labs(title = "South Bristols (n = 24)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
 # print(sbrsrd11plot)
@@ -588,6 +594,9 @@ nopard11 <- rbind(nopaindrd, nopana2)
 nopard11$Meannumvisits <- as.numeric(nopard11$Meannumvisits)
 nopard11$sd <- as.numeric(nopard11$sd)
 nopard11$Date <- as.Date(nopard11$Date, "%Y-%m-%d")
+
+partynopameannumvismonth <- boxplot(Meannumvisits ~ Month, data = nopard11, main = "Nopah (n = 6)", ylab = "VTW/Bighorn")
+
 library(ggplot2)
 nopard11plot <- ggplot(data = nopard11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = 0.2) + labs(title = "Nopah (n = 6)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
 # print(nopard11plot)
@@ -607,15 +616,50 @@ cmprrd11 <- rbind(cmprindrd, cmprna2)
 cmprrd11$Meannumvisits <- as.numeric(cmprrd11$Meannumvisits)
 cmprrd11$sd <- as.numeric(cmprrd11$sd)
 cmprrd11$Date <- as.Date(cmprrd11$Date, "%Y-%m-%d")
+
+partycmprmeannumvismonth <- boxplot(Meannumvisits ~ Month, data = cmprrd11, main = "Castle Piute (n = 4)", ylab = "VTW/Bighorn")
+
 library(ggplot2)
 cmprrd11plot <- ggplot(data = cmprrd11, aes(x = Date, y = Meannumvisits)) + geom_point() + geom_errorbar(aes(ymin = Meannumvisits - sd, ymax = Meannumvisits + sd), width = 0.2) + labs(title = "Castle Piute (n = 4)", x = "Date", y = "Mean Number of Visits by Day") + ylim(0, 2.5) + scale_x_date(limits = as.Date(c("2019-05-17", "2019-08-15"))) + theme_grey(base_size = 10)
 # print(cmprrd11plot)
 
 library(gridExtra)
 grid.arrange(p, sbrsrd11plot, nopard11plot, cmprrd11plot, nrow = 2, top = "Mean Number of Visits Per Day Given All Collared Sheep")
+
+allindrd11 <- rbind(marbindrd11, sbrsrd11, nopard11, cmprrd11)
+
+
+par(mar=c(4,5,3.9,1))
+par(mfrow = c(2,2))
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Marb", ], main = "Marbles (31*)", ylab = "VTW/Desert Bighorn")
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "BrsS", ], main = "South Bristols (n = 24)", ylab = "VTW/Desert Bighorn")
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Nopa", ], main = "Nopah (n = 6)", ylab = "VTW/Desert Bighorn")
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "CMPR", ], main = "Castle Piute (n = 4)", ylab = "VTW/Desert Bighorn")
+# title("Number of VTW/Bighorn/Day By Month", line = -1, outer = TRUE)
+
+# With the same y axis for all:
+par(mar=c(4,5,3.9,1))
+par(mfrow = c(2,2))
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Marb", ], main = "Marbles (31*)", ylab = "VTW/desert bighorn", ylim = c(0, 1.3))
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "BrsS", ], main = "South Bristols (n = 24)", ylab = "VTW/desert bighorn", ylim = c(0, 1.3))
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Nopa", ], main = "Nopah (n = 6)", ylab = "VTW/desert bighorn", ylim = c(0, 1.3))
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "CMPR", ], main = "Castle Piute (n = 4)", ylab = "VTW/desert bighorn", ylim = c(0, 1.3))
+
+
+
+
+par(mfrow = c(2,2))
+#title = "Percent of Individual Sheep that Visited Water by Month")
+boxplot(Percentvisited ~ Month, data = marbindsheepvisitperday1, main = "Marbles (n = 31*)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = sbrsindsheepvisitperday2, main = "South Bristols (n = 24)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = nopaindsheepvisitperday2, main = "Nopah (n = 6)", ylab = "% of Individual Sheep")
+boxplot(Percentvisited ~ Month, data = cmprindsheepvisitperday2, main = "Castle Piutes (n = 4)", ylab = "% of Individual Sheep")
+title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
+dev.off()
+
 ```
 
-I then ran statistics associated with the previous figures. In the Marbles, there was a significant difference in the percent of collared sheep visiting water on a given day by month between May and June/July/August, though not among June, July, and August. In the South Bristols, there was a significant difference between July and August, and between June and August, thought not between June and July. In the Nopahs, June and July were not significant different, though they were both different from August. In the Castle Piutes, the only significant differences between months were between May and July, and May and August. Whether two months were significantly different on the mean number of visits to water on a given day was exactly the same as whether two months were significantly different in the percent of collared sheep visiting on a given day by month. To me, this suggests that the number of visits was not significantly different between different individual sheep.
+I then ran statistics associated with the previous figures. In the Marbles, there was a significant difference in the percent of collared sheep visiting water on a given day by month between May and June/July/August, though not among June, July, and August. In the South Bristols, there was a significant difference between July and August, and between June and August, thought not between June and July. In the Nopahs, June and July were not significant different, though they were both different from August. In the Castle Piutes, there were no significant differences between months. Whether two months were significantly different on the mean number of visits to water on a given day was exactly the same as whether two months were significantly different in the percent of collared sheep visiting on a given day by month. To me, this suggests that the number of visits was not significantly different between different individual sheep.
 
 ***The figures of the 'Mean Number of Visits to Water on a Given Day by Month' and 'Percent of Individual Sheep that Visited Water on a Given Day by Month' are exceedingly similar. When I double-checked how I calculated these, I didn't find a problem. Can someone double check me? If this is true, it suggests that there was basically no different in the number of visits to water between different sheep...
 
@@ -889,6 +933,10 @@ boxplot(MarbNumVisitbyID1$Freq, ylab = "Number of Visits", main = "Marbles (n = 
 summary(MarbNumVisitbyID1$Freq)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
 #   2.00   22.00   25.00   25.41   30.00   46.00
+hist(MarbNumVisitbyID1$Freq)
+Marbfreqvisit <- aov(Freq ~ Var1, data = MarbNumVisitbyID1)
+summary(Marbfreqvisit)
+TukeyHSD(Marbfreqvisit)
 
 # South Bristols only covers complete days
 BrsSNumVisitbyID <- as.data.frame(table(BrsScutobsrdwithdups$KI_Known_ID))
@@ -927,7 +975,7 @@ BrsSlongtimedif <- BrsScutobslong %>%
   mutate(Timediff = DateTimect - lag(DateTimect), diff_hours = as.numeric(Timediff, units = 'hours'))
 # mean(BrsSlongtimedif$diff_hours, na.rm = TRUE)
 # [1] 37.57339
-# boxplot(BrsSlongtimedif$diff_hours, ylab = "Time Between Visits to Water (hours)", main = "Time between Visits to Water for all Sheep")
+boxplot(BrsSlongtimedif$diff_hours, ylab = "Time Between Visits to Water (hours)", main = "Time between Visits to Water for all Sheep")
 summary(BrsSlongtimedif$diff_hours)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's
 #  0.10   11.87   28.53   37.57   47.16  456.88      25
@@ -938,8 +986,8 @@ shapiro.test(BrsSlongtimedif$diff_hours)
 hist(BrsSlongtimedif$diff_hours)
 # very right-skewed - log transform
 hist(log(BrsSlongtimedif$diff_hours))
-boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
-boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+boxplot((diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
+boxplot(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif, main = "Time between Visits to Water by Sheep")
 # Looking at the non-logged boxplot, there is one sheep that is super off compared to the rest of them???
 BrsSdiffhoursindsheep <- aov(log(diff_hours) ~ KI_Known_ID, data = BrsSlongtimedif)
 summary.lm(BrsSdiffhoursindsheep)
@@ -1081,6 +1129,14 @@ table(Marbcutobsrd$Age2019[(Marbcutobsrd$KI_Known_ID != "BHS_1367") & (Marbcutob
 chisq.test(x = c(76, 184, 132, 150, 25, 15, 51, 10), p = c(2/25, 6/25, 6/25, 6/25, 1/25, 1/25, 2/25, 1/25))
 # p-value = 1.176e-05
 # But is this really a significant finding? I'm question it.
+# Examining 0-4, 5+
+Marbcutobsrd$fourorless <- TRUE
+Marbcutobsrd$fourorless[Marbcutobsrd$Age2019 >= 5] <- FALSE
+# 25 sheep, 2 are 4 minus, 23 are above 4
+table(Marbcutobsrd$fourorless[(Marbcutobsrd$KI_Known_ID != "BHS_1367") & (Marbcutobsrd$KI_Known_ID != "BHS_1366") & (Marbcutobsrd$KI_Known_ID != "BHS_1497")])
+# Fourorless 127, 5+ 489
+chisq.test(x = c(127, 489), p = c(2/25, 23/25))
+# Hella significantly different?
 
 BrsScutobsrdwithdups$Age2019 <- NA
 BrsScutobsrdwithdups$Age2019[BrsScutobsrdwithdups$KI_Known_ID == "BHS_1330"] <- 8
@@ -1108,6 +1164,14 @@ table(BrsScutobsrdwithdups$Age2019)
 chisq.test(x = c(58, 101, 23, 239, 120, 48, 103, 54), p = c(1/19, 2/19, 1/19, 4/19, 4/19, 2/19, 4/19, 1/19))
 # X-squared = 109.61, df = 7, p-value < 2.2e-16
 # Could it be that middle-aged sheep are visiting water more often b/c they are more likely to have lambs make it to the summer? Is that even true???? Though ewes did not visit more than rams
+# Examining 0-4, 5+
+BrsScutobsrdwithdups$fourorless <- TRUE
+BrsScutobsrdwithdups$fourorless[BrsScutobsrdwithdups$Age2019 >= 5] <- FALSE
+# 19 sheep total, 3 4orless, 16 five or more
+table(BrsScutobsrdwithdups$fourorless)
+# four or less 320, five or more 568
+chisq.test(x = c(320, 568), p = c(3/19, 16/19))
+# Also hella significantly different?
 
 nopacutobsrd$Age2019 <- NA
 nopacutobsrd$Age2019[nopacutobsrd$KI_Known_ID == "BHS_1737"] <- 3
@@ -1122,6 +1186,14 @@ table(nopacutobsrd$Age2019)
 chisq.test( x = c(16, 5, 5, 1), p = c(2/6, 2/6, 1/6, 1/6))
 # X-squared = 10, df = 3, p-value = 0.01857
 # warning: Chi-squared approximation may be incorrect
+# Examining 0-4, 5+
+nopacutobsrd$fourorless <- TRUE
+nopacutobsrd$fourorless[nopacutobsrd$Age2019 >= 5] <- FALSE
+# 6 sheep, 4 four or less, 2 5 or older
+table(nopacutobsrd$fourorless)
+# 18 four or less, 6 five or greater
+chisq.test(x = c(18, 6), p = c(4/6, 2/6))
+# no significant difference
 
 cmprcutobs1$Age2019 <- NA
 cmprcutobs1$Age2019[cmprcutobs1$KI_Known_ID == "BHS_1730"] <- 5
@@ -1187,6 +1259,13 @@ chisq.test(x = c(7, 4, 6, 4, 3, 40, 103, 150, 166, 236, 184, 186, 143, 113, 88, 
 percentvisitbyhour <- c(7/1667, 4/1667, 6/1667, 4/1667, 3/1667, 40/1667, 103/1667, 150/1667, 166/1667, 236/1667, 184/1667, 186/1667, 143/1667, 113/1667, 88/1667, 50/1667, 43/1667, 44/1667, 32/1667, 37/1667, 10/1667, 6/1667, 6/1667, 6/1667)
 plot(percentvisitbyhour, type = "o", ylab = "Percent of Bighorn Visits by Hour", xlab = "Hour", main = "Percent of Bighorn Visits by Time of Day")
 
+par(mfrow=c(2,1), mar=c(1,1,1,1))
+plot(percentvisitbyhour, type = "o", ylab = "Percent of bighorn visits by hour", xlab = "Hour")
+title(outer=T,adj=0,main="A",cex=1.1,col="black",font=2,line=-1)
+boxplot(stplengthtopo ~ TimeLocal1, data = callmtndistwater2,ylab = "Topographic step length (m)", xlab = "Time of day")
+title(outer=T,adj=0,main="B",cex=1.1,col="black",font=2,line=-1)
+dev.off()
+
 
 ```
 
@@ -1217,11 +1296,381 @@ qqnorm(allrangetime1$VisitDuration)
 qqline(allrangetime1$VisitDuration)
 # Not normally distributed. Huge gap could be not being careful enough at following rules for defining what is a visit? Or sheep come/drink/leave vs. sheep come/stay/hang out?
 hist(allrangetime1$VisitDuration)
+qqnorm(sqrt(allrangetime1$VisitDuration))
+qqline(sqrt(allrangetime1$VisitDuration))
+
+wilcox.test(allrangetime1$VisitDuration[allrangetime1$KI_Sex == "F"], allrangetime1$VisitDuration[allrangetime1$KI_Sex == "M"])
+
+wilcox.test(allgpsbrsmay$positangledegree[allgpsbrsmay$beforevisit == "TRUE"], allgpsbrsmay$positangledegree[allgpsbrsmay$beforevisit == "FALSE"])
+
 # NEED TO FIGURE THAT OUT BEFORE RUNNING THE REST OF IT..
+# Check it out by month and range
+allrangetime1$Month <- as.factor(allrangetime1$Month)
+marbrangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "Marb",]
+sbrsrangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "BrsS",]
+cmprrangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "CMPR",]
+noparangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "Nopa",]
 
-# CHECK IT OUT BY MONTH
+# Plotting visit duration by month and range
+# Marb = 646 visits, Sbrs = 886 visits, Nopah = 24 visits, CMPR = 24 visits
+par(mar=c(4,5,3.9,1))
+par(mfrow = c(2,2))
+marbbplotvisit <- boxplot(VisitDuration ~ Month, data = marbrangetime1, main = "Marbles", ylab = "Visit duration (mins)")
+sbrsplotvisit <- boxplot(VisitDuration ~ Month, data = sbrsrangetime1, main = "South Bristols", ylab = "Visit duration (mins)")
+nopaplotvisit <- boxplot(VisitDuration ~ Month, data = noparangetime1, main = "Nopah", ylab = "Visit duration (mins)")
+cmprplotvisit <- boxplot(VisitDuration ~ Month, data = cmprrangetime1, main = "Castle Piutes", ylab = "Visit duration (mins)")
+title("Duration of Visits to Water by Month", line = -1, outer = TRUE)
+dev.off()
 
+# Seeing if there is a difference in visit duration between mtn ranges
+boxplot(VisitDuration ~ GO_RangeCode, data = allrangetime1)
+kruskal.test(VisitDuration ~ GO_RangeCode, data = allrangetime1)
+library(dunn.test)
+attach(allrangetime1)
+dunn.test(x = VisitDuration, g = GO_RangeCode)
+
+# Seeing if there is a difference in visit duration by month within each range
+# Marbles
+qqnorm(marbrangetime1$VisitDuration)
+qqline(marbrangetime1$VisitDuration)
+hist(marbrangetime1$VisitDuration)
+
+Marbvisitdur <- aov(formula = VisitDuration ~ Month, data = marbrangetime1)
+summary.lm(Marbvisitdur)
+# Multiple R-squared:  0.03485,	Adjusted R-squared:  0.02925 
+# F-statistic: 6.223 on 3 and 517 DF,  p-value: 0.0003709
+TukeyHSD(Marbvisitdur)
+#          diff         lwr       upr     p adj
+# 6-5 46.305869 -12.2762350 104.88797 0.1756905
+# 7-5 55.342593  -4.7618178 115.44700 0.0835664
+# 8-5 91.278867  28.8712120 153.68652 0.0010434
+# 7-6  9.036723 -20.7175750  38.79102 0.8622678
+# 8-6 44.972998  10.8043933  79.14160 0.0041429
+# 8-7 35.936275  -0.7811699  72.65372 0.0576537
+# Kruskal Wallis test
+kruskal.test(VisitDuration ~ Month, data = marbrangetime1)
+# Kruskal-Wallis chi-squared = 11.69, df = 3, p-value = 0.008526
+library(dunn.test)
+attach(marbrangetime1)
+dunn.test(x = VisitDuration, g = Month)
+# May was significantly different from June-August, but that's the only significant difference.
+
+# South Bristols
+sbrsvisitdur <- aov(formula = VisitDuration ~ Month, data = sbrsrangetime1)
+summary.lm(sbrsvisitdur)
+# Multiple R-squared:  0.03279,	Adjusted R-squared:  0.0276 
+# F-statistic: 6.322 on 2 and 373 DF,  p-value: 0.001994
+TukeyHSD(sbrsvisitdur)
+#         diff        lwr       upr     p adj
+# 7-6 23.47670 -19.631751  66.58516 0.4065079
+# 8-6 65.89259  20.633256 111.15192 0.0019647
+# 8-7 42.41588   2.711376  82.12039 0.0330298
+# Kruskal Wallis test
+kruskal.test(VisitDuration ~ Month, data = sbrsrangetime1)
+# Kruskal-Wallis chi-squared = 5.4516, df = 2, p-value = 0.06549'
+# No significant difference between months
+
+# Nopah
+nopavisitdur <- aov(formula = VisitDuration ~ Month, data = noparangetime1)
+summary.lm(nopavisitdur)
+# Multiple R-squared:  0.03629,	Adjusted R-squared:  -0.007511 
+# F-statistic: 0.8285 on 1 and 22 DF,  p-value: 0.3726
+TukeyHSD(nopavisitdur)
+#         diff       lwr     upr     p adj
+# 8-7 18.73109 -23.94562 61.4078 0.3725632
+# Kruskal Wallis test
+kruskal.test(VisitDuration ~ Month, data = noparangetime1)
+# Kruskal-Wallis chi-squared = 0.63163, df = 1, p-value = 0.4268
+# Visit Duration no difference between months
+
+# CMPR
+cmprvisitdur <- aov(formula = VisitDuration ~ Month, data = cmprrangetime1)
+summary.lm(cmprvisitdur)
+# Multiple R-squared:  0.211,	Adjusted R-squared:  0.1233 
+# F-statistic: 2.407 on 2 and 18 DF,  p-value: 0.1185
+TukeyHSD(cmprvisitdur)
+#          diff        lwr       upr     p adj
+# 7-6  22.82857  -36.28956 81.946701 0.5950662
+# 8-6 -24.68254  -75.56332 26.198245 0.4469806
+# 8-7 -47.51111 -103.82582  8.803598 0.1071098
+# Kruskal Wallis test
+kruskal.test(VisitDuration ~ Month, data = cmprrangetime1)
+# Kruskal-Wallis chi-squared = 6.7345, df = 2, p-value = 0.03448
+attach(cmprrangetime1)
+dunn.test(x = VisitDuration, g = Month)
+# June and August, July and August significantly different
 
 ## whether there is a significant difference in how often ewes with lambs come in vs. ewes without lambs (or ewe groups with lambs come in vs. ewe groups without lambs)
 
 ```
+Examining the group compostion data.
+
+
+```{r}
+allcut1 <- rbind(Marbcutobs, BrsScutobs, cmprcutobs, nopacutobs)
+# Because observations in this dataset currently represent visits by individual sheep, I need to turn it back into group observations.
+allcut2 <- allcut1[!duplicated(allcut1[ , c("GO_DatObsTime")]), ]
+hist(allcut2$GO_GroupSize)
+# A total of 1118 group observations.
+nrow(allcut2[allcut2$GO_NoAdltEwe > 0, ])
+# There are 668 observations with adult ewes in them
+nrow(allcut2[allcut2$GO_NoAdltRam > 0, ])
+# There are 521 observations with adult rams in them
+nrow(allcut2[((allcut2$GO_NoAdltEwe > 0) & (allcut2$GO_NoAdltRam == 0)), ])
+# There are 282 observations with adults ewes but no adult rams.
+nrow(allcut2[((allcut2$GO_NoAdltRam > 0) & (allcut2$GO_NoAdltEwe == 0)), ])
+# 135 cases where there are adult rams but no adult ewes.
+nrow(allcut2[((allcut2$GO_NoAdltRam > 0) & (allcut2$GO_NoAdltEwe > 0)), ])
+# 386 cases where both adult ewes and adult rams.
+ewesnorams <- allcut2[((allcut2$GO_NoAdltEwe > 0) & (allcut2$GO_NoAdltRam == 0)),]
+hist(ewesnorams$GO_GroupSize)
+ramsnoewes <- allcut2[((allcut2$GO_NoAdltRam > 0) & (allcut2$GO_NoAdltEwe == 0)), ]
+hist(ramsnoewes$GO_GroupSize)
+mean(ramsnoewes$GO_NoAdltRam)
+mean(ewesnorams$GO_NoAdltEwe)
+boxplot(ewesnorams$GO_GroupSize, ramsnoewes$GO_GroupSize, names = c("Ewes", "Rams"), ylab = "Group Size", main = "Single Sex Group Size")
+t.test(ewesnorams$GO_GroupSize, ramsnoewes$GO_GroupSize)
+# t = 5.5358, df = 406.65, p-value = 5.565e-08
+#  When by themselves, rams groups are significantly smaller than ewe groups. Ewe groups bigger for protection of themselves and their lambs? Way more mixed sex groups because rutting.
+
+# How many groups with ewes had at least one lamb
+atleastoneewe <- allcut2[(allcut2$GO_NoAdltEwe > 0), ]
+# 668 groups have at least 1 ewe
+nrow(atleastoneewe[atleastoneewe$GO_NoLambs > 0, ])
+# 296 groups with ewes have at least 1 lamb
+nrow(atleastoneewe[atleastoneewe$GO_NoLambs == 0, ])
+# 372 groups with ewes have no lambs
+atleastoneewe$difewelamb <- (atleastoneewe$GO_NoAdltEwe - atleastoneewe$GO_NoLambs)
+boxplot(difewelamb ~ Month, data = atleastoneewe, ylab = "Number of ewes - Number of lambs", main = "Difference in the Number of Ewes and Lambs Seen at Water")
+atleastoneewe$Month <- as.factor(atleastoneewe$Month)
+difewemonth <- aov(difewelamb ~ Month, data = atleastoneewe)
+summary.lm(difewemonth)
+TukeyHSD(difewemonth)
+hist(atleastoneewe$difewelamb)
+mean(atleastoneewe$GO_NoAdltEwe)
+# less descrepancy seen throughout the summer? Weird. Don't know enough from this to understand what is going on.
+# mean number of adult ewes seen in groups with at least 1 ewe = 2.95
+
+# The percent of visits by individual ewes that where there were lambs
+# since going back to individual animals, using allcut1
+ewevisitsind1 <- allcut1[allcut1$KI_Sex == "F", ]
+ewevisitsind <- ewevisitsind1[!is.na(ewevisitsind1$KI_Known_ID), ]
+# dropping ram ids
+ewevisitsind$KI_Known_ID <- droplevels(ewevisitsind$KI_Known_ID)
+totalvisitsbyewe <- as.data.frame(table(ewevisitsind$KI_Known_ID))
+# nrow(ewevisitsind[((ewevisitsind$KI_Known_ID == "BHS_1329") & (ewevisitsind1$GO_NoLambs > 0)), ])
+totalvisitsbyewe$novisitwithlamb <- NA
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1328"] <- 20
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1329"] <- 13
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1330"] <- 12
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1333"] <- 8
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1334"] <- 11
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1337"] <- 23
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1357"] <- 7
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1361"] <- 6
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1362"] <- 9 
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1365"] <- 9
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1366"] <- 4
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1367"] <- 3
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1416"] <- 4
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1421"] <- 1
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1425"] <- 14
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1426"] <- 6
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1489"] <- 16
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1491"] <- 18
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1492"] <- 0
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1574"] <- 7
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1575"] <- 17
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1576"] <- 8
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1577"] <- 11
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1578"] <- 15
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1579"] <- 10
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1580"] <- 5
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1581"] <- 16
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1582"] <- 19
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1583"] <- 5
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1584"] <- 7
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1585"] <- 5
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1587"] <- 8
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1588"] <- 13
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1592"] <- 13
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1594"] <- 5
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1595"] <- 1
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1596"] <- 45
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1599"] <- 29
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1687"] <- 27
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1688"] <- 0
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1730"] <- 2
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1732"] <- 1
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1733"] <- 2
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1734"] <- 5
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1589"] <- 1
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1736"] <- 3
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1738"] <- 3
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1740"] <- 9
+totalvisitsbyewe$novisitwithlamb[totalvisitsbyewe$Var1 == "BHS_1741"] <- 0
+totalvisitsbyewe$prctlamb <- (totalvisitsbyewe$novisitwithlamb / totalvisitsbyewe$Freq)
+hist(totalvisitsbyewe$Freq)
+# more or less normally distributed
+plot(Freq ~ prctlamb, data = totalvisitsbyewe)
+ewevis <- lm(Freq ~ prctlamb, data = totalvisitsbyewe)
+summary(ewevis)
+# does not explain it
+# if I did this correctly
+# nrow(ewevisitsind[((ewevisitsind$KI_Known_ID == "BHS_1328") & (ewevisitsind$GO_NoLambs > 0)), ])
+
+# The percent of visits by individual ewes that where there were lambs attempt 2
+totalewevisits <- allcut1[(allcut1$KI_Known_ID == "BHS_1367" | allcut1$KI_Known_ID == "BHS_1365" | allcut1$KI_Known_ID == "BHS_1361" | allcut1$KI_Known_ID == "BHS_1362" |allcut1$KI_Known_ID == "BHS_1357" | allcut1$KI_Known_ID == "BHS_1416" | allcut1$KI_Known_ID == "BHS_1421" | allcut1$KI_Known_ID == "BHS_1581" | allcut1$KI_Known_ID == "BHS_1577" | allcut1$KI_Known_ID == "BHS_1574" | allcut1$KI_Known_ID == "BHS_1576" | allcut1$KI_Known_ID == "BHS_1583" | allcut1$KI_Known_ID == "BHS_1584" | allcut1$KI_Known_ID == "BHS_1585" | allcut1$KI_Known_ID == "BHS_1587" | allcut1$KI_Known_ID == "BHS_1582" | allcut1$KI_Known_ID == "BHS_1575" | allcut1$KI_Known_ID == "BHS_1592" | allcut1$KI_Known_ID == "BHS_1594" | allcut1$KI_Known_ID == "BHS_1366" | allcut1$KI_Known_ID == "BHS_1497" | allcut1$KI_Known_ID == "BHS_1588" | allcut1$KI_Known_ID == "BHS_1595" | allcut1$KI_Known_ID == "BHS_1589" | allcut1$KI_Known_ID == "BHS_1330" | allcut1$KI_Known_ID == "BHS_1337" | allcut1$KI_Known_ID == "BHS_1334" | allcut1$KI_Known_ID == "BHS_1329" | allcut1$KI_Known_ID == "BHS_1328" | allcut1$KI_Known_ID == "BHS_1333" | allcut1$KI_Known_ID == "BHS_1425" | allcut1$KI_Known_ID == "BHS_1426" | allcut1$KI_Known_ID == "BHS_1489" | allcut1$KI_Known_ID == "BHS_1491" | allcut1$KI_Known_ID == "BHS_1578" | allcut1$KI_Known_ID == "BHS_1579" | allcut1$KI_Known_ID == "BHS_1580" | allcut1$KI_Known_ID == "BHS_1596" | allcut1$KI_Known_ID == "BHS_1599" | allcut1$KI_Known_ID == "BHS_1687" | allcut1$KI_Known_ID == "BHS_1737" | allcut1$KI_Known_ID == "BHS_1740" | allcut1$KI_Known_ID == "BHS_1741" | allcut1$KI_Known_ID == "BHS_1738" | allcut1$KI_Known_ID == "BHS_1736" | allcut1$KI_Known_ID == "BHS_1730" | allcut1$KI_Known_ID == "BHS_1733" | allcut1$KI_Known_ID == "BHS_1734"), ]
+totalewevisits$KI_Known_ID <- droplevels(totalewevisits$KI_Known_ID)
+totalewevisits1 <- as.data.frame(table(totalewevisits$KI_Known_ID))
+totalewevisits1$novisitwithlamb <- NA
+# nrow(totalewevisits[((totalewevisits$KI_Known_ID == "BHS_1733") & (totalewevisits$GO_NoLambs > 0)), ])
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1367"] <- 3
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1365"] <- 9
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1361"] <- 6
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1362"] <- 9
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1357"] <- 7
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1416"] <- 4
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1421"] <- 1
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1581"] <- 16
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1577"] <- 11
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1574"] <- 7
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1576"] <- 8
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1583"] <- 5
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1584"] <- 7
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1585"] <- 5
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1587"] <- 8
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1582"] <- 19
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1575"] <- 17
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1592"] <- 13
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1594"] <- 5
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1366"] <- 4
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1497"] <- 0
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1588"] <- 13
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1595"] <- 1
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1589"] <- 1
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1330"] <- 12
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1337"] <- 23
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1334"] <- 11
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1329"] <- 13
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1328"] <- 20
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1333"] <- 8
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1425"] <- 14
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1426"] <- 6
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1489"] <- 16
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1491"] <- 18
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1578"] <- 15
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1579"] <- 10
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1580"] <- 5
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1596"] <- 45
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1599"] <- 29
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1687"] <- 27
+  totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1737"] <- 0
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1740"] <- 9
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1741"] <- 0
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1738"] <- 3
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1736"] <- 3
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1730"] <- 3
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1733"] <- 2
+totalewevisits1$novisitwithlamb[totalewevisits1$Var1 == "BHS_1734"] <- 5
+totalewevisits1$prctlamb <- (totalewevisits1$novisitwithlamb / totalewevisits1$Freq)
+hist(totalewevisits1$Freq)
+# more or less normally distributed
+plot(Freq ~ prctlamb, data = totalewevisits1)
+visewe <- glm(Freq ~ prctlamb, data = totalewevisits1)
+summary(visewe)                                 
+# Coefficients:
+#            Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)   29.795      5.794   5.142 6.02e-06 ***
+# prctlamb      -9.751     12.452  -0.783    0.438    
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+# (Dispersion parameter for gaussian family taken to be 297.0269)
+
+#     Null deviance: 13251  on 45  degrees of freedom
+# Residual deviance: 13069  on 44  degrees of freedom
+# AIC: 396.41
+with(summary(visewe), 1 - deviance/null.deviance)
+
+
+
+
+
+
+
+
+
+
+
+# ewevisitsind$KI_Known_ID
+# for(i in levels(totalvisitsbyewe$Var1)){
+#   totalvisitsbyewe$novisitwithlamb <- nrow(ewevisitsind[((i == ewevisitsind$KI_Known_ID) & (ewevisitsind$GO_NoLambs > 0)), ])
+#   }
+
+# If the length of the visit was a function of group size
+
+allcut2$KI_DG_FirstPhotoTime <- as.factor(allcut2$KI_DG_FirstPhotoTime)
+allcut2$KI_DG_FirstPhotoTime[allcut2$KI_DG_FirstPhotoTime == " "] <- NA
+is.na(allcut2$KI_DG_FirstPhotoTime) <- allcut2$KI_DG_FirstPhotoTime == ' '
+allcut2$KI_DG_FirstPhotoTime[allcut2$KI_DG_FirstPhotoTime == ""] <- NA
+allcut2$KI_DG_LastPhotoTime[allcut2$KI_DG_LastPhotoTime == ""] <- NA
+allcut2$fpt <- paste(as.character(allcut2$GO_Date), as.character(allcut2$KI_DG_FirstPhotoTime))
+allcut2$fpt[is.na(allcut2$KI_DG_FirstPhotoTime) == TRUE] <- NA
+allcut2$lpt <- paste(as.character(allcut2$GO_Date), as.character(allcut2$KI_DG_LastPhotoTime))
+allcut2$lpt[is.na(allcut2$KI_DG_LastPhotoTime) == TRUE] <- NA
+library(lubridate)
+allcut2$fpt <- strptime(allcut2$fpt, "%Y-%m-%d %H:%M")
+allcut2$fpt <- as.POSIXct(allcut2$fpt, tz = "America/Los_Angeles", format = "%Y%m%d %H:%M")
+allcut2$lpt <- strptime(allcut2$lpt, "%Y-%m-%d %H:%M")
+allcut2$lpt <- as.POSIXct(allcut2$lpt, tz = "America/Los_Angeles", format = "%Y%m%d %H:%M")
+allcut2$visitduration <- ((allcut2$lpt - allcut2$fpt) / 60)
+allcut2$visitduration <- as.numeric(allcut2$visitduration)
+allcut2$visitduration[allcut2$visitduration < 0] <- NA
+# Seeing if one explains the other
+hist(log(allcut2$visitduration)) 
+yasha <- lm(visitduration ~ GO_GroupSize, data = allcut2)
+summary(yasha)
+# Group size impacts visit duration!
+# Multiple R-squared:  0.02292,	Adjusted R-squared:  0.02136 
+# F-statistic: 14.64 on 1 and 624 DF,  p-value: 0.0001432
+
+```
+
+
+
+````{r}
+marbindsheepvisitperday1$visitedP <- (marbindsheepvisitperday1$Percentvisited) * 100
+sbrsindsheepvisitperday2$visitedP <- sbrsindsheepvisitperday2$Percentvisited * 100
+nopaindsheepvisitperday2$visitedP <- nopaindsheepvisitperday2$Percentvisited * 100
+cmprindsheepvisitperday2$visitedP <- cmprindsheepvisitperday2$Percentvisited * 100
+
+yeye <- rbind(marbindsheepvisitperday1, sbrsindsheepvisitperday2, nopaindsheepvisitperday2, cmprindsheepvisitperday2)
+allindsheepvisitperday$visitedP <- allindsheepvisitperday$Percentvisited * 100
+allindsheepvisitperday$Month <- as.numeric
+
+allindsheepvisitperday$Month <- as.factor(allindsheepvisitperday$Month)
+par(mar=c(4,5,3.9,1))
+par(mfrow = c(2,2))
+#title = "Percent of Individual Sheep that Visited Water by Month")
+# Previous ylab: "% of Individual Sheep"
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Marb", ], main = "Marbles (n = 31*)", ylab = "Percent", ylim = c(0, 100))
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "BrsS", ], main = "South Bristols (n = 24)", ylab = "Percent", ylim = c(0, 100))
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Nopa", ], main = "Nopah (n = 6)", ylab = "Percent", ylim = c(0, 100))
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "CMPR", ], main = "Castle Piutes (n = 4)", ylab = "Percent", ylim = c(0, 100))
+#title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
+dev.off()
+
+# With not same x axis
+# par(mar=c(4.5,3.7,3.7,4.5))
+# par(mfrow = c(2,2))
+#title = "Percent of Individual Sheep that Visited Water by Month")
+# boxplot(visitedP ~ Month, data = marbindsheepvisitperday1, main = "Marbles (n = 31*)", ylab = "% of Individual Sheep", ylim = c(0, 100))
+# boxplot(visitedP ~ Month, data = sbrsindsheepvisitperday2, main = "South Bristols (n = 24)", ylab = "% of Individual Sheep", ylim = c(0, 100))
+# boxplot(visitedP ~ Month, data = nopaindsheepvisitperday2, main = "Nopah (n = 6)", ylab = "% of Individual Sheep", ylim = c(0, 100))
+# boxplot(visitedP ~ Month, data = cmprindsheepvisitperday2, main = "Castle Piutes (n = 4)", ylab = "% of Individual Sheep", ylim = c(0, 100))
+# title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
+# dev.off()
+
+```
+
