@@ -14,7 +14,7 @@ setwd("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/AllData392
 
 ## Subsetting by Range & Individual Sheep ID
 
-First, I uploaded the GPS data. I checked for duplicates - there were none. Then, I subset the data for only the mountain ranges that I am interested in: South Bristols (BrsS), Marbles (Marb), Nopah (Nopa), Castle-Piute (CMPR), and Newberry-Rodman-Ord (NROM). Then I subset to only the individual bighorn that I am interested in - those with fix rates of 4 hours or less.
+First, I uploaded the GPS data.  I checked for duplicates - there were none. Then, I subset the data for only the mountain ranges that I am interested in: South Bristols (BrsS), Marbles (Marb), Nopah (Nopa), Castle-Piute (CMPR), and Newberry-Rodman-Ord (NROM). Then I subset to only the individual bighorn that I am interested in - those with fix rates of 4 hours or less.
 
 A list of bighorn whose collars are every four hours:
 
