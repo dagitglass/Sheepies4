@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Subset to the desired 4 hr fix rate. Calculated the fix rate success to determine if there is topographic bias.
+Subset to the desired 4 hr fix rate. Calculated the fix rate success to determine if there is topographic bias. 
 ```{r}
 cln1hrfix1 <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/cln1hrfix1_11620.csv")
 library(lubridate)
