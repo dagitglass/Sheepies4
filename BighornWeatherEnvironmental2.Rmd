@@ -92,6 +92,7 @@ bsheepglm2 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa
 summary(bsheepglm2)
 
 vuong(twovar, bsheepglm2)
+vuong(twovar1, bsheepglm2)
 
 ```{graphing visit vs. max temp}
 
