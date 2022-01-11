@@ -6,10 +6,38 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+balenvvisitnozero <- ballenvvisit2[ballenvvisit2$NumIndSheep != 0,]
 
 
 
 
+library(pscl)
+negbintwovar <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
+summary(negbintwovar)
+
+negbintwovar1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
+summary(negbintwovar1)
+
+negbintwovar2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI | tmax..deg.c. + MeanNDVI + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
+summary(negbintwovar2)
+
+vuong(negbintwovar, twovar)
+vuong(negbintwovar2, twovar1)
+
+hurdtwovar <- hurdle(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(hurdtwovar)
+
+hurdtwovar1 <- hurdle(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
+summary(hurdtwovar1)
+
+vuong(twovar1, hurdtwovar1)
+
+# From the Zuur book zero inflated chapter:
+library(lmtest)
+# these two models below have the same variable
+lrtest(twovar1, negbintwovar1)
+
+lrtest(negbintwovar1, twovar1)
 
 ```
 

@@ -42,6 +42,9 @@ pR2(twovar1)
 
 hist(ballenvvisit2$NumIndSheep)
 
+library(performance)
+r2_zeroinflated(twovar1)
+
 # This one works, just tmax:
 bzeroinflpsclmodel1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. | tmax..deg.c. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
 summary(bzeroinflpsclmodel1)
