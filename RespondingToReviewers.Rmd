@@ -18,8 +18,11 @@ summary(negbintwovar)
 negbintwovar1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar1)
 
+## NEW BEST MODEL 1/11/22
 negbintwovar2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI | tmax..deg.c. + MeanNDVI + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar2)
+
+negbinwith
 
 vuong(negbintwovar, twovar)
 vuong(negbintwovar2, twovar1)
@@ -38,6 +41,7 @@ library(lmtest)
 lrtest(twovar1, negbintwovar1)
 
 lrtest(negbintwovar1, twovar1)
+lrtest(negbintwovar1, hurdtwovar1)
 
 ```
 
