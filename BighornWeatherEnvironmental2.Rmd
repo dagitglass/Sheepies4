@@ -75,6 +75,8 @@ summary(bzeroinflpsclmodel1day)
 bzeroinflpsclmodel1vp <- zeroinfl(NumIndSheep ~ vp..Pa. | vp..Pa. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
 summary(bzeroinflpsclmodel1vp)
 
+
+
 # Running the model with scaled variables to see which one has the biggest effect
 
 ballenvvisit3 <- ballenvvisit2
@@ -87,6 +89,10 @@ ballenvvisit3$scaleprecip <- scale(ballenvvisit3$prcp..mm.day., center = TRUE, s
 scaletwovar <- zeroinfl(NumIndSheep ~ scaletmax + scalendvi + scaletmin | scaletmax + scalendvi + scaletmin + MtnRange, data = ballenvvisit3, dist = "poisson", link = "logit")
 summary(scaletwovar)
 pR2(scaletwovar)
+
+scaletwovarnb <- zeroinfl(NumIndSheep ~ scaletmax + scalendvi + scaletmin | scaletmax + scalendvi + scaletmin + MtnRange, data = ballenvvisit3, dist = "negbin", link = "logit")
+summary(scaletwovarnb)
+pR2(scaletwovarnb)
 
 # GLM
 bsheepglm <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. +  vp..Pa. + MeanNDVI, data = ballenvvisit2, family = "poisson")

@@ -46,6 +46,43 @@ lrtest(twovar1, negbintwovar1)
 lrtest(negbintwovar1, twovar1)
 lrtest(negbintwovar1, hurdtwovar1)
 
+
+### Checking with 6 week precip 1/14/22
+ballenvvisit4 <- ballenvvisit2
+Precip6Wk <- read.csv("C:/Users/Danielle Glass/Documents/RWorkingDirectory3/Sheepies5/6WeekTotalPrecip.csv", sep = ",", header = TRUE)
+ballenvvisitpre <- cbind(ballrangeenvvar, Precip6Wk$Week6TotalPrecip)
+names(ballenvvisitpre)[names(ballenvvisitpre) == "MountainRange"] <- "MtnRange"
+ballenvvisitpre1 <- merge(x = meanpercentbighorn2, y = ballenvvisitpre, all = TRUE)
+ballenvvisitpre2 <- ballenvvisitpre1[with(ballenvvisitpre1, order(MtnRange, Date)), ]
+ballenvvisitpre3 <- ballenvvisitpre2[complete.cases(ballenvvisitpre2), ]
+names(ballenvvisitpre3)[names(ballenvvisitpre3) == "Precip6Wk$Week6TotalPrecip"] <- "Precip6Wk"
+
+# Modeling
+library(pscl)
+
+# Model with tmax, NDVI, tmin, precip, 6Wk precip works
+prmd <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmd)
+
+# Minus precip
+prmd1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmd1)
+
+# Minus tmin
+prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmd2)
+
+# Running the model with scaled variables to see which one has the biggest effect
+
+scballpre3 <- ballenvvisitpre3
+scballpre3$scaletmax <- scale(scballpre3$tmax..deg.c., center = TRUE, scale = TRUE)
+scballpre3$scaleMeanNDVI <- scale(scballpre3$MeanNDVI, center = TRUE, scale = TRUE)
+scballpre3$scaleprecip6wk <- scale(scballpre3$Precip6Wk, center = TRUE, scale = TRUE)
+
+scaleprmd <- zeroinfl(NumIndSheep ~ scaletmax + scaleMeanNDVI + scaleprecip6wk | scaletmax + scaleMeanNDVI + scaleprecip6wk + MtnRange, data = scballpre3, dist = "negbin", link = "logit")
+summary(scaleprmd)
+pR2(scaleprmd)
+
 ```
 
 
