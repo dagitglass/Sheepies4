@@ -68,9 +68,16 @@ summary(prmd)
 prmd1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmd1)
 
-# Minus tmin
+# Minus tmin -- best model 1/14/22
 prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmd2)
+
+# Comparing against poisson model
+prmd2poi <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "poisson", link = "logit")
+summary(prmd2poi)
+
+lrtest(prmd2, prmd2poi)
+# Negative binomial is better
 
 # Running the model with scaled variables to see which one has the biggest effect
 
