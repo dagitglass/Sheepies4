@@ -14,14 +14,15 @@ balenvvisitnozero <- ballenvvisit2[ballenvvisit2$NumIndSheep != 0,]
 library(pscl)
 negbintwovar <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar)
+AIC(negbintwovar)
 
 negbintwovar1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar1)
+AIC(negbintwovar1)
 
-## NEW BEST MODEL 1/11/22
 negbintwovar2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI | tmax..deg.c. + MeanNDVI + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar2)
-
+AIC(negbintwovar2)
 
 negbintwovar2int <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmax..deg.c. * MeanNDVI | tmax..deg.c. + MeanNDVI + tmax..deg.c. * MeanNDVI + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar2int)
@@ -71,13 +72,51 @@ summary(prmd1)
 # Minus tmin -- best model 1/14/22
 prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmd2)
+AIC(prmd2)
+
+# Including interaction btwn Precip6Wk and MeanNDVI -- best model as of 1/19/22***
+prmdint <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmdint)
+AIC(prmdint)
+
+# Including interaction btwn MeanNDVI + tmax
+prmdint1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * tmax..deg.c. | tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * tmax..deg.c. + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmdint1)
+AIC(prmdint1)
+# Singular!
+
+
+
+
+
+
 
 # Comparing against poisson model
 prmd2poi <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "poisson", link = "logit")
 summary(prmd2poi)
+AIC(prmd2poi)
 
 lrtest(prmd2, prmd2poi)
 # Negative binomial is better
+
+##Checking to make sure other variables are still computationally singular
+prmds <- zeroinfl(NumIndSheep ~ srad..W.m.2. | srad..W.m.2. + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmds)
+# solar radiation computationally singular
+
+# Day length
+dyl <- zeroinfl(NumIndSheep ~ dayl..s. | dayl..s. + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(dyl)
+
+# Vapor Pressure
+vp <- zeroinfl(NumIndSheep ~ vp..Pa. | vp..Pa. + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(vp)
+
+# Selecting Models
+library(AICcmodavg)
+models <- list(prmd, prmd1, prmd2, prmds, dyl, vp)
+model.names <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'srad', 'dayl', 'vp')
+
 
 # Running the model with scaled variables to see which one has the biggest effect
 

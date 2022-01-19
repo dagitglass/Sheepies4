@@ -38,6 +38,7 @@ hist(ballenvvisit2$NumIndSheep)
 # USED THIS ONE IN PAPER 71421
 twovar1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "poisson", link = "logit")
 summary(twovar1)
+AIC(twovar1)
 
 pR2(twovar1)
 
