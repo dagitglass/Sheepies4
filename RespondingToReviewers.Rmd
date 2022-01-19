@@ -85,7 +85,17 @@ summary(prmdint1)
 AIC(prmdint1)
 # Singular!
 
+# Including interaction between tmax and Precip6Wk
+prmdint2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmdint2)
+AIC(prmdint2)
+# Not as good an AIC, NaNs produced
 
+# Interaction between tmax, ndvi, and Precip6Wk
+prmdint3 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk * MeanNDVI | tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk * MeanNDVI + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+summary(prmdint3)
+AIC(prmdint3)
+# Computationally singular
 
 
 
@@ -114,8 +124,9 @@ summary(vp)
 
 # Selecting Models
 library(AICcmodavg)
-models <- list(prmd, prmd1, prmd2, prmds, dyl, vp)
-model.names <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'srad', 'dayl', 'vp')
+models <- list(prmd, prmd1, prmd2, prmds, dyl, vp, prmdint, prmdint1, prmdint2, prmdint3)
+model.names <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'srad', 'dayl', 'vp', 'inter.prcp6.ndvi', 'inter.ndvi.tmax', 'inter.ndvi.prcp6', 'inter.prcp6.ndvi.tmax')
+aictab(cand.set = models, modnames = model.names)
 
 
 # Running the model with scaled variables to see which one has the biggest effect
