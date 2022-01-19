@@ -85,6 +85,7 @@ summary(prmdint1)
 AIC(prmdint1)
 # Singular!
 
+
 # Including interaction between tmax and Precip6Wk
 prmdint2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmdint2)
@@ -121,6 +122,7 @@ summary(dyl)
 # Vapor Pressure
 vp <- zeroinfl(NumIndSheep ~ vp..Pa. | vp..Pa. + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(vp)
+pR2(vp)
 
 # Selecting Models
 library(AICcmodavg)
