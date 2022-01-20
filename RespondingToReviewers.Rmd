@@ -147,11 +147,7 @@ library("Hmisc")
 envvarnew <- ballenvvisitpre3[, c(12:14, 16:20)]
 yik <- rcorr(as.matrix(envvarnew), type = "pearson")
 
-# Checking for correlation between variables
-# Without scaling
-library("Hmisc")
-envvar <- allenvvisit1[, c(11:13, 15:18)]
-temp <- rcorr(as.matrix(envvar), type = "pearson")
+
 
 ```
 
