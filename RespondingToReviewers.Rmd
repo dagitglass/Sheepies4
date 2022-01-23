@@ -130,6 +130,10 @@ models <- list(prmd, prmd1, prmd2, prmds, dyl, vp, prmdint, prmdint1, prmdint2, 
 model.names <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'srad', 'dayl', 'vp', 'inter.prcp6.ndvi', 'inter.ndvi.tmax', 'inter.tmax.prcp6', 'inter.prcp6.ndvi.tmax')
 aictab(cand.set = models, modnames = model.names)
 
+# Only including models that are not computationally singular
+models1 <- list(prmd, prmd1, prmd2, prmdint, prmdint2)
+models.names1 <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'inter.prcp6.ndvi', 'inter.tmax.prcp6') 
+aictab(cand.set = models1, modnames = models.names1)
 
 # Running the model with scaled variables to see which one has the biggest effect
 
