@@ -882,7 +882,8 @@ TukeyHSD(PercentVisitMtnRange)
 # Nopa-BrsS -0.349547023 -0.44686256 -0.25223148 0.0000000
 # CMPR-BrsS -0.185168686 -0.30038982 -0.06994756 0.0002885
 # CMPR-Nopa  0.164378337  0.03997543  0.28878124 0.0042406
-
+library(effectsize)
+eta_squared(PercentVisitMtnRange, partial)
 
 ## whether there is a significant difference in the number of visitations between mountain ranges ##
 names(marbindrd11)[names(marbindrd11) == "rownames(marbindrd)"] <- "Date"
