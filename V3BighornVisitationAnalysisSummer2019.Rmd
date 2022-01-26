@@ -687,6 +687,7 @@ TukeyHSD(PercentMonthMarb)
 # 7-6 0.06666667 -0.04088161 0.1742149 0.3517407
 # 8-6 0.09032258 -0.03693026 0.2175754 0.2394620
 # 8-7 0.02365591 -0.11238310 0.1596949 0.9650476
+eta_squared(PercentMonthMarb, partial = FALSE)
 
 # South Bristols
 library(lubridate)
@@ -716,6 +717,7 @@ TukeyHSD(PercentMonthsbrs)
 # 7-6 0.02789280 -0.046335899 0.1021215 0.6400796
 # 8-6 0.12657005  0.026656877 0.2264832 0.0095915
 # 8-7 0.09867725  0.001504951 0.1958495 0.0457927
+eta_squared(PercentMonthsbrs, partial = FALSE)
 
 # ANOVA on actual numbers and percentages yields the same exact result.
 
@@ -735,6 +737,7 @@ TukeyHSD(PercentMonthNopa)
 # 7-6 0.05555556 -0.0339505 0.1450616 0.2945005
 # 8-6 0.41666667  0.2946172 0.5387161 0.0000000
 # 8-7 0.36111111  0.2497894 0.4724329 0.0000000
+eta_squared(PercentMonthNopa, partial = FALSE)
 
 # Castle Piutes
 cmprindsheepvisitperday2$Month <- month(cmprindsheepvisitperday2$Date)
@@ -755,6 +758,7 @@ TukeyHSD(PercentMonthCMPR)
 # 7-6 0.18750000 -0.273172651 0.6481727 0.6675089
 # 8-6 0.20833333 -0.203704812 0.6203715 0.5018073
 # 8-7 0.02083333 -0.439839317 0.4815060 0.9992381
+eta_squared(PercentMonthCMPR, partial = FALSE)
 
 
 par(mfrow = c(2,2))
@@ -787,6 +791,7 @@ TukeyHSD(MeanVisitsMonthMarb)
 # 7-6 0.09338382 -0.08339269 0.2701603 0.4984561
 # 8-6 0.11575941 -0.08251927 0.3140381 0.4110441
 # 8-7 0.02237559 -0.18823008 0.2329813 0.9918760
+eta_squared(MeanVisitsMonthMarb, partial = FALSE)
 
 # South Bristols
 sbrsrd11$Month <- month(sbrsrd11$Date)
@@ -802,6 +807,7 @@ TukeyHSD(MeanVisitsMonthSbrs)
 # 7-6 0.1035732 -0.05770139 0.2648478 0.2784047
 # 8-6 0.3200483  0.11436138 0.5257352 0.0011822
 # 8-7 0.2164751  0.01821764 0.4147325 0.0291954
+eta_squared(MeanVisitsMonthSbrs, partial = FALSE)
 
 #Nopah
 nopard11$Month <- month(nopard11$Date)
@@ -817,6 +823,7 @@ TukeyHSD(MeanVisitsMonthNopa)
 # 7-6 0.0500000 -0.07666386 0.1766639 0.6040199
 # 8-6 0.5261905  0.35972154 0.6926594 0.0000000
 # 8-7 0.4761905  0.32342811 0.6289528 0.0000000
+eta_squared(MeanVisitsMonthNopa, partial = FALSE)
 
 #Castle Piutes
 cmprrd11$Month <- month(cmprrd11$Date)
@@ -835,6 +842,7 @@ TukeyHSD(MeanVisitsMonthCmpr)
 # 7-6 0.1458333 -0.35970223 0.6513689 0.8484271
 # 8-6 0.2083333 -0.24383142 0.6604981 0.5767064
 # 8-7 0.0625000 -0.44303557 0.5680356 0.9851190
+eta_squared(MeanVisitsMonthCmpr, partial = FALSE)
 
 # If not working, change visits to 'Meannumvisits' for Marbles
 par(mfrow = c(2,2))
@@ -883,7 +891,7 @@ TukeyHSD(PercentVisitMtnRange)
 # CMPR-BrsS -0.185168686 -0.30038982 -0.06994756 0.0002885
 # CMPR-Nopa  0.164378337  0.03997543  0.28878124 0.0042406
 library(effectsize)
-eta_squared(PercentVisitMtnRange, partial)
+eta_squared(PercentVisitMtnRange, partial = FALSE)
 
 ## whether there is a significant difference in the number of visitations between mountain ranges ##
 names(marbindrd11)[names(marbindrd11) == "rownames(marbindrd)"] <- "Date"
@@ -913,7 +921,7 @@ TukeyHSD(MeanVisitationMtnRange)
 # Nopa-BrsS -0.45744792 -0.5914880 -0.32340783 0.0000000
 # CMPR-BrsS -0.30983922 -0.4715145 -0.14816390 0.0000096
 # CMPR-Nopa  0.14760870 -0.0264174  0.32163479 0.1271620
-
+eta_squared(MeanVisitationMtnRange, partial = FALSE)
 ```
 Next, I did a more general examination of the spread in the number of individual visits between individual sheep. In doing this, I was not trying to examine the difference in number of visits by individual sheep between mountain ranges, but rather what was the general spread of the number of visits within each mountain range (these spreads are therefore not comparable because I did not account for the different study time periods within the different ranges). In the Marbles, the spread of the data was relatively small (mean of 25.41, 1st quartile at 22, 3rd quartile at 30). In the South Bristols, the spread was larger (mean of 36.48, 1st quartile of 23, 3rd quartile of 54).
 

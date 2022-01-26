@@ -1508,6 +1508,8 @@ TukeyHSD(closedistmarb)
 # 7-6 -3.7718695 -5.364838 -2.178901 0.0000000
 # 8-6 -3.1235886 -5.082401 -1.164776 0.0002479
 # 8-7  0.6482809 -1.363010  2.659572 0.8410124
+eta_squared(closedistmarb, partial = FALSE)
+
 # South Bristols
 boxplot(Closedist ~ Month, data = allgpsbrs)
 closedistbrs <- aov(sqrt(Closedist) ~ Month, data = allgpsbrs)
@@ -1519,6 +1521,8 @@ TukeyHSD(closedistbrs)
 # 7-6  -7.327503  -9.132527  -5.522479     0
 # 8-6 -17.665846 -20.001509 -15.330183     0
 # 8-7 -10.338343 -12.639262  -8.037423     0
+eta_squared(closedistbrs, partial = FALSE)
+
 # Nopah
 boxplot(Closedist ~ Month, data = allgpsnopa)
 closedistnopa <- aov(sqrt(Closedist) ~ Month, data = allgpsnopa)
@@ -1530,6 +1534,8 @@ TukeyHSD(closedistnopa)
 # 7-6  -5.371773  -7.973494  -2.770052 4.1e-06
 # 8-6 -36.113580 -39.425255 -32.801905 0.0e+00
 # 8-7 -30.741807 -33.538857 -27.944757 0.0e+00
+eta_squared(closedistnopa, partial = FALSE)
+
 # Castle Piute
 boxplot(Closedist ~ Month, data = allgpscmpr)
 closedistcmpr <- aov(sqrt(Closedist) ~ Month, data = allgpscmpr)
@@ -1541,6 +1547,7 @@ TukeyHSD(closedistcmpr)
 # 7-6  3.679604  1.951014 5.408194 0.0000021
 # 8-6  3.388210  2.140640 4.635779 0.0000000
 # 8-7 -0.291394 -1.855100 1.272312 0.8999157
+eta_squared(closedistcmpr, partial = FALSE)
 
 par(mfrow = c(2,2))
 boxplot(sqrt(Closedist) ~ Month, data = allgpsmarb, ylab = "Distance to the Nearest Water Source (m)", main = "Marbles")
