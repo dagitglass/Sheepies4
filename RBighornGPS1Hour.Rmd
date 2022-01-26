@@ -441,6 +441,7 @@ summary(day1hrmovevizscal)
 # Removing scalepositangledegree
 day1hrmovevizscal1 <- glmer(beforevisit ~ scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day1hr, family = binomial(link = "logit"))
 summary(day1hrmovevizscal1)
+confint(day1hrmovevizscal1)
 
 mean(day1hr$Closedist[day1hr$beforevisit == TRUE])
 #211.4435

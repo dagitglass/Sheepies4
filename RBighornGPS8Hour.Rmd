@@ -431,6 +431,7 @@ summary(daybmovevizscal1)
 # Removing scalepositangledegree
 daybmovevizscal2 <- glmer(beforevisit ~ scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day8hr, family = binomial(link = "logit"))
 summary(daybmovevizscal2)
+confint(daybmovevizscal2)
  
 ```
 Examining the 4 movement variables. If each variable is different by mountain range, individual, or month. EVERYTHING BELOW THIS HAS NOT BEEN EXAMINED FOR 8 HR FIX RATE. STILL SET TO 4 HR FIX RATE DATAFRAME

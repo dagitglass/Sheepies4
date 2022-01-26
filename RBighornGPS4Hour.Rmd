@@ -422,6 +422,8 @@ summary(day4hrmovevizscal)
 # Removing scalepositangledegree
 day4hrmovevizscal1 <- glmer(beforevisit ~ scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day4hr, family = binomial(link = "logit"))
 summary(day4hrmovevizscal1)
+# https://stackoverflow.com/questions/11072544/how-to-get-coefficients-and-their-confidence-intervals-in-mixed-effects-models
+confint(day4hrmovevizscal1)
 
 
 # Looking at a glm model because why not
