@@ -438,10 +438,12 @@ dayall4mtndistwater2$Min <- as.numeric(format(dayall4mtndistwater2$DateTimeLocal
 day1hr <- dayall4mtndistwater2[(((dayall4mtndistwater2$Hour == 4) & (dayall4mtndistwater2$Min == 59)) | ((dayall4mtndistwater2$Hour == 20) & ((dayall4mtndistwater2$Min == 0) | (dayall4mtndistwater2$Min == 1) | (dayall4mtndistwater2$Min == 2) | (dayall4mtndistwater2$Min == 3))) | (dayall4mtndistwater2$Hour == 5) | (dayall4mtndistwater2$Hour == 6) | (dayall4mtndistwater2$Hour == 7) | (dayall4mtndistwater2$Hour == 8) | (dayall4mtndistwater2$Hour == 9) | (dayall4mtndistwater2$Hour == 10) | (dayall4mtndistwater2$Hour == 11) | (dayall4mtndistwater2$Hour == 12) | (dayall4mtndistwater2$Hour == 13) | (dayall4mtndistwater2$Hour == 14) | (dayall4mtndistwater2$Hour == 15) | (dayall4mtndistwater2$Hour == 16) | (dayall4mtndistwater2$Hour == 17) | (dayall4mtndistwater2$Hour == 18) | (dayall4mtndistwater2$Hour == 19)), ]
 day1hrmovevizscal <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day1hr, family = binomial(link = "logit"))
 summary(day1hrmovevizscal)
+AIC(day1hrmovevizscal)
 # Removing scalepositangledegree
 day1hrmovevizscal1 <- glmer(beforevisit ~ scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day1hr, family = binomial(link = "logit"))
 summary(day1hrmovevizscal1)
 confint(day1hrmovevizscal1)
+AIC(day1hrmovevizscal1)
 
 mean(day1hr$Closedist[day1hr$beforevisit == TRUE])
 #211.4435

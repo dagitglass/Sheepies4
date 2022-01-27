@@ -425,13 +425,20 @@ dayeightall4mtndistwater2$Min <- as.numeric(format(dayeightall4mtndistwater2$Dat
 day8hr <- dayeightall4mtndistwater2[((dayeightall4mtndistwater2$Hour == 7) | (dayeightall4mtndistwater2$Hour == 8) | (dayeightall4mtndistwater2$Hour == 16)), ]
 daybmovevizscal <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day8hr, family = binomial(link = "logit"))
 summary(daybmovevizscal)
+AIC(daybmovevizscal)
 # Removing scalestplengthtopo
 daybmovevizscal1 <- glmer(beforevisit ~ scalepositangledegree + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day8hr, family = binomial(link = "logit"))
 summary(daybmovevizscal1)
+AIC(daybmovevizscal1)
 # Removing scalepositangledegree
 daybmovevizscal2 <- glmer(beforevisit ~ scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day8hr, family = binomial(link = "logit"))
 summary(daybmovevizscal2)
 confint(daybmovevizscal2)
+AIC(daybmovevizscal2)
+
+daybmovevizscalint <- glmer(beforevisit ~ scaleClosedist + scaleangle2waterdegree + scaleClosedist * scaleangle2waterdegree + (1|IDs), data = day8hr, family = binomial(link = "logit"))
+summary(daybmovevizscalint)
+# higher AIC than model above, not as good.
  
 ```
 Examining the 4 movement variables. If each variable is different by mountain range, individual, or month. EVERYTHING BELOW THIS HAS NOT BEEN EXAMINED FOR 8 HR FIX RATE. STILL SET TO 4 HR FIX RATE DATAFRAME
