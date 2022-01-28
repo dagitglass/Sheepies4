@@ -1663,10 +1663,27 @@ par(mar=c(4,5,3.9,1))
 par(mfrow = c(2,2))
 #title = "Percent of Individual Sheep that Visited Water by Month")
 # Previous ylab: "% of Individual Sheep"
-boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Marb", ], main = "Marbles (n = 31*)", ylab = "Percent", ylim = c(0, 100))
-boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "BrsS", ], main = "South Bristols (n = 24)", ylab = "Percent", ylim = c(0, 100))
-boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Nopa", ], main = "Nopah (n = 6)", ylab = "Percent", ylim = c(0, 100))
-boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "CMPR", ], main = "Castle Piutes (n = 4)", ylab = "Percent", ylim = c(0, 100))
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Marb", ], main = substitute(paste('Marbles (', italic(n), ' = 31*)')), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
+box(bty="l")
+axis(2)
+axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "BrsS", ], main = substitute(paste('South Bristols (', italic(n), ' = 24)')), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
+box(bty="l")
+axis(2)
+axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Nopa", ], main = substitute(paste('Nopah (', italic(n), ' = 6)')), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
+box(bty="l")
+axis(2)
+axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+
+
+boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "CMPR", ], main = substitute(paste('Castle Piutes(', italic(n), ' = 4)')), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
+box(bty="l")
+axis(2)
+axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+        
 #title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
 dev.off()
 
