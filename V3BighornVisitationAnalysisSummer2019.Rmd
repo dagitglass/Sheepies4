@@ -1281,7 +1281,10 @@ table(allrangetime1$Hour)
 chisq.test(x = c(7, 4, 6, 4, 3, 40, 103, 150, 166, 236, 184, 186, 143, 113, 88, 50, 43, 44, 32, 37, 10, 6, 6, 6), p = c(1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24, 1/24))
 # X-squared = 1736.3, df = 23, p-value < 2.2e-16
 percentvisitbyhour <- c(7/1667, 4/1667, 6/1667, 4/1667, 3/1667, 40/1667, 103/1667, 150/1667, 166/1667, 236/1667, 184/1667, 186/1667, 143/1667, 113/1667, 88/1667, 50/1667, 43/1667, 44/1667, 32/1667, 37/1667, 10/1667, 6/1667, 6/1667, 6/1667)
-plot(percentvisitbyhour, type = "o", ylab = "Percent of Bighorn Visits by Hour", xlab = "Hour", main = "Percent of Bighorn Visits by Time of Day")
+plot(percentvisitbyhour, type = "o", ylab = "Percent of Bighorn Visits by Hour", xlab = "Hour", main = "Percent of Bighorn Visits by Time of Day", axes = F)
+box(bty="l")
+axis(2)
+axis(1)
 
 par(mfrow=c(2,1), mar=c(1,1,1,1))
 plot(percentvisitbyhour, type = "o", ylab = "Percent of bighorn visits by hour", xlab = "Hour")

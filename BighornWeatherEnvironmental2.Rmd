@@ -113,7 +113,9 @@ library(plyr)
 ballenvvisit3 <- ballenvvisit2
 ballenvvisit3$MountainRange <- revalue(ballenvvisit3$MtnRange, c("Marb" = "Marbles", "BrsS" = "South Bristols", "Nopa" = "Nopah", "CMPR" = "Castle Piutes"))
 library(ggplot2)
-ggplot(ballenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range")
+# Figure 3
+ggplot(ballenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range") + theme(axis.line = element_line(colour = "black")) + 
+  theme(panel.background = element_rect(fill = "white"))
 
 ggplot(allenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain range")
 
