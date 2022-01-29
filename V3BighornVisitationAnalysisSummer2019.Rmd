@@ -1338,13 +1338,6 @@ sbrsrangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "BrsS",]
 cmprrangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "CMPR",]
 noparangetime1 <- allrangetime1[allrangetime1$GO_RangeCode == "Nopa",]
 
-# Example one
-boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Marb", ], main = (substitute(paste(bold('Marbles ('), bolditalic(n), bold(' = 31*)')))), ylab = "VTW/desert bighorn", ylim = c(0, 1.3), axes = F, col = "white")
-box(bty="l")
-axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
-# Example
-
 
 # Plotting visit duration by month and range figure 7
 # Marb = 646 visits, Sbrs = 886 visits, Nopah = 24 visits, CMPR = 24 visits
