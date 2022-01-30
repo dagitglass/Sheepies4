@@ -151,8 +151,44 @@ library("Hmisc")
 envvarnew <- ballenvvisitpre3[, c(12:14, 16:20)]
 yik <- rcorr(as.matrix(envvarnew), type = "pearson")
 
+## Adding in Precip6 to the distance to water ~ environmental variables analysis
+# need to switch from xallenvvisit1 to ballenvvisitpre3
+
+library(dplyr)
+library(rsq)
+ballenvvisitpre4 <- ballenvvisitpre3
+names(ballenvvisitpre4)[names(ballenvvisitpre4) == "MtnRange"] <- "MountainRange"
+xbcombined <- sort(union(levels(allcdi2$MountainRange), levels(ballenvvisitpre4$MountainRange)))
+xmovenv <- left_join(mutate(allcdi2, MountainRange = factor(MountainRange, levels = xbcombined)), mutate(ballenvvisitpre4[, c("Date", "MountainRange", "dayl..s.", "prcp..mm.day.", "srad..W.m.2.", "tmax..deg.c.", "tmin..deg.c.", "vp..Pa.", "MeanNDVI", "Precip6Wk")], MountainRange = factor(MountainRange, levels = xbcombined)))
+
+xdistenvnew <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI + Precip6Wk, data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew)
+# R squared
+with(summary(xdistenvnew), 1 - deviance/null.deviance)
+
+# Minus vp
+xdistenvnew1 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI + Precip6Wk, data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew1)
+# R squared
+with(summary(xdistenvnew1), 1 - deviance/null.deviance)
+
+# Minus NDVI ** Similar AIC so this is the best one
+xdistenvnew2 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk, data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew2)
+# R squared
+with(summary(xdistenvnew2), 1 - deviance/null.deviance)
 
 
+
+
+bovenv <- movenv
+bovenv$scaledayl <- scale(bovenv$dayl..s., center = TRUE, scale = TRUE)
+bovenv$scaleprecip <- scale(bovenv$prcp..mm.day., center = TRUE, scale = TRUE)
+bovenv$scalesrad <- scale(bovenv$srad..W.m.2., center = TRUE, scale = TRUE)
+bovenv$scaletmax <- scale(bovenv$tmax..deg.c., center = TRUE, scale = TRUE)
+bovenv$scaletmin <- scale(bovenv$tmin..deg.c., center = TRUE, scale = TRUE)
+bovenv$scalevp <- scale(bovenv$vp..Pa., center = TRUE, scale = TRUE)
+bovenv$scalendvi <- scale(bovenv$MeanNDVI, center = TRUE, scale = TRUE)
 ```
 
 

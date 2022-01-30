@@ -749,6 +749,7 @@ with(summary(bdistenvnew), 1 - deviance/null.deviance)
 bdistenvnew1 <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scalendvi, data = bovenv, na.action = na.exclude)
 summary(bdistenvnew1)
 confint(bdistenvnew1)
+# confidence intervals are understandably different than in non-scaled version
 
 # OLD WAY OF DOING THIS:
 library(tidyr)
