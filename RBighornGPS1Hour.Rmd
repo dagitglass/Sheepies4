@@ -699,7 +699,7 @@ names(nopacdi2)[names(nopacdi2) == "rowMeans.nopacdi..na.rm...TRUE."] <- "MeanCl
 nopacdi2$MountainRange <- "Nopa"
 # Combining them together
 allcdi2 <- rbind(marbcdi2, sbrscdi2, cmprdi2, nopacdi2)
-allcdi2$Date <- as.Date(allcdi2$Date, format = "%Y-%m-%d")
+allcdi2$Date <- as.Date(allcdi2$Date, format = "%m/%d/%Y")
 allcdi2$MountainRange <- as.factor(allcdi2$MountainRange)
 # Adding the Environmental Variables
 library(dplyr)
@@ -711,17 +711,44 @@ bcombined <- sort(union(levels(allcdi2$MountainRange), levels(dallenvvisit1$Moun
 movenv <- left_join(mutate(allcdi2, MountainRange = factor(MountainRange, levels = bcombined)), mutate(dallenvvisit1[, c("Date", "MountainRange", "dayl..s.", "prcp..mm.day.", "srad..W.m.2.", "tmax..deg.c.", "tmin..deg.c.", "vp..Pa.", "MeanNDVI")], MountainRange = factor(MountainRange, levels = bcombined)))
 distenvnew <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = movenv, na.action = na.exclude)
 summary(distenvnew)
-plot(distenvnew)
+# R squared
+with(summary(distenvnew), 1 - deviance/null.deviance)
+
 # Minus vapor pressure
 distenvnew1 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI, data = movenv, na.action = na.exclude)
 summary(distenvnew1)
+AIC(distenvnew1)
+#confint(
+
 # Minus NDVI THIS IS USED IN PAPER
 distenvnew2 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c., data = movenv, na.action = na.exclude)
 summary(distenvnew2)
 plot(distenvnew2)
+AIC(distenvnew2)
+
 # looks to be some heterskedasticity..., but using it for now.
 rsq(distenvnew2, adj = FALSE)
 with(summary(distenvnew2), 1 - deviance/null.deviance)
+
+## 1/29/22 testing if results change when scaled
+#allenvvisit1$scaledayl <- scale(allenvvisit1$dayl..s., center = TRUE, scale = TRUE)
+
+bovenv <- movenv
+bovenv$scaledayl <- scale(bovenv$dayl..s., center = TRUE, scale = TRUE)
+bovenv$scaleprecip <- scale(bovenv$prcp..mm.day., center = TRUE, scale = TRUE)
+bovenv$scalesrad <- scale(bovenv$srad..W.m.2., center = TRUE, scale = TRUE)
+bovenv$scaletmax <- scale(bovenv$tmax..deg.c., center = TRUE, scale = TRUE)
+bovenv$scaletmin <- scale(bovenv$tmin..deg.c., center = TRUE, scale = TRUE)
+bovenv$scalevp <- scale(bovenv$vp..Pa., center = TRUE, scale = TRUE)
+bovenv$scalendvi <- scale(bovenv$MeanNDVI, center = TRUE, scale = TRUE)
+
+bdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax +  scalevp + scalendvi, data = bovenv, na.action = na.exclude)
+summary(bdistenvnew)
+with(summary(bdistenvnew), 1 - deviance/null.deviance)
+## So if you scale it the R squared and the AIC are the same...
+bdistenvnew1 <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scalendvi, data = bovenv, na.action = na.exclude)
+summary(bdistenvnew1)
+confint(bdistenvnew1)
 
 # OLD WAY OF DOING THIS:
 library(tidyr)
