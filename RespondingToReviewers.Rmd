@@ -64,20 +64,24 @@ library(pscl)
 # Model with tmax, NDVI, tmin, precip, 6Wk precip works
 prmd <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmd)
+BIC(prmd)
 
 # Minus precip
 prmd1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmd1)
+BIC(prmd1)
 
 # Minus tmin -- best model 1/14/22
 prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmd2)
 AIC(prmd2)
+BIC(prmd2)
 
 # Including interaction btwn Precip6Wk and MeanNDVI -- best model as of 1/19/22***
 prmdint <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmdint)
 AIC(prmdint)
+BIC(prmdint)
 
 # Including interaction btwn MeanNDVI + tmax
 prmdint1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * tmax..deg.c. | tmax..deg.c. + MeanNDVI + Precip6Wk + MeanNDVI * tmax..deg.c. + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
@@ -90,6 +94,7 @@ AIC(prmdint1)
 prmdint2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + tmax..deg.c. * Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 summary(prmdint2)
 AIC(prmdint2)
+BIC(prmdint2)
 # Not as good an AIC, NaNs produced
 
 # Interaction between tmax, ndvi, and Precip6Wk

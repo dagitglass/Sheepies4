@@ -420,10 +420,12 @@ day4hr <- dayfall4mtndistwater2[(((dayfall4mtndistwater2$Hour == 4) & (dayfall4m
 day4hrmovevizscal <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day4hr, family = binomial(link = "logit"))
 summary(day4hrmovevizscal)
 AIC(day4hrmovevizscal)
+BIC(day4hrmovevizscal)
 # Removing scalepositangledegree
 day4hrmovevizscal1 <- glmer(beforevisit ~ scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day4hr, family = binomial(link = "logit"))
 summary(day4hrmovevizscal1)
 AIC(day4hrmovevizscal1)
+BIC(day4hrmovevizscal1)
 # https://stackoverflow.com/questions/11072544/how-to-get-coefficients-and-their-confidence-intervals-in-mixed-effects-models
 confint(day4hrmovevizscal1)
 

@@ -439,12 +439,13 @@ day1hr <- dayall4mtndistwater2[(((dayall4mtndistwater2$Hour == 4) & (dayall4mtnd
 day1hrmovevizscal <- glmer(beforevisit ~ scalepositangledegree + scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day1hr, family = binomial(link = "logit"))
 summary(day1hrmovevizscal)
 AIC(day1hrmovevizscal)
+BIC(day1hrmovevizscal)
 # Removing scalepositangledegree
 day1hrmovevizscal1 <- glmer(beforevisit ~ scalestplengthtopo + scaleClosedist + scaleangle2waterdegree + (1|IDs), data = day1hr, family = binomial(link = "logit"))
 summary(day1hrmovevizscal1)
 confint(day1hrmovevizscal1)
 AIC(day1hrmovevizscal1)
-
+BIC(day1hrmovevizscal1)
 mean(day1hr$Closedist[day1hr$beforevisit == TRUE])
 #211.4435
 mean(day1hr$Closedist[day1hr$beforevisit == FALSE])
@@ -711,6 +712,7 @@ bcombined <- sort(union(levels(allcdi2$MountainRange), levels(dallenvvisit1$Moun
 movenv <- left_join(mutate(allcdi2, MountainRange = factor(MountainRange, levels = bcombined)), mutate(dallenvvisit1[, c("Date", "MountainRange", "dayl..s.", "prcp..mm.day.", "srad..W.m.2.", "tmax..deg.c.", "tmin..deg.c.", "vp..Pa.", "MeanNDVI")], MountainRange = factor(MountainRange, levels = bcombined)))
 distenvnew <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = movenv, na.action = na.exclude)
 summary(distenvnew)
+BIC(distenvnew)
 # R squared
 with(summary(distenvnew), 1 - deviance/null.deviance)
 
@@ -718,6 +720,7 @@ with(summary(distenvnew), 1 - deviance/null.deviance)
 distenvnew1 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI, data = movenv, na.action = na.exclude)
 summary(distenvnew1)
 AIC(distenvnew1)
+BIC(distenvnew1)
 #confint(
 
 # Minus NDVI THIS IS USED IN PAPER
@@ -725,6 +728,7 @@ distenvnew2 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax
 summary(distenvnew2)
 plot(distenvnew2)
 AIC(distenvnew2)
+BIC(distenvnew2)
 
 # looks to be some heterskedasticity..., but using it for now.
 rsq(distenvnew2, adj = FALSE)
