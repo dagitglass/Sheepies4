@@ -165,6 +165,7 @@ ballenvvisitpre4 <- ballenvvisitpre3
 names(ballenvvisitpre4)[names(ballenvvisitpre4) == "MtnRange"] <- "MountainRange"
 xbcombined <- sort(union(levels(allcdi2$MountainRange), levels(ballenvvisitpre4$MountainRange)))
 xmovenv <- left_join(mutate(allcdi2, MountainRange = factor(MountainRange, levels = xbcombined)), mutate(ballenvvisitpre4[, c("Date", "MountainRange", "dayl..s.", "prcp..mm.day.", "srad..W.m.2.", "tmax..deg.c.", "tmin..deg.c.", "vp..Pa.", "MeanNDVI", "Precip6Wk")], MountainRange = factor(MountainRange, levels = xbcombined)))
+xmovenv$MeanClosedist[is.nan(xmovenv$MeanClosedist)] <- NA
 
 xdistenvnew <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI + Precip6Wk, data = xmovenv, na.action = na.exclude)
 summary(xdistenvnew)
@@ -180,8 +181,16 @@ with(summary(xdistenvnew1), 1 - deviance/null.deviance)
 # Minus NDVI ** Similar AIC so this is the best one 1/29/22***
 xdistenvnew2 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk, data = xmovenv, na.action = na.exclude)
 summary(xdistenvnew2)
+
+#xdistenvnew2 <- glm(MeanClosedist ~ tmax..deg.c., data = xmovenv)
+
 # R squared
 with(summary(xdistenvnew2), 1 - deviance/null.deviance)
+plot(fitted(xdistenvnew2), resid(xdistenvnew2))
+qqnorm(resid(xdistenvnew2))
+qqline(resid(xdistenvnew2))
+library(car)
+qqPlot(resid(xdistenvnew2))
 
 # Scaling to create beta coefficients/compare variable importance
 jovenv <- xmovenv
@@ -194,7 +203,7 @@ jovenv$scalevp <- scale(jovenv$vp..Pa., center = TRUE, scale = TRUE)
 jovenv$scalendvi <- scale(jovenv$MeanNDVI, center = TRUE, scale = TRUE)
 jovenv$scale6precip <- scale(jovenv$Precip6Wk, center = TRUE, scale = TRUE)
 
-jdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scale6precip, data = jovenv, na.action = na.exclude)
+jdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scalendvi + scale6precip, data = jovenv, na.action = na.exclude)
 summary(jdistenvnew)
 with(summary(jdistenvnew), 1 - deviance/null.deviance)
 confint(jdistenvnew)
