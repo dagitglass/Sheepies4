@@ -74,7 +74,11 @@ summary(prmd1)
 BIC(prmd1)
 
 # Minus tmin -- best model 1/14/22
-prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+marbv3 <- ballenvvisitpre3[ballenvvisitpre3$MtnRange == "Marb", ]
+cmprv3 <- ballenvvisitpre3[ballenvvisitpre3$MtnRange == "CMPR", ]
+
+prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk, data = cmprv3, dist = "negbin", link = "logit")
+# + MtnRange
 summary(prmd2)
 AIC(prmd2)
 BIC(prmd2)
@@ -167,16 +171,32 @@ jball3$scalevp <- scale(jball3$vp..Pa., center = TRUE, scale = TRUE)
 jball3$scalendvi <- scale(jball3$MeanNDVI, center = TRUE, scale = TRUE)
 jball3$scale6wkprecip <- scale(jball3$Precip6Wk, center = TRUE, scale = TRUE)
 
-##adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random = ~ 1 | MtnRange, data = ballenvvisitpre3, family = zi.negative.binomial(), zi_fixed = ~ tmax..deg.c. + MeanNDVI + Precip6Wk)
+marbv3 <- ballenvvisitpre3[ballenvvisitpre3$MtnRange == "Marb", ]
+
+adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, data = marbv3, family = zi.negative.binomial(), zi_fixed = ~ tmax..deg.c. + MeanNDVI + Precip6Wk)
+# , random = ~ 1 | MtnRange
+
+adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random = ~ 1 | MtnRange, data = ballenvvisitpre3, family = zi.negative.binomial(), zi_fixed = ~ tmax..deg.c. + MeanNDVI + Precip6Wk)
 
 adprmd2 <- mixed_model(NumIndSheep ~ scaletmax + scalendvi + scale6wkprecip, random = ~ 1 | MtnRange, data = jball3, family = zi.negative.binomial(), zi_fixed = ~ scaletmax + scalendvi + scale6wkprecip, control = 'iter_EM = 0')
 
+mtnrange3<- ballenvvisitpre3[ballenvvisitpre3$MtnRange == "Marb" | ballenvvisitpre3$MtnRange == "SBrs" | ballenvvisitpre3$MtnRange == "Nopa", ]
+
 library(glmmTMB)
-adprmd2 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange), zi = ~tmax..deg.c. + MeanNDVI + Precip6Wk, family = nbinom2, data = ballenvvisitpre3)
+#(1|MtnRange)
+adprmd2 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange), zi = ~tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange), family = nbinom2, data = mtnrange3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+
+summary(adprmd2)
+
+# zi = ~tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange)
 
 adprmd2 <- glmmTMB(NumIndSheep ~ scaletmax + scalendvi + scale6wkprecip + (1|MtnRange), zi = ~scaletmax + scalendvi + scale6wkprecip, family = nbinom2, data = jball3)
 
 adprmd2 <- glmmTMB(NumIndSheep ~ scaletmax  + (1|MtnRange), zi = ~scaletmax , family = nbinom2, data = jball3)
+m1B <- update(adprmd2, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(m1B)
+
+adprmd2 <- glmmTMB(NumIndSheep ~ tmax..deg.c.  + (1|MtnRange), zi = ~tmax..deg.c. , family = nbinom2, data = jball3)
 m1B <- update(adprmd2, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(m1B)
 
