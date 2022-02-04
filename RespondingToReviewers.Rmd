@@ -15,6 +15,8 @@ library(pscl)
 negbintwovar <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar)
 AIC(negbintwovar)
+BIC(negbintwovar)
+length(coefficients(negbintwovar))
 
 negbintwovar1 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. | tmax..deg.c. + MeanNDVI + tmin..deg.c. + MtnRange, data = ballenvvisit2, dist = "negbin", link = "logit")
 summary(negbintwovar1)
@@ -134,11 +136,13 @@ library(AICcmodavg)
 models <- list(prmd, prmd1, prmd2, prmds, dyl, vp, prmdint, prmdint1, prmdint2, prmdint3)
 model.names <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'srad', 'dayl', 'vp', 'inter.prcp6.ndvi', 'inter.ndvi.tmax', 'inter.tmax.prcp6', 'inter.prcp6.ndvi.tmax')
 aictab(cand.set = models, modnames = model.names)
+bictab(cand.set = models, modnames = model.names)
 
 # Only including models that are not computationally singular
 models1 <- list(prmd, prmd1, prmd2, prmdint, prmdint2)
 models.names1 <- c('tmax.ndvi.tmin.precip.precip6.model', 'tmax.ndvi.tmin.precip6.model', 'tmax.ndvi.precip6.model', 'inter.prcp6.ndvi', 'inter.tmax.prcp6') 
 aictab(cand.set = models1, modnames = models.names1)
+bictab(cand.set = models1, modnames = models.names1)
 
 # Running the model with scaled variables to see which one has the biggest effect
 
@@ -150,6 +154,13 @@ scballpre3$scaleprecip6wk <- scale(scballpre3$Precip6Wk, center = TRUE, scale = 
 scaleprmd <- zeroinfl(NumIndSheep ~ scaletmax + scaleMeanNDVI + scaleprecip6wk | scaletmax + scaleMeanNDVI + scaleprecip6wk + MtnRange, data = scballpre3, dist = "negbin", link = "logit")
 summary(scaleprmd)
 pR2(scaleprmd)
+
+## Double-Checking with GLMM adaptive
+library(GLMMadaptive)
+adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random = ~ 1 | MtnRange, data = ballenvvisitpre3, family = zi.negative.binomial(), zi_fixed = ~ tmax..deg.c. + MeanNDVI + Precip6Wk)
+
+prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+
 
 ## Correlation between environmental variables including Precip6
 library("Hmisc")
