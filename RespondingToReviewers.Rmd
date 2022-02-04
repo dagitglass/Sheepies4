@@ -167,22 +167,44 @@ xbcombined <- sort(union(levels(allcdi2$MountainRange), levels(ballenvvisitpre4$
 xmovenv <- left_join(mutate(allcdi2, MountainRange = factor(MountainRange, levels = xbcombined)), mutate(ballenvvisitpre4[, c("Date", "MountainRange", "dayl..s.", "prcp..mm.day.", "srad..W.m.2.", "tmax..deg.c.", "tmin..deg.c.", "vp..Pa.", "MeanNDVI", "Precip6Wk")], MountainRange = factor(MountainRange, levels = xbcombined)))
 xmovenv$MeanClosedist[is.nan(xmovenv$MeanClosedist)] <- NA
 
-xdistenvnew <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI + Precip6Wk, data = xmovenv, na.action = na.exclude)
+library(pscl)
+xdistenvnew <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. +  vp..Pa. + MeanNDVI + Precip6Wk + prcp..mm.day., data = xmovenv, na.action = na.exclude)
 summary(xdistenvnew)
 # R squared
 with(summary(xdistenvnew), 1 - deviance/null.deviance)
+BIC(xdistenvnew)
 
 # Minus vp
-xdistenvnew1 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI + Precip6Wk, data = xmovenv, na.action = na.exclude)
+xdistenvnew1 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI + Precip6Wk + prcp..mm.day., data = xmovenv, na.action = na.exclude)
 summary(xdistenvnew1)
 # R squared
 with(summary(xdistenvnew1), 1 - deviance/null.deviance)
+BIC(xdistenvnew1)
+
+# Minus prcp
+xdistenvnew2 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + MeanNDVI + Precip6Wk, data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew2)
+# R squared
+with(summary(xdistenvnew2), 1 - deviance/null.deviance)
+BIC(xdistenvnew2)
 
 # Minus NDVI ** Similar AIC so this is the best one 1/29/22***
-xdistenvnew2 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk, data = xmovenv, na.action = na.exclude)
-summary(xdistenvnew2)
+xdistenvnew3 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk, data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew3)
+BIC(xdistenvnew3)
+# Higher BIC than xdistenvnew1
+
+xdistenvnew4 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk + MeanNDVI * Precip6Wk, data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew4)
+BIC(xdistenvnew4)
+
 
 #xdistenvnew2 <- glm(MeanClosedist ~ tmax..deg.c., data = xmovenv)
+
+# Checking out distance to water by month
+library(lubridate)
+xmovenv$Month <- month(xmovenv$Date)
+boxplot(MeanClosedist ~ Month, data = xmovenv, ylab = "Average distance to the nearest water source (m)")
 
 # R squared
 with(summary(xdistenvnew2), 1 - deviance/null.deviance)
@@ -203,7 +225,7 @@ jovenv$scalevp <- scale(jovenv$vp..Pa., center = TRUE, scale = TRUE)
 jovenv$scalendvi <- scale(jovenv$MeanNDVI, center = TRUE, scale = TRUE)
 jovenv$scale6precip <- scale(jovenv$Precip6Wk, center = TRUE, scale = TRUE)
 
-jdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scalendvi + scale6precip, data = jovenv, na.action = na.exclude)
+jdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scale6precip, data = jovenv, na.action = na.exclude)
 summary(jdistenvnew)
 with(summary(jdistenvnew), 1 - deviance/null.deviance)
 confint(jdistenvnew)
