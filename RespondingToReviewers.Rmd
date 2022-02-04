@@ -180,10 +180,66 @@ adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random
 
 adprmd2 <- mixed_model(NumIndSheep ~ scaletmax + scalendvi + scale6wkprecip, random = ~ 1 | MtnRange, data = jball3, family = zi.negative.binomial(), zi_fixed = ~ scaletmax + scalendvi + scale6wkprecip, control = 'iter_EM = 0')
 
-mtnrange3<- ballenvvisitpre3[ballenvvisitpre3$MtnRange == "Marb" | ballenvvisitpre3$MtnRange == "SBrs" | ballenvvisitpre3$MtnRange == "Nopa", ]
+## Double-checking with glmmTMB
 
 library(glmmTMB)
-#(1|MtnRange)
+
+prmd <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+
+cup <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cup)
+cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cup1)
+# tmax works
+# mtnrange3 also works
+anova(cup, cup1)
+# Same equivalent so probably not including Mtn range in zero inflated is better
+
+cuptmin <- glmmTMB(NumIndSheep ~ tmin..deg.c. + (1|MtnRange), zi = ~ tmin..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+# fits but can't produce AIC
+#mtnrange3 doesn't converge
+
+cupdl <- glmmTMB(NumIndSheep ~ dayl..s. + (1|MtnRange), zi = ~ dayl..s., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+# NAN's produced
+# mtnrange3 doens't converge
+
+cupsr <- glmmTMB(NumIndSheep ~ srad..W.m.2. + (1|MtnRange), zi = ~ srad..W.m.2., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+# Nan's produced
+# mtnrange3 doesn't work
+
+cupvp <- glmmTMB(NumIndSheep ~ vp..Pa. + (1|MtnRange), zi = ~ vp..Pa., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+#Nans produced
+# same for mtnrange3
+
+
+cupndvi <- glmmTMB(NumIndSheep ~ MeanNDVI + (1|MtnRange), zi = ~ MeanNDVI, family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupndvi)
+# works! AIC 722 BIC 740.5
+# doesn't work for mtnrange3
+
+cup6precip <- glmmTMB(NumIndSheep ~ Precip6Wk + (1|MtnRange), zi = ~ Precip6Wk, family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cup6precip)
+# works AIC 709.4, BIC 727.9
+# works for mtnrange3
+
+cupss <- glmmTMB(NumIndSheep ~ Precip6Wk + MeanNDVI + tmax..deg.c. + (1|MtnRange), zi = ~ Precip6Wk + MeanNDVI + tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupss)
+# doesn't converge
+
+cupsv <- glmmTMB(NumIndSheep ~ Precip6Wk + MeanNDVI + (1|MtnRange), zi = ~ Precip6Wk + MeanNDVI, family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupsv)
+# AIC 705.7, BIC 730.4
+
+cupbv <- glmmTMB(NumIndSheep ~ Precip6Wk + tmax..deg.c. + (1|MtnRange), zi = ~ Precip6Wk + tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupbv)
+# Nans produced
+
+cupzs <- glmmTMB(NumIndSheep ~ MeanNDVI + tmax..deg.c. + (1|MtnRange), zi = ~ MeanNDVI + tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupzs)
+# Nans produced
+
+mtnrange3<- ballenvvisitpre3[ballenvvisitpre3$MtnRange == "Marb" | ballenvvisitpre3$MtnRange == "SBrs" | ballenvvisitpre3$MtnRange == "Nopa", ]
+
 adprmd2 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange), zi = ~tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange), family = nbinom2, data = mtnrange3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 
 summary(adprmd2)
