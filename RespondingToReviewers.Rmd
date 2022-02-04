@@ -156,10 +156,31 @@ summary(scaleprmd)
 pR2(scaleprmd)
 
 ## Double-Checking with GLMM adaptive
-library(GLMMadaptive)
-adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random = ~ 1 | MtnRange, data = ballenvvisitpre3, family = zi.negative.binomial(), zi_fixed = ~ tmax..deg.c. + MeanNDVI + Precip6Wk)
+library(GLMMadaptive) 
+jball3 <- ballenvvisitpre3
+jball3$scaledayl <- scale(jball3$dayl..s., center = TRUE, scale = TRUE)
+jball3$scaleprcp <- scale(jball3$prcp..mm.day., center = TRUE, scale = TRUE)
+jball3$scalesrad <- scale(jball3$srad..W.m.2., center = TRUE, scale = TRUE)
+jball3$scaletmax <- scale(jball3$tmax..deg.c., center = TRUE, scale = TRUE)
+jball3$scaletmin <- scale(jball3$tmin..deg.c., center = TRUE, scale = TRUE)
+jball3$scalevp <- scale(jball3$vp..Pa., center = TRUE, scale = TRUE)
+jball3$scalendvi <- scale(jball3$MeanNDVI, center = TRUE, scale = TRUE)
+jball3$scale6wkprecip <- scale(jball3$Precip6Wk, center = TRUE, scale = TRUE)
 
-prmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+##adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random = ~ 1 | MtnRange, data = ballenvvisitpre3, family = zi.negative.binomial(), zi_fixed = ~ tmax..deg.c. + MeanNDVI + Precip6Wk)
+
+adprmd2 <- mixed_model(NumIndSheep ~ scaletmax + scalendvi + scale6wkprecip, random = ~ 1 | MtnRange, data = jball3, family = zi.negative.binomial(), zi_fixed = ~ scaletmax + scalendvi + scale6wkprecip, control = 'iter_EM = 0')
+
+library(glmmTMB)
+adprmd2 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk + (1|MtnRange), zi = ~tmax..deg.c. + MeanNDVI + Precip6Wk, family = nbinom2, data = ballenvvisitpre3)
+
+adprmd2 <- glmmTMB(NumIndSheep ~ scaletmax + scalendvi + scale6wkprecip + (1|MtnRange), zi = ~scaletmax + scalendvi + scale6wkprecip, family = nbinom2, data = jball3)
+
+adprmd2 <- glmmTMB(NumIndSheep ~ scaletmax  + (1|MtnRange), zi = ~scaletmax , family = nbinom2, data = jball3)
+m1B <- update(adprmd2, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(m1B)
+
+dprmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 
 
 ## Correlation between environmental variables including Precip6
