@@ -264,6 +264,10 @@ dprmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg
 
 ## GLM models
 
+prmd <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+
+zeroinfl(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI + prcp..mm.day. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3, link = "logit")
+
 pet <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI + prcp..mm.day. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3)
 summary(pet)
 
