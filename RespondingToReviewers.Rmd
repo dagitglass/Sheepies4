@@ -230,6 +230,10 @@ cupsv <- glmmTMB(NumIndSheep ~ Precip6Wk + MeanNDVI + (1|MtnRange), zi = ~ Preci
 summary(cupsv)
 # AIC 705.7, BIC 730.4
 
+cupsvint <- glmmTMB(NumIndSheep ~ Precip6Wk + MeanNDVI + Precip6Wk * MeanNDVI + (1|MtnRange), zi = ~ Precip6Wk + MeanNDVI + Precip6Wk * MeanNDVI, family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupsvint)
+# AIC 709.6, BIC 740.4
+
 cupbv <- glmmTMB(NumIndSheep ~ Precip6Wk + tmax..deg.c. + (1|MtnRange), zi = ~ Precip6Wk + tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cupbv)
 # Nans produced
@@ -257,6 +261,16 @@ m1B <- update(adprmd2, control=glmmTMBControl(optimizer=optim, optArgs=list(meth
 summary(m1B)
 
 dprmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
+
+## GLM models
+
+pet <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI + prcp..mm.day. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3)
+summary(pet)
+
+# GLM minus tmin - THIS IS THE ONE USED IN THE PAPER
+sheepglm1 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
+summary(sheepglm1)
+anova(sheepglm, sheepglm1, test = "Chisq")
 
 
 ## Correlation between environmental variables including Precip6
