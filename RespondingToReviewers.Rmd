@@ -188,13 +188,34 @@ prmd <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm
 
 cup <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cup)
-cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c. + (1|MtnRange), family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cup1)
 BIC(cup1)
 # tmax works
 # mtnrange3 also works
 anova(cup, cup1)
 # Same equivalent so probably not including Mtn range in zero inflated is better
+
+cup_nb1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c. + (1|MtnRange), family = nbinom1, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cup_nb1)
+BIC(cup_nb1)
+anova(cup1, cup_nb1)
+
+## Checking against poisson model
+cuppoisson6precip <- glmmTMB(NumIndSheep ~ Precip6Wk + (1|MtnRange), zi = ~ Precip6Wk, family = poisson, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cuppoisson6precip)
+BIC(cuppoisson6precip)
+# tmax, ndvi, day length, sr, tmax, tmin, vp   poisson does not converge
+
+cuppoissonprecip <- glmmTMB(NumIndSheep ~ prcp..mm.day. + (1|MtnRange), zi = ~ prcp..mm.day., family = poisson, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cuppoissonprecip)
+BIC(cuppoissonprecip)
+
+lrtest(cup6precip, cuppoisson6precip)
+
+library(lmtest)
+# these two models below have the same variable
+lrtest(twovar1, negbintwovar1)
 
 cuptmin <- glmmTMB(NumIndSheep ~ tmin..deg.c. + (1|MtnRange), zi = ~ tmin..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 # fits but can't produce AIC
@@ -261,6 +282,10 @@ adprmd2 <- glmmTMB(NumIndSheep ~ tmax..deg.c.  + (1|MtnRange), zi = ~tmax..deg.c
 m1B <- update(adprmd2, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(m1B)
 
+cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cup1)
+
+
 dprmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 
 ## GLM models
@@ -284,7 +309,35 @@ pet3 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.
 summary(pet3)
 BIC(pet3)
 
+ballforscale <- ballenvvisitpre3
 
+ballforscale$scaledayl <- scale(ballforscale$dayl..s., center = TRUE, scale = TRUE)
+ballforscale$scaleprecip <- scale(ballforscale$prcp..mm.day., center = TRUE, scale = TRUE)
+ballforscale$scalesrad <- scale(ballforscale$srad..W.m.2., center = TRUE, scale = TRUE)
+ballforscale$scaletmax <- scale(ballforscale$tmax..deg.c., center = TRUE, scale = TRUE)
+ballforscale$scaletmin <- scale(ballforscale$tmin..deg.c., center = TRUE, scale = TRUE)
+ballforscale$scalevp <- scale(ballforscale$vp..Pa., center = TRUE, scale = TRUE)
+ballforscale$scalendvi <- scale(ballforscale$MeanNDVI, center = TRUE, scale = TRUE)
+ballforscale$scale6precip <- scale(ballforscale$Precip6Wk, center = TRUE, scale = TRUE)
+
+scalepvglm <- glm(Percentvisited ~ scaledayl + scaleprecip + scalesrad + scaletmin + scaletmax + scalevp + scalendvi + scale6precip, data = ballforscale)
+summary(scalepvglm)
+BIC(scalepvglm)
+
+# Minus ndvi
+scalepvglm1 <- glm(Percentvisited ~ scaledayl + scaleprecip + scalesrad + scaletmin + scaletmax + scalevp + scale6precip, data = ballforscale)
+summary(scalepvglm1)
+BIC(scalepvglm1)
+
+# Minus precip
+scalepvglm2 <- glm(Percentvisited ~ scaledayl + scalesrad + scaletmin + scaletmax + scalevp + scale6precip, data = ballforscale)
+summary(scalepvglm2)
+BIC(scalepvglm2)
+
+# Minus vp
+scalepvglm3 <- glm(Percentvisited ~ scaledayl + scalesrad + scaletmin + scaletmax + scale6precip, data = ballforscale)
+summary(scalepvglm3)
+BIC(scalepvglm3)
 
 # GLM minus tmin - THIS IS THE ONE USED IN THE PAPER
 sheepglm1 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
