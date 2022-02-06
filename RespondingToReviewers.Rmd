@@ -190,6 +190,7 @@ cup <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., f
 summary(cup)
 cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cup1)
+BIC(cup1)
 # tmax works
 # mtnrange3 also works
 anova(cup, cup1)
@@ -264,12 +265,26 @@ dprmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg
 
 ## GLM models
 
-prmd <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk | tmax..deg.c. + MeanNDVI + tmin..deg.c. + prcp..mm.day. + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
-
-zeroinfl(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI + prcp..mm.day. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3, link = "logit")
-
 pet <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI + prcp..mm.day. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3)
 summary(pet)
+BIC(pet)
+
+# Minus MeanNDVI
+pet1 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + prcp..mm.day. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3)
+summary(pet1)
+BIC(pet1)
+
+# Minus precipitation
+pet2 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3)
+summary(pet2)
+BIC(pet2)
+
+# Minus vapor pressure
+pet3 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk, data = ballenvvisitpre3)
+summary(pet3)
+BIC(pet3)
+
+
 
 # GLM minus tmin - THIS IS THE ONE USED IN THE PAPER
 sheepglm1 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
