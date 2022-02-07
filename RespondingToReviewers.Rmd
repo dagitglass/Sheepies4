@@ -370,14 +370,31 @@ pet3int7 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..
 summary(pet3int7)
 BIC(pet3int7)
 
-pet3int2 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * dayl..s. * Precip6Wk, data = ballenvvisitpre3)
-summary(pet3int2)
-BIC(pet3int2)
+pet3int9 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + dayl..s. * srad..W.m.2., data = ballenvvisitpre3)
+summary(pet3int9)
+BIC(pet3int9)
+
+pet3int10 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + dayl..s. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int10)
+BIC(pet3int10)
+
+pet3int11 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + srad..W.m.2. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int11)
+BIC(pet3int11)
+
+pet3int12 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * dayl..s. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int12)
+BIC(pet3int12)
 
 pet3int8 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmin..deg.c. * dayl..s. * Precip6Wk, data = ballenvvisitpre3)
 summary(pet3int8)
 BIC(pet3int8)
 
+modelsb <- list(pet, pet1, pet2, pet3, pet3int, pet3int1, pet3int3, pet3int4, pet3int5, pet3int6, pet3int7, pet3int9, pet3int10, pet3int11, pet3int12, pet3int8)
+
+modelnamesb <- c("Dayl.sr.maxtemp.mintemp.vp.ndvi.precip.6weekprecip", "dayl.sr.maxtemp.vp.precip.mintemp.precip6week", "dayl.sr.maxtemp.vp.mintemp.precip6week", "dayl.sr.maxtemp.tmin.precip6wk", "dayl.sr.tmax.tmin.Precip6Wk..inttmaxPrecip6Wk", "dayl.sr.tmax.tmin.Precip6Wk..inttmaxdayl", "dayl.sr.tmax.tmin.Precip6Wk..inttmaxsr", "dayl.sr.tmax.tmin.Precip6Wk..inttmaxprecip6wk", "dayl.sr.tmax.tmin.Precip6Wk..inttminprecip6wk", "dayl.sr.tmax.tmin.Precip6Wk..inttminsr", "dayl.sr.tmax.tmin.Precip6Wk..inttmindayl", "dayl.sr.tmax.tmin.Precip6Wk..intdaylsr", "dayl.sr.tmax.tmin.Precip6Wk..intdaylprecip6wk", "dayl.sr.tmax.tmin.Precip6Wk..intsrprecip6wk", "dayl.sr.tmax.tmin.Precip6Wk..inttmaxdaylprecip6wk", "dayl.sr.tmax.tmin.Precip6Wk..inttmindaylprecip6Wk")
+                  
+bictab(cand.set = modelsb, modnames = modelnamesb)
 
 ballforscale <- ballenvvisitpre3
 
@@ -409,10 +426,15 @@ scalepvglm3 <- glm(Percentvisited ~ scaledayl + scalesrad + scaletmin + scaletma
 summary(scalepvglm3)
 BIC(scalepvglm3)
 
+# Used in paper 2/6/22
+pet3int7scale <- glm(Percentvisited ~ scaledayl + scalesrad + scaletmax + scaletmin + scale6precip + scaletmin * scaledayl, data = ballforscale)
+summary(pet3int7scale)
+confint(pet3int7scale)
+
 # GLM minus tmin - THIS IS THE ONE USED IN THE PAPER
-sheepglm1 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
-summary(sheepglm1)
-anova(sheepglm, sheepglm1, test = "Chisq")
+#sheepglm1 <- glm(NumIndSheep ~ dayl..s. + srad..W.m.2. + tmax..deg.c. +  vp..Pa. + MeanNDVI, data = allenvvisit1, family = "poisson")
+#summary(sheepglm1)
+#anova(sheepglm, sheepglm1, test = "Chisq")
 
 
 ## Correlation between environmental variables including Precip6
