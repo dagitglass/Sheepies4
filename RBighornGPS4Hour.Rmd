@@ -431,6 +431,11 @@ confint(day4hrmovevizscal1)
 
 day4hrmovevizscal1 <- glmer(beforevisit ~ scalestplengthtopo + scaleClosedist + scaleangle2waterdegree +  (1|IDs), data = day4hr, family = binomial(link = "logit"))
 
+## Comparing the models
+library(AICcmodavg)
+modelf <- list(day4hrmovevizscal, day4hrmovevizscal1)
+modelnamesf <- c('4var', '3varnoangle')
+bictab(cand.set = modelf, modnames = modelnamesf)
 
 # Looking at a glm model because why not
 temp <- glm(beforevisit ~ positangledegree + sqrt(stplengthtopo) + sqrt(Closedist) + angle2waterdegree, data = fall4mtndistwater2, family = "binomial")

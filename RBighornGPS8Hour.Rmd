@@ -439,6 +439,12 @@ confint(daybmovevizscal2)
 AIC(daybmovevizscal2)
 BIC(daybmovevizscal2)
 
+## Comparing models
+library(AICcmodavg)
+modelsg <- list(daybmovevizscal, daybmovevizscal1, daybmovevizscal2)
+modelnamesg <- c('4var', '3varnostplength', '2varClosedistAngletowater')
+bictab(cand.set = modelsg, modnames = modelnamesg)
+
 daybmovevizscalint <- glmer(beforevisit ~ scaleClosedist + scaleangle2waterdegree + scaleClosedist * scaleangle2waterdegree + (1|IDs), data = day8hr, family = binomial(link = "logit"))
 summary(daybmovevizscalint)
 # higher AIC than model above, not as good.
