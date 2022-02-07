@@ -340,6 +340,45 @@ pet3 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.
 summary(pet3)
 BIC(pet3)
 
+pet3int <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int)
+BIC(pet3int)
+
+#2
+pet3int1 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * dayl..s., data = ballenvvisitpre3)
+summary(pet3int1)
+BIC(pet3int1)
+
+pet3int3 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * srad..W.m.2., data = ballenvvisitpre3)
+summary(pet3int3)
+BIC(pet3int3)
+
+pet3int4 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int4)
+BIC(pet3int4)
+
+pet3int5 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmin..deg.c. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int5)
+BIC(pet3int5)
+
+pet3int6 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmin..deg.c. * srad..W.m.2., data = ballenvvisitpre3)
+summary(pet3int6)
+BIC(pet3int6)
+
+#1
+pet3int7 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmin..deg.c. * dayl..s., data = ballenvvisitpre3)
+summary(pet3int7)
+BIC(pet3int7)
+
+pet3int2 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmax..deg.c. * dayl..s. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int2)
+BIC(pet3int2)
+
+pet3int8 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmin..deg.c. * dayl..s. * Precip6Wk, data = ballenvvisitpre3)
+summary(pet3int8)
+BIC(pet3int8)
+
+
 ballforscale <- ballenvvisitpre3
 
 ballforscale$scaledayl <- scale(ballforscale$dayl..s., center = TRUE, scale = TRUE)
