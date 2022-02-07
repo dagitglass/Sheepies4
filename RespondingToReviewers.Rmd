@@ -444,6 +444,13 @@ yik <- rcorr(as.matrix(envvarnew), type = "pearson")
 
 ## Adding in Precip6 to the distance to water ~ environmental variables analysis
 # need to switch from xallenvvisit1 to ballenvvisitpre3
+tomp <- allcdi2
+plot(MeanClosedist ~ Date, data = allcdi2)
+plot(MeanClosedist ~ Date, data = marbcdi2)
+plot(MeanClosedist ~ Date, data = sbrscdi2)
+plot(MeanClosedist ~ Date, data = nopacdi2)
+plot(MeanClosedist ~ Date, data = cmprdi2)
+
 
 library(dplyr)
 library(rsq)
