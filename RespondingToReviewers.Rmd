@@ -316,6 +316,10 @@ summary(m1B)
 cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cup1)
 
+install.packages(c("insight", "performance"), repos = 'https://easystats.r-universe.dev')
+library(performance)
+performance::r2(cup1)
+r2_zeroinflated(cup1, method = "correlation")
 
 dprmd2 <- zeroinfl(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk | tmax..deg.c. + MeanNDVI + Precip6Wk + MtnRange, data = ballenvvisitpre3, dist = "negbin", link = "logit")
 
@@ -369,6 +373,8 @@ BIC(pet3int6)
 pet3int7 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + tmin..deg.c. * dayl..s., data = ballenvvisitpre3)
 summary(pet3int7)
 BIC(pet3int7)
+#R squared
+with(summary(pet3int7), 1 - deviance/null.deviance)
 
 pet3int9 <- glm(Percentvisited ~ dayl..s. + srad..W.m.2. + tmax..deg.c. + tmin..deg.c. + Precip6Wk + dayl..s. * srad..W.m.2., data = ballenvvisitpre3)
 summary(pet3int9)
