@@ -190,7 +190,7 @@ cup <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., f
 summary(cup)
 BIC(cup)
 plot(residuals(cup))
-cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c. + (1|MtnRange), family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+#cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c. + (1|MtnRange), family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cup1)
 BIC(cup1)
 # tmax works
