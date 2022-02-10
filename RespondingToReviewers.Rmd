@@ -180,6 +180,11 @@ adprmd2 <- mixed_model(NumIndSheep ~ tmax..deg.c. + MeanNDVI + Precip6Wk, random
 
 adprmd2 <- mixed_model(NumIndSheep ~ scaletmax + scalendvi + scale6wkprecip, random = ~ 1 | MtnRange, data = jball3, family = zi.negative.binomial(), zi_fixed = ~ scaletmax + scalendvi + scale6wkprecip, control = 'iter_EM = 0')
 
+library(glmmTMB)
+cupst <- glmmTMB(NumIndSheep ~ scaletmax + (1|MtnRange), zi = ~ scaletmax, family = nbinom2, data = jball3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cupst)
+confint(cupst)
+
 ## Double-checking with glmmTMB
 
 library(glmmTMB)
@@ -190,6 +195,7 @@ cup <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c., f
 summary(cup)
 BIC(cup)
 plot(residuals(cup))
+confint(cup)
 #cup1 <- glmmTMB(NumIndSheep ~ tmax..deg.c. + (1|MtnRange), zi = ~ tmax..deg.c. + (1|MtnRange), family = nbinom2, data = ballenvvisitpre3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
 summary(cup1)
 BIC(cup1)
@@ -509,10 +515,18 @@ xdistenvnew9 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tma
 summary(xdistenvnew9)
 BIC(xdistenvnew9)
 
-#***
 xdistenvnew10 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk + dayl..s. * tmin..deg.c., data = xmovenv, na.action = na.exclude)
 summary(xdistenvnew10)
 BIC(xdistenvnew10)
+# R squared
+with(summary(xdistenvnew10), 1 - deviance/null.deviance)
+
+#****
+xdistenvnew18 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + dayl..s. * tmin..deg.c., data = xmovenv, na.action = na.exclude)
+summary(xdistenvnew18)
+BIC(xdistenvnew18)
+# R squared
+with(summary(xdistenvnew18), 1 - deviance/null.deviance)
 
 xdistenvnew12 <- glm(MeanClosedist ~ dayl..s. + srad..W.m.2. + tmin..deg.c. + tmax..deg.c. + Precip6Wk + dayl..s. * srad..W.m.2., data = xmovenv, na.action = na.exclude)
 summary(xdistenvnew12)
@@ -540,10 +554,9 @@ BIC(xdistenvnew17)
 
 ## Comparing models
 library(AICcmodavg)
-modelsc <- list(xdistenvnew, xdistenvnew1, xdistenvnew2, xdistenvnew3, xdistenvnew7, xdistenvnew8, xdistenvnew11, xdistenvnew9, xdistenvnew10, xdistenvnew12, xdistenvnew13, xdistenvnew14, xdistenvnew15, xdistenvnew16, xdistenvnew17)
-modelnamesc <- c('daylsrtmintmaxvpndviprecip6precip', 'daylsrtmintmaxndviprecip6precip_1', 'daylsrtmintmaxndviprecip6_2', 'daylsrtmintmaxprecip6_3', 'daylsrtmintmaxprecip6_inprecip6tmax_7', 'daylsrtmintmaxprecip6_intdayltmax_8', 'daylsrtmintmaxprecip6_intsrtmax_11', 'daylsrtmintmaxprecip6_intdaylprecip6_9', 'daylsrtmintmaxprecip6_intdayltmin_10', 'daylsrtmintmaxprecip6_intdaylsr_12', 'daylsrtmintmaxprecip6_inttminsr_13', 'daylsrtmintmaxprecip6_intprecip6sr_14', 'daylsrtmintmaxprecip6_inttminprecip6_15', 'daylsrtmintmaxprecip6_intdayltminsr_16', 'daylsrtmintmaxprecip6_intdayltminprecip6_17')
+modelsc <- list(xdistenvnew, xdistenvnew1, xdistenvnew2, xdistenvnew3, xdistenvnew7, xdistenvnew8, xdistenvnew11, xdistenvnew9, xdistenvnew10, xdistenvnew12, xdistenvnew13, xdistenvnew14, xdistenvnew15, xdistenvnew16, xdistenvnew17, xdistenvnew18)
+modelnamesc <- c('daylsrtmintmaxvpndviprecip6precip', 'daylsrtmintmaxndviprecip6precip_1', 'daylsrtmintmaxndviprecip6_2', 'daylsrtmintmaxprecip6_3', 'daylsrtmintmaxprecip6_inprecip6tmax_7', 'daylsrtmintmaxprecip6_intdayltmax_8', 'daylsrtmintmaxprecip6_intsrtmax_11', 'daylsrtmintmaxprecip6_intdaylprecip6_9', 'daylsrtmintmaxprecip6_intdayltmin_10', 'daylsrtmintmaxprecip6_intdaylsr_12', 'daylsrtmintmaxprecip6_inttminsr_13', 'daylsrtmintmaxprecip6_intprecip6sr_14', 'daylsrtmintmaxprecip6_inttminprecip6_15', 'daylsrtmintmaxprecip6_intdayltminsr_16', 'daylsrtmintmaxprecip6_intdayltminprecip6_17', 'daylsrtmintmax_intdayltmin_18')
 bictab(cand.set = modelsc, modnames = modelnamesc) 
-
 
 #xdistenvnew2 <- glm(MeanClosedist ~ tmax..deg.c., data = xmovenv)
 
@@ -571,7 +584,7 @@ jovenv$scalevp <- scale(jovenv$vp..Pa., center = TRUE, scale = TRUE)
 jovenv$scalendvi <- scale(jovenv$MeanNDVI, center = TRUE, scale = TRUE)
 jovenv$scale6precip <- scale(jovenv$Precip6Wk, center = TRUE, scale = TRUE)
 
-jdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scale6precip + scaledayl * scaletmin, data = jovenv, na.action = na.exclude)
+jdistenvnew <- glm(MeanClosedist ~ scaledayl + scalesrad + scaletmin + scaletmax + scaledayl * scaletmin, data = jovenv, na.action = na.exclude)
 summary(jdistenvnew)
 with(summary(jdistenvnew), 1 - deviance/null.deviance)
 confint(jdistenvnew)
