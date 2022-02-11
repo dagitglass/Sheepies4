@@ -589,6 +589,12 @@ summary(jdistenvnew)
 with(summary(jdistenvnew), 1 - deviance/null.deviance)
 confint(jdistenvnew)
 
+# ANOVA of NDVI
+hist(ballenvvisitpre3$MeanNDVI)
+comndvi <- aov(MeanNDVI ~ MtnRange, data = ballenvvisitpre3)
+summary(comndvi)
+TukeyHSD(comndvi)
+# CMPR significantly different from 3 other ranges, which aren't different from each other...
 ```
 
 
