@@ -185,6 +185,10 @@ cupst <- glmmTMB(NumIndSheep ~ scaletmax + (1|MtnRange), zi = ~ scaletmax, famil
 summary(cupst)
 confint(cupst)
 
+cups6 <- glmmTMB(NumIndSheep ~ scale6wkprecip + (1|MtnRange), zi = ~ scale6wkprecip, family = nbinom2, data = jball3, control=glmmTMBControl(optimizer=optim, optArgs=list(method="BFGS")))
+summary(cups6)
+confint(cupst)
+
 ## Double-checking with glmmTMB
 
 library(glmmTMB)
