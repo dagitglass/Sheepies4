@@ -116,6 +116,16 @@ library(ggplot2)
 # Figure 3
 ggplot(ballenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range") + theme(axis.line = element_line(colour = "black")) + 
   theme(panel.background = element_rect(fill = "white"))
+  
+forfig3 <- ballenvvisit3 
+forfig3$MountainRange <- as.character(forfig3$MountainRange)
+forfig3$MountainRange[forfig3$MountainRange == 'Marbles'] <- 'Marble'
+forfig3$MountainRange[forfig3$MountainRange == 'South Bristols'] <- 'South Bristol'
+forfig3$MountainRange[forfig3$MountainRange == 'Castle Piutes'] <- 'Castle Piute'
+forfig3$MountainRange <- as.factor(forfig3$MountainRange)
+ggplot(forfig3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range") + theme(axis.line = element_line(colour = "black")) + 
+  theme(panel.background = element_rect(fill = "white"))
+
 
 ggplot(allenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain range")
 
