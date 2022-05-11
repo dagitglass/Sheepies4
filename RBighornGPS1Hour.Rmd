@@ -903,29 +903,29 @@ cdcmprmonth <- aov(sqrt(Closedist) ~ Month, data = cmpr4mtndistwater3)
 summary.lm(cdcmprmonth)
 TukeyHSD(cdcmprmonth)
 
-# par(mar=c(4,4,4,4))
+# par(mar=c(4,4,4,4)) Figure 5
 par(mar=c(4,4,4,1))
 par(mfrow = c(2,2))
 boxplot(Closedist ~ Month, data = callmtndistwater2[callmtndistwater2$MountainRange == "Marb", ], ylab = "Distance (m)", main = "Marble", xlab = "Month", axes = F, col = "white", xaxt='n')
 box(bty="l")
 axis(2, axTicks(2), format(axTicks(2), big.mark = ","))
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 boxplot(Closedist ~ Month, data = callmtndistwater2[callmtndistwater2$MountainRange == "BrsS", ], ylab = "Distance (m)", main = "South Bristol", axes = F, col = "white", xaxt='n')
 box(bty="l")
 axis(2, axTicks(2), format(axTicks(2), big.mark = ","))
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 
 boxplot(Closedist ~ Month, data = callmtndistwater2[callmtndistwater2$MountainRange == "Nopa", ], ylab = "Distance (m)", main = "Nopah", axes = F, col = "white", xaxt='n')
 box(bty="l")
 axis(2, axTicks(2), format(axTicks(2), big.mark = ","))
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 boxplot(Closedist ~ Month, data = callmtndistwater2[callmtndistwater2$MountainRange == "CMPR", ], ylab = "Distance (m)", main = "Castle Piute", axes = F, col = "white", xaxt='n')
 box(bty="l")
 axis(2, axTicks(2), format(axTicks(2), big.mark = ","))
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 dev.off()
 
 #7/5/21 using day only data, above ggplot still works

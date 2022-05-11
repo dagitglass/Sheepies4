@@ -644,23 +644,22 @@ par(mfrow = c(2,2))
 boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Marb", ], main = (substitute(paste(bold('Marble ('), bolditalic(n), bold(' = 31*)')))), ylab = "VTW/desert bighorn", ylim = c(0, 1.3), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "BrsS", ], main = substitute(paste(bold('South Bristol ('), bolditalic(n), bold(' = 24)'))), ylab = "VTW/desert bighorn", ylim = c(0, 1.3), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "Nopa", ], main = substitute(paste(bold('Nopah ('), bolditalic(n), bold(' = 6)'))), ylab = "VTW/desert bighorn", ylim = c(0, 1.3), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
-boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "CMPR", ], main = substitute(paste(bold('Castle Piute('), bolditalic(n), bold(' = 4)'))), ylab = "VTW/desert bighorn", ylim = c(0, 1.3), axes = F, col = "white")
+boxplot(Meannumvisits ~ Month, data = allindrd11[allindrd11$MtnRange == "CMPR", ], main = substitute(paste(bold('Castle Piute ('), bolditalic(n), bold(' = 4)'))), ylab = "VTW/desert bighorn", ylim = c(0, 1.3), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
-
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 
 
@@ -1348,22 +1347,22 @@ par(mfrow = c(2,2))
 marbbplotvisit <- boxplot(VisitDuration ~ Month, data = marbrangetime1, main = "Marble", ylab = "Visit duration (mins)", axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 sbrsplotvisit <- boxplot(VisitDuration ~ Month, data = sbrsrangetime1, main = "South Bristol", ylab = "Visit duration (mins)", axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 nopaplotvisit <- boxplot(VisitDuration ~ Month, data = noparangetime1, main = "Nopah", ylab = "Visit duration (mins)", axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 cmprplotvisit <- boxplot(VisitDuration ~ Month, data = cmprrangetime1, main = "Castle Piute", ylab = "Visit duration (mins)", axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 title("Duration of Visits to Water by Month", line = -1, outer = TRUE)
 dev.off()
 
@@ -1703,23 +1702,23 @@ par(mfrow = c(2,2))
 boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Marb", ], main = substitute(paste(bold('Marble ('), bolditalic(n), bold(' = 31*)'))), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "BrsS", ], main = substitute(paste(bold('South Bristol ('), bolditalic(n), bold(' = 24)'))), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "Nopa", ], main = substitute(paste(bold('Nopah ('), bolditalic(n), bold(' = 6)'))), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
 
 
 boxplot(visitedP ~ Month, data = allindsheepvisitperday[allindsheepvisitperday$MtnRange == "CMPR", ], main = substitute(paste(bold('Castle Piute ('), bolditalic(n), bold(' = 4)'))), ylab = "Percent", ylim = c(0, 100), axes = F, col = "white")
 box(bty="l")
 axis(2)
-axis(1, at = c(1, 2, 3, 4), labels = c("5", "6", "7", "8"))
+axis(1, at = c(1, 2, 3, 4), labels = c("May", "Jun", "Jul", "Aug"))
         
 #title("Percent of Individual Sheep that Visited Water on a Given Day by Month", line = -1, outer = TRUE)
 dev.off()
