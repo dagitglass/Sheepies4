@@ -123,11 +123,12 @@ forfig3$MountainRange[forfig3$MountainRange == 'Marbles'] <- 'Marble'
 forfig3$MountainRange[forfig3$MountainRange == 'South Bristols'] <- 'South Bristol'
 forfig3$MountainRange[forfig3$MountainRange == 'Castle Piutes'] <- 'Castle Piute'
 forfig3$MountainRange <- as.factor(forfig3$MountainRange)
-ggplot(forfig3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range") + theme(axis.line = element_line(colour = "black")) + 
-  theme(panel.background = element_rect(fill = "white"))
+ggplot(forfig3, aes(tmax..deg.c., Percentvisited, color = MountainRange)) + geom_point() + scale_color_manual(values = c("#00BA38", "#D55E00", "gold1", "#619CFF")) + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain Range") + theme(axis.line = element_line(colour = "black")) + 
+  theme(panel.background = element_rect(fill = "white")) 
+#+ scale_color_manual(values = c("Marb" = "#00BA38", "CMPR" = "#F8766D", "Nopa" = "#619CFF", "BrsS" = "#CD9600"))
+# F0E442
 
-
-ggplot(allenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain range")
+# ggplot(allenvvisit3, aes(tmax..deg.c., Percentvisited, colour = MountainRange)) + geom_point() + ylab("Percent of desert bighorn that visited water") + xlab("Maximum temperature (°C)") + labs(color = "Mountain range")
 
 
 # Means
