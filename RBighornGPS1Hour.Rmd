@@ -454,6 +454,10 @@ mean(day1hr$stplengthtopo[day1hr$beforevisit == TRUE])
 #451.2731 
 mean(day1hr$stplengthtopo[day1hr$beforevisit == FALSE])
 # 181.3339
+
+longstp <- day1hr[day1hr$stplengthtopo >= 2000, ]
+table(longstp$beforevisit)
+
 mean(day1hr$angle2waterdegree[day1hr$beforevisit == TRUE], na.rm = TRUE)
 # 80.4167
 mean(day1hr$angle2waterdegree[day1hr$beforevisit == FALSE], na.rm = TRUE)
