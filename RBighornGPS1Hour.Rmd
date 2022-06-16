@@ -960,8 +960,10 @@ topographic step length by time of day
 ```{r}
 callmtndistwater2$DateTimeLocalTestct <- as.POSIXct(callmtndistwater2$DateTimeLocalTestct)
 callmtndistwater2$TimeLocal1 <- as.numeric(format(callmtndistwater2$DateTimeLocalTestct, "%H"))
-boxplot(stplengthtopo ~ TimeLocal1, data = callmtndistwater2,ylab = "Topographic step length (m)", xlab = "Time of day")
-
+boxplot(stplengthtopo ~ TimeLocal1, data = callmtndistwater2,ylab = "Topographic step length (m)", xlab = "Time of day", col = "white", axes = F)
+box(bty="l")
+axis(2, axTicks(2), format(axTicks(2), big.mark = ","))
+axis(1)
 
 # boxplot(stplengthtopo ~ TimeLocal, data = steplengthallmtn1, main = "Topographic Step Length By Hour for All Mountain Ranges", ylab = "Topographic Step Length (m)", xlab = "Time of Day")
 ```
