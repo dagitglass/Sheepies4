@@ -1,0 +1,85 @@
+---
+title: "RespondingToContentEditor"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Used in paper 2/6/22
+pet3int7scale <- glm(Percentvisited ~ scaledayl + scalesrad + scaletmax + scaletmin + scale6precip + scaletmin * scaledayl, data = ballforscale)
+summary(pet3int7scale)
+confint(pet3int7scale)
+
+## Max temp, min temp, and vapor pressure are super correlated
+
+rab1 <- glm(Percentvisited ~ scaledayl + scaleprecip + scalesrad + scaletmax + scalendvi + scale6precip, data = ballforscale)
+summary(rab1)
+BIC(rab1)
+with(summary(rab1), 1 - deviance/null.deviance)
+
+# Minus srad
+rab2 <- glm(Percentvisited ~ scaledayl + scaleprecip + scaletmax + scalendvi + scale6precip, data = ballforscale)
+summary(rab2)
+BIC(rab2)
+with(summary(rab2), 1 - deviance/null.deviance)
+
+# Minus precip
+rab3 <- glm(Percentvisited ~ scaledayl + scaletmax + scalendvi + scale6precip, data = ballforscale)
+summary(rab3)
+BIC(rab3)
+with(summary(rab3), 1 - deviance/null.deviance)
+
+# Minus ndvi
+rab4 <- glm(Percentvisited ~ scaledayl + scaletmax + scale6precip, data = ballforscale)
+summary(rab4)
+BIC(rab4)
+with(summary(rab4), 1 - deviance/null.deviance)
+
+# With interaction of day length and tmax** Best one.
+rab5 <- glm(Percentvisited ~ scaledayl + scaletmax + scale6precip + scaledayl * scaletmax, data = ballforscale)
+summary(rab5)
+BIC(rab5)
+with(summary(rab5), 1 - deviance/null.deviance)
+
+# With interaction of day length and 6 precip
+rab6 <- glm(Percentvisited ~ scaledayl + scaletmax + scale6precip + scale6precip * scaletmax, data = ballforscale)
+summary(rab6)
+BIC(rab6)
+with(summary(rab6), 1 - deviance/null.deviance)
+
+# With interaction of 6 precip and tmax
+rab7 <- glm(Percentvisited ~ scaledayl + scaletmax + scale6precip + scale6precip * scaletmax, data = ballforscale)
+summary(rab7)
+BIC(rab7)
+with(summary(rab7), 1 - deviance/null.deviance)
+
+# With interaction of 6 precip, tmax, and day length
+rab8 <- glm(Percentvisited ~ scaledayl + scaletmax + scale6precip + scale6precip * scaletmax * scaledayl, data = ballforscale)
+summary(rab8)
+BIC(rab8)
+with(summary(rab8), 1 - deviance/null.deviance)
+
+
+### GLM dist to water
+
+bun <- glm(MeanClosedist ~ scaledayl + scaleprecip + scalesrad + scaletmax + scalendvi + scale6precip, data = jovenv, na.action = na.exclude)
+summary(bun)
+with(summary(bun), 1 - deviance/null.deviance)
+confint(bun)
+
+# Minus srad
+bun1 <- glm(MeanClosedist ~ scaledayl + scaleprecip + scaletmax + scalendvi + scale6precip, data = jovenv, na.action = na.exclude)
+summary(bun1)
+with(summary(bun1), 1 - deviance/null.deviance)
+confint(bun1)
+
+# Minus precip
+bun2 <- glm(MeanClosedist ~ scaledayl + scaletmax + scalendvi + scale6precip, data = jovenv, na.action = na.exclude)
+summary(bun2)
+with(summary(bun2), 1 - deviance/null.deviance)
+confint(bun2)
+
+
+```
+
